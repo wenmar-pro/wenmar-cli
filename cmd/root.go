@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/agent"
+	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -19,16 +21,22 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "wenmar",
-	Short: "Wenmar Pro API CLI",
-	Long:  "A command-line interface for the Wenmar Pro automotive shop management API.",
+	Use:           "wenmar",
+	Short:         "Wenmar Pro API CLI",
+	Long:          "A command-line interface for the Wenmar Pro automotive shop management API.",
+	SilenceUsage:  true,
+	SilenceErrors: true,
 }
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(errors.ExitCode(err))
 	}
 }
+
+// RootCmd exposes the command tree for tests.
+func RootCmd() *cobra.Command { return rootCmd }
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "API bearer token (or set WENMAR_TOKEN env)")

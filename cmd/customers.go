@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
-	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
@@ -24,20 +22,20 @@ var customersListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
 	Short:   "List all customers, paginated via the Link header",
-	Run:     runCustomersList,
+	RunE:    runCustomersList,
 }
 
 var customersShowCmd = &cobra.Command{
 	Use:   "show <id>",
 	Short: "Show a single customer by ID",
 	Args:  cobra.ExactArgs(1),
-	Run:   runCustomersShow,
+	RunE:  runCustomersShow,
 }
 
 var customersCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new customer",
-	Run:   runCustomersCreate,
+	RunE:  runCustomersCreate,
 }
 
 var (
@@ -66,11 +64,10 @@ func newSDKClient() (*wenmar.Client, error) {
 	return wenmar.NewClient(baseURL, token)
 }
 
-func runCustomersList(cmd *cobra.Command, args []string) {
+func runCustomersList(cmd *cobra.Command, args []string) error {
 	client, err := newSDKClient()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitGeneric)
+		return err
 	}
 
 	pageFlag, _ := cmd.Flags().GetInt("page")
@@ -81,8 +78,7 @@ func runCustomersList(cmd *cobra.Command, args []string) {
 
 	resp, paginator, err := client.ListCustomersWithPagination(context.Background(), pagePtr)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
+		return err
 	}
 
 	data := extractData(resp.JSON200)
@@ -91,39 +87,35 @@ func runCustomersList(cmd *cobra.Command, args []string) {
 
 	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag}
-	output.Render(os.Stdout, data, summary, meta, opts)
+	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
 }
 
-func runCustomersShow(cmd *cobra.Command, args []string) {
+func runCustomersShow(cmd *cobra.Command, args []string) error {
 	client, err := newSDKClient()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitGeneric)
+		return err
 	}
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "id must be an integer")
-		os.Exit(errors.ExitGeneric)
+		return fmt.Errorf("id must be an integer")
 	}
 
 	resp, err := client.ShowCustomer(context.Background(), id)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
+		return err
 	}
 
 	data := extractData(resp.JSON200)
 	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag}
-	output.Render(os.Stdout, data, "", nil, opts)
+	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
-func runCustomersCreate(cmd *cobra.Command, args []string) {
+func runCustomersCreate(cmd *cobra.Command, args []string) error {
 	client, err := newSDKClient()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitGeneric)
+		return err
 	}
 
 	body := generated.CreateCustomerJSONRequestBody{
@@ -144,14 +136,13 @@ func runCustomersCreate(cmd *cobra.Command, args []string) {
 
 	resp, err := client.CreateCustomer(context.Background(), body)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
+		return err
 	}
 
 	data := extractData(resp.JSON201)
 	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag}
-	output.Render(os.Stdout, data, "Customer created.", nil, opts)
+	return output.Render(cmd.OutOrStdout(), data, "Customer created.", nil, opts)
 }
 
 // extractData converts the generated response's JSON200 field to a

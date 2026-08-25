@@ -46,10 +46,21 @@ func toSlice(data any) []map[string]any {
 	switch v := data.(type) {
 	case []map[string]any:
 		return v
+	case []any:
+		out := make([]map[string]any, 0, len(v))
+		for _, item := range v {
+			if m, ok := item.(map[string]any); ok {
+				out = append(out, m)
+			}
+		}
+		return out
 	case map[string]any:
 		if d, ok := v["data"]; ok {
 			if arr, ok := d.([]map[string]any); ok {
 				return arr
+			}
+			if arr, ok := d.([]any); ok {
+				return toSlice(arr)
 			}
 		}
 		return []map[string]any{v}

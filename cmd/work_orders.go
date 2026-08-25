@@ -3,10 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	"github.com/spf13/cobra"
 )
@@ -21,14 +19,14 @@ var workOrdersListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
 	Short:   "List all work orders, paginated via the Link header",
-	Run:     runWorkOrdersList,
+	RunE:    runWorkOrdersList,
 }
 
 var workOrdersShowCmd = &cobra.Command{
 	Use:   "show <id>",
 	Short: "Show a single work order by ID",
 	Args:  cobra.ExactArgs(1),
-	Run:   runWorkOrdersShow,
+	RunE:  runWorkOrdersShow,
 }
 
 func init() {
@@ -37,11 +35,10 @@ func init() {
 	rootCmd.AddCommand(workOrdersCmd)
 }
 
-func runWorkOrdersList(cmd *cobra.Command, args []string) {
+func runWorkOrdersList(cmd *cobra.Command, args []string) error {
 	client, err := newSDKClient()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitGeneric)
+		return err
 	}
 
 	pageFlag, _ := cmd.Flags().GetInt("page")
@@ -52,8 +49,7 @@ func runWorkOrdersList(cmd *cobra.Command, args []string) {
 
 	resp, paginator, err := client.ListWorkOrdersWithPagination(context.Background(), pagePtr)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
+		return err
 	}
 
 	data := extractData(resp.JSON200)
@@ -62,30 +58,27 @@ func runWorkOrdersList(cmd *cobra.Command, args []string) {
 
 	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag}
-	output.Render(os.Stdout, data, summary, meta, opts)
+	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
 }
 
-func runWorkOrdersShow(cmd *cobra.Command, args []string) {
+func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
 	client, err := newSDKClient()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitGeneric)
+		return err
 	}
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "id must be an integer")
-		os.Exit(errors.ExitGeneric)
+		return fmt.Errorf("id must be an integer")
 	}
 
 	resp, err := client.ShowWorkOrder(context.Background(), id)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
+		return err
 	}
 
 	data := extractData(resp.JSON200)
 	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag}
-	output.Render(os.Stdout, data, "", nil, opts)
+	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }

@@ -3,10 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +18,7 @@ var vehiclesShowCmd = &cobra.Command{
 	Use:   "show <id>",
 	Short: "Show a single vehicle by ID",
 	Args:  cobra.ExactArgs(1),
-	Run:   runVehiclesShow,
+	RunE:  runVehiclesShow,
 }
 
 func init() {
@@ -28,27 +26,24 @@ func init() {
 	rootCmd.AddCommand(vehiclesCmd)
 }
 
-func runVehiclesShow(cmd *cobra.Command, args []string) {
+func runVehiclesShow(cmd *cobra.Command, args []string) error {
 	client, err := newSDKClient()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitGeneric)
+		return err
 	}
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "id must be an integer")
-		os.Exit(errors.ExitGeneric)
+		return fmt.Errorf("id must be an integer")
 	}
 
 	resp, err := client.ShowVehicle(context.Background(), id)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(errors.ExitCode(err))
+		return err
 	}
 
 	data := extractData(resp.JSON200)
 	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag}
-	output.Render(os.Stdout, data, "", nil, opts)
+	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
