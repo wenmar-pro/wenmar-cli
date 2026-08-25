@@ -15,4 +15,5 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.8 // indirect
 	github.com/oapi-codegen/runtime v1.7.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
