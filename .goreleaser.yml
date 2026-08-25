@@ -1,0 +1,61 @@
+project_name: wenmar
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: wenmar
+    main: ./cmd/wenmar
+    binary: wenmar
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+brews:
+  - repository:
+      owner: Wenmar-Pro
+      name: homebrew-wenmar
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: wenmar-cli-ci
+      email: ci@wenmarpro.com
+    directory: Formula
+    homepage: https://github.com/Wenmar-Pro/wenmar-cli
+    description: CLI for the Wenmar Pro automotive shop management API
+    license: MIT
+    test: |
+      system "#{bin}/wenmar", "--help"
+    install: |
+      bin.install "wenmar"
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
