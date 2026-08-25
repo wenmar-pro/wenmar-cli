@@ -56,7 +56,7 @@ func init() {
 }
 
 func newSDKClient() (*wenmar.Client, error) {
-	token, err := auth.ResolveToken(tokenFlag, "")
+	token, err := auth.ResolveToken(tokenFlag)
 	if err != nil {
 		return nil, err
 	}
