@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"os"
 
+	"github.com/wenmar-pro/wenmar-cli/internal/agent"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -34,4 +37,30 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output as full JSON envelope {ok, data, summary, meta}")
 	rootCmd.PersistentFlags().BoolVar(&agentFlag, "agent", false, "Output raw JSON data (no envelope)")
 	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "jq filter expression (implies --json)")
+
+	defaultHelpFunc := rootCmd.HelpFunc()
+	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		if agentFlag {
+			info := agent.CommandInfo{
+				Path:        cmd.CommandPath(),
+				Description: cmd.Short,
+			}
+			cmd.Flags().VisitAll(func(f *pflag.Flag) {
+				if !f.Hidden {
+					info.Flags = append(info.Flags, agent.FlagInfo{
+						Name:        f.Name,
+						Short:       f.Shorthand,
+						Type:        f.Value.Type(),
+						Default:     f.DefValue,
+						Description: f.Usage,
+					})
+				}
+			})
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			enc.Encode(info)
+			return
+		}
+		defaultHelpFunc(cmd, args)
+	})
 }
