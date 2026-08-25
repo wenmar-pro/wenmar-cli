@@ -9,7 +9,7 @@ Built on the [wenmar-sdk Go module](https://github.com/Wenmar-Pro/wenmar-sdk). S
 ### macOS / Linux / WSL2 (curl)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/master/install-cli | bash
+curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
 ```
 
 The script detects your OS/arch, downloads the latest release, verifies
@@ -20,8 +20,8 @@ PATH if needed.
 To install a specific version or into a custom directory:
 
 ```bash
-WENMAR_VERSION=0.1.0 curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/master/install-cli | bash
-WENMAR_BIN_DIR=~/custom/bin curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/master/install-cli | bash
+WENMAR_VERSION=0.1.0 curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
+WENMAR_BIN_DIR=~/custom/bin curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
 ```
 
 ### Binary download
