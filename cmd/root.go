@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/agent"
+	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,6 +31,21 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	// If no config and no env token, and running bare `wenmar`, show welcome
+	if len(os.Args) == 1 {
+		if envToken := os.Getenv("WENMAR_TOKEN"); envToken == "" {
+			if cfg, err := config.Load(); err != nil || cfg.Token == "" {
+				fmt.Println("  Welcome to Wenmar CLI")
+				fmt.Println()
+				fmt.Println("  No API token configured. Run `wenmar setup` to get started.")
+				fmt.Println()
+				fmt.Println("    wenmar setup")
+				fmt.Println()
+				os.Exit(0)
+			}
+		}
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(errors.ExitCode(err))
