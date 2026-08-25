@@ -5,7 +5,7 @@ A command-line interface for the Wenmar Pro automotive shop management API.
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
+curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/master/install-cli | bash
 ```
 
 Installs `wenmar` to `~/bin` or `~/.local/bin` and verifies the SHA-256

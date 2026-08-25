@@ -2,7 +2,7 @@
 # install-cli — Install the Wenmar CLI
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
+#   curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/master/install-cli | bash
 #
 # Options (via environment):
 #   WENMAR_BIN_DIR   Where to install the binary
