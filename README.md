@@ -6,22 +6,33 @@ Built on the [wenmar-sdk Go module](https://github.com/Wenmar-Pro/wenmar-sdk). S
 
 ## Install
 
-### Homebrew (macOS)
+### macOS / Linux / WSL2 (curl)
 
 ```bash
-brew tap Wenmar-Pro/homebrew-wenmar
-brew install wenmar
+curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
+```
+
+The script detects your OS/arch, downloads the latest release, verifies
+its SHA-256 checksum, and installs `wenmar` to `~/bin` or `~/.local/bin`
+(whichever is on your PATH). It then prompts you to add the directory to
+PATH if needed.
+
+To install a specific version or into a custom directory:
+
+```bash
+WENMAR_VERSION=0.1.0 curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
+WENMAR_BIN_DIR=~/custom/bin curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
 ```
 
 ### Binary download
 
 Download the latest release from [GitHub Releases](https://github.com/Wenmar-Pro/wenmar-cli/releases) for your platform:
 
-- `wenmar_darwin_arm64` (Apple Silicon)
-- `wenmar_darwin_amd64` (Intel Mac)
-- `wenmar_linux_amd64`
-- `wenmar_linux_arm64`
-- `wenmar_windows_amd64.exe`
+- `wenmar_<version>_darwin_arm64.tar.gz` (Apple Silicon)
+- `wenmar_<version>_darwin_amd64.tar.gz` (Intel Mac)
+- `wenmar_<version>_linux_amd64.tar.gz`
+- `wenmar_<version>_linux_arm64.tar.gz`
+- `wenmar_<version>_windows_amd64.zip`
 
 ### Build from source
 

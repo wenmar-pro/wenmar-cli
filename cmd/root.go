@@ -24,6 +24,7 @@ var rootCmd = &cobra.Command{
 	Use:           "wenmar",
 	Short:         "Wenmar Pro API CLI",
 	Long:          "A command-line interface for the Wenmar Pro automotive shop management API.",
+	Version:       version,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
@@ -39,6 +40,7 @@ func Execute() {
 func RootCmd() *cobra.Command { return rootCmd }
 
 func init() {
+	rootCmd.SetVersionTemplate(versionString() + "\n")
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "API bearer token (or set WENMAR_TOKEN env)")
 	rootCmd.PersistentFlags().StringVar(&baseURLFlag, "base-url", "", "API base URL (default: https://app.wenmarpro.com)")
 	rootCmd.PersistentFlags().BoolVarP(&mdFlag, "md", "m", false, "Output as GFM table (default for TTY)")

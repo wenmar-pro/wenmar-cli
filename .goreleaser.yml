@@ -20,7 +20,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+      - -s -w -X github.com/wenmar-pro/wenmar-cli/cmd.version={{.Version}} -X github.com/wenmar-pro/wenmar-cli/cmd.commit={{.Commit}} -X github.com/wenmar-pro/wenmar-cli/cmd.date={{.Date}}
 
 archives:
   - id: default
@@ -28,25 +28,7 @@ archives:
     format_overrides:
       - goos: windows
         formats: [zip]
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-
-brews:
-  - repository:
-      owner: Wenmar-Pro
-      name: homebrew-wenmar
-      branch: main
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    commit_author:
-      name: wenmar-cli-ci
-      email: ci@wenmarpro.com
-    directory: Formula
-    homepage: https://github.com/Wenmar-Pro/wenmar-cli
-    description: CLI for the Wenmar Pro automotive shop management API
-    license: MIT
-    test: |
-      system "#{bin}/wenmar", "--help"
-    install: |
-      bin.install "wenmar"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
   name_template: "checksums.txt"

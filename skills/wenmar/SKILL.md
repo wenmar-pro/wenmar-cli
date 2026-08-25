@@ -2,6 +2,16 @@
 
 A command-line interface for the Wenmar Pro automotive shop management API.
 
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
+```
+
+Installs `wenmar` to `~/bin` or `~/.local/bin` and verifies the SHA-256
+checksum against the release. See `install-cli` in the repo root for
+`WENMAR_BIN_DIR` / `WENMAR_VERSION` / `WENMAR_RELEASES_BASE` options.
+
 ## Auth
 
 Set your API token as an environment variable:
