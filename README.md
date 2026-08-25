@@ -1,6 +1,6 @@
 # Wenmar CLI
 
-A command-line interface for the [Wenmar Pro](https://github.com/Wenmar-Pro/wenmar-pro) automotive shop management API.
+A command-line interface for the [Wenmar Pro](https://wenmarpro.com) automotive shop management software.
 
 Built on the [wenmar-sdk Go module](https://github.com/Wenmar-Pro/wenmar-sdk). Single static binary, no runtime dependencies.
 
