@@ -155,6 +155,47 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		}
 	})
 
+	// GET/POST /work_orders
+	mux.HandleFunc("/work_orders", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			writeJSON(w, http.StatusOK, []map[string]any{
+				{"id": 1, "work_order_number": 1, "status": "in_progress"},
+			})
+		case http.MethodPost:
+			writeJSON(w, http.StatusCreated, map[string]any{"id": 10, "work_order_number": 10, "status": "pending"})
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// GET/PATCH/DELETE /work_orders/:id
+	mux.HandleFunc("/work_orders/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		id := strings.TrimPrefix(r.URL.Path, "/work_orders/")
+		if id == "999999" {
+			writeError(w, http.StatusNotFound, "not_found", "Resource not found")
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "work_order_number": 1, "status": "in_progress"})
+		case http.MethodPatch:
+			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "work_order_number": 1, "status": "completed"})
+		case http.MethodDelete:
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv
@@ -347,6 +388,48 @@ func TestVehiclesDelete_JSON(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !strings.Contains(out, "Vehicle 1 deleted") {
+		t.Errorf("expected delete confirmation in output, got: %s", out)
+	}
+}
+
+func TestWorkOrdersCreate_JSON201(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"work_orders", "create", "--customer-id", "1", "--vehicle-id", "1",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"work_order_number": 10`) {
+		t.Errorf("expected created work order in output, got: %s", out)
+	}
+}
+
+func TestWorkOrdersUpdate_JSON(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"work_orders", "update", "1", "--intake-method", "drop_off",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"id": 1`) {
+		t.Errorf("expected updated work order in output, got: %s", out)
+	}
+}
+
+func TestWorkOrdersDelete_JSON(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"work_orders", "delete", "1",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "Work order 1 deleted") {
 		t.Errorf("expected delete confirmation in output, got: %s", out)
 	}
 }
