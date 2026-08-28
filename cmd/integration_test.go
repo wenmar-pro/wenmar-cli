@@ -499,3 +499,17 @@ func TestCustomersList_Count(t *testing.T) {
 		t.Errorf("expected count '2', got %q", trimmed)
 	}
 }
+
+func TestCustomersList_MarkdownAlias(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"customers", "list", "--markdown",
+		"--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "| id |") {
+		t.Errorf("expected GFM table header, got: %s", out)
+	}
+}
