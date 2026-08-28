@@ -77,7 +77,7 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 		return fmt.Errorf("failed to create client: %w", err)
 	}
 
-	_, err = client.ListCustomers(context.Background(), nil)
+	_, err = client.ListCustomers(context.Background())
 	if err != nil {
 		fmt.Fprintln(out, " ✗")
 		return fmt.Errorf("token verification failed: %w", err)

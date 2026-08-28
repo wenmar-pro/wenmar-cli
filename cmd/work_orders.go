@@ -41,13 +41,7 @@ func runWorkOrdersList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	pageFlag, _ := cmd.Flags().GetInt("page")
-	var pagePtr *int
-	if pageFlag > 0 {
-		pagePtr = &pageFlag
-	}
-
-	resp, paginator, err := client.ListWorkOrdersWithPagination(context.Background(), pagePtr)
+	resp, paginator, err := client.ListWorkOrdersWithPagination(context.Background())
 	if err != nil {
 		return err
 	}
@@ -56,8 +50,8 @@ func runWorkOrdersList(cmd *cobra.Command, args []string) error {
 	summary := fmt.Sprintf("Page 1. More results: %v", paginator.HasNext())
 	meta := &output.Meta{HasNext: paginator.HasNext()}
 
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag}
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
 }
 
@@ -78,7 +72,7 @@ func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag}
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }

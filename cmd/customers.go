@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
@@ -38,10 +39,18 @@ var customersCreateCmd = &cobra.Command{
 	RunE:  runCustomersCreate,
 }
 
+var customersUpdateCmd = &cobra.Command{
+	Use:   "update <id>",
+	Short: "Update a customer by ID",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersUpdate,
+}
+
 var (
 	customerCreateFullName string
 	customerCreateEmail    string
 	customerCreatePhone    string
+	customerUpdateFullName string
 )
 
 func init() {
@@ -50,8 +59,9 @@ func init() {
 	customersCreateCmd.Flags().StringVar(&customerCreateEmail, "email", "", "Customer email")
 	customersCreateCmd.Flags().StringVar(&customerCreatePhone, "phone", "", "Customer phone")
 	customersCreateCmd.MarkFlagRequired("full-name")
+	customersUpdateCmd.Flags().StringVar(&customerUpdateFullName, "full-name", "", "Customer full name")
 
-	customersCmd.AddCommand(customersListCmd, customersShowCmd, customersCreateCmd)
+	customersCmd.AddCommand(customersListCmd, customersShowCmd, customersCreateCmd, customersUpdateCmd)
 	rootCmd.AddCommand(customersCmd)
 }
 
@@ -70,13 +80,7 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	pageFlag, _ := cmd.Flags().GetInt("page")
-	var pagePtr *int
-	if pageFlag > 0 {
-		pagePtr = &pageFlag
-	}
-
-	resp, paginator, err := client.ListCustomersWithPagination(context.Background(), pagePtr)
+	resp, paginator, err := client.ListCustomersWithPagination(context.Background())
 	if err != nil {
 		return err
 	}
@@ -85,8 +89,8 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 	summary := fmt.Sprintf("Page 1. More results: %v", paginator.HasNext())
 	meta := &output.Meta{HasNext: paginator.HasNext()}
 
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag}
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
 }
 
@@ -107,8 +111,8 @@ func runCustomersShow(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag}
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
@@ -118,20 +122,15 @@ func runCustomersCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	firstName, lastName := splitName(customerCreateFullName)
 	body := generated.CreateCustomerJSONRequestBody{
-		Customer: &struct {
-			Email    *string `json:"email,omitempty"`
-			FullName string  `json:"full_name"`
-			Phone    *string `json:"phone,omitempty"`
+		Customer: struct {
+			FirstName string `json:"first_name"`
+			LastName  string `json:"last_name"`
 		}{
-			FullName: customerCreateFullName,
+			FirstName: firstName,
+			LastName:  lastName,
 		},
-	}
-	if customerCreateEmail != "" {
-		body.Customer.Email = &customerCreateEmail
-	}
-	if customerCreatePhone != "" {
-		body.Customer.Phone = &customerCreatePhone
 	}
 
 	resp, err := client.CreateCustomer(context.Background(), body)
@@ -140,9 +139,43 @@ func runCustomersCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON201)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag}
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "Customer created.", nil, opts)
+}
+
+func runCustomersUpdate(cmd *cobra.Command, args []string) error {
+	client, err := newSDKClient()
+	if err != nil {
+		return err
+	}
+
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("id must be an integer")
+	}
+
+	body := generated.UpdateCustomerJSONRequestBody{}
+	resp, err := client.UpdateCustomer(context.Background(), id, body)
+	if err != nil {
+		return err
+	}
+
+	data := extractData(resp.JSON200)
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	return output.Render(cmd.OutOrStdout(), data, "Customer updated.", nil, opts)
+}
+
+func splitName(full string) (string, string) {
+	parts := strings.Fields(full)
+	if len(parts) == 0 {
+		return "", ""
+	}
+	if len(parts) == 1 {
+		return parts[0], ""
+	}
+	return parts[0], strings.Join(parts[1:], " ")
 }
 
 // extractData converts the generated response's JSON200 field to a
@@ -163,9 +196,6 @@ func extractData(json200 any) any {
 		return json200
 	}
 	if m, ok := result.(map[string]any); ok {
-		if d, ok := m["data"]; ok {
-			return d
-		}
 		return m
 	}
 	return result

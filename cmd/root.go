@@ -18,6 +18,7 @@ var (
 	mdFlag      bool
 	jsonFlag    bool
 	agentFlag   bool
+	quietFlag   bool
 	jqFlag      string
 )
 
@@ -62,6 +63,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&mdFlag, "md", "m", false, "Output as GFM table (default for TTY)")
 	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output as full JSON envelope {ok, data, summary, meta}")
 	rootCmd.PersistentFlags().BoolVar(&agentFlag, "agent", false, "Output raw JSON data (no envelope)")
+	rootCmd.PersistentFlags().BoolVar(&quietFlag, "quiet", false, "Raw JSON output, no envelope, no agent discovery")
 	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "jq filter expression (implies --json)")
 
 	defaultHelpFunc := rootCmd.HelpFunc()

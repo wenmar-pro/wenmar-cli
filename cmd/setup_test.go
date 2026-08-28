@@ -15,7 +15,7 @@ import (
 func startFakeAPIReturning401(t *testing.T) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/customers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/customers", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
 	})
 	return httptest.NewServer(mux)

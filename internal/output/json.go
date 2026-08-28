@@ -5,13 +5,15 @@ import (
 	"io"
 )
 
-func renderJSON(w io.Writer, data any, summary string, meta *Meta, raw bool) error {
+func renderJSONRaw(w io.Writer, data any) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
+	return enc.Encode(data)
+}
 
-	if raw {
-		return enc.Encode(data)
-	}
+func renderJSON(w io.Writer, data any, summary string, meta *Meta, breadcrumbs []Breadcrumb) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
 
 	envelope := map[string]any{
 		"ok":   true,
@@ -22,6 +24,9 @@ func renderJSON(w io.Writer, data any, summary string, meta *Meta, raw bool) err
 	}
 	if meta != nil {
 		envelope["meta"] = meta
+	}
+	if len(breadcrumbs) > 0 {
+		envelope["breadcrumbs"] = breadcrumbs
 	}
 	return enc.Encode(envelope)
 }

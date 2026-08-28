@@ -73,6 +73,63 @@ func TestRender_DefaultIsMD(t *testing.T) {
 	}
 }
 
+func TestRenderJSON_Breadcrumbs(t *testing.T) {
+	var buf bytes.Buffer
+	data := []map[string]any{{"id": 1, "name": "Jane"}}
+	opts := Options{Mode: ModeJSON, Breadcrumbs: []Breadcrumb{{Cmd: "wenmar vehicles show 13"}}}
+	err := Render(&buf, data, "", nil, opts)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	output := buf.String()
+	if !contains(output, `"breadcrumbs"`) {
+		t.Error("expected breadcrumbs in JSON envelope")
+	}
+	if !contains(output, `"cmd": "wenmar vehicles show 13"`) {
+		t.Error("expected cmd entry in breadcrumbs")
+	}
+}
+
+func TestRenderJSON_NoBreadcrumbsWhenEmpty(t *testing.T) {
+	var buf bytes.Buffer
+	data := []map[string]any{{"id": 1}}
+	err := Render(&buf, data, "", nil, Options{Mode: ModeJSON})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if contains(buf.String(), "breadcrumbs") {
+		t.Error("expected no breadcrumbs when none provided")
+	}
+}
+
+func TestRender_QuietRawJSON(t *testing.T) {
+	var buf bytes.Buffer
+	data := []map[string]any{{"id": 1, "name": "Jane"}}
+	err := Render(&buf, data, "", nil, Options{Mode: ModeQuiet})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	output := buf.String()
+	if !contains(output, `"name": "Jane"`) {
+		t.Error("expected raw data without envelope")
+	}
+	if contains(output, `"ok"`) {
+		t.Error("expected no envelope in quiet mode")
+	}
+}
+
+func TestResolveMode_Quiet(t *testing.T) {
+	if mode := ResolveMode(false, false, false, true, ""); mode != ModeQuiet {
+		t.Errorf("expected ModeQuiet, got %v", mode)
+	}
+}
+
+func TestResolveMode_JQOverridesQuiet(t *testing.T) {
+	if mode := ResolveMode(false, false, true, true, ".[].id"); mode != ModeJQ {
+		t.Errorf("expected ModeJQ to win over quiet, got %v", mode)
+	}
+}
+
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsStr(s, substr))
 }

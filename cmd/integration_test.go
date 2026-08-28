@@ -39,62 +39,120 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 
 	mux := http.NewServeMux()
 
-	// GET/POST /api/customers
-	mux.HandleFunc("/api/customers", func(w http.ResponseWriter, r *http.Request) {
+	// GET/POST /customers
+	mux.HandleFunc("/customers", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+token {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
 			return
 		}
 		switch r.Method {
 		case http.MethodGet:
-			writeJSON(w, http.StatusOK, map[string]any{
-				"data": []map[string]any{
-					{"id": 1, "full_name": "Jane Doe", "email": "jane@test.com"},
-					{"id": 2, "full_name": "John Smith", "email": "john@test.com"},
-				},
+			writeJSON(w, http.StatusOK, []map[string]any{
+				{"id": 1, "full_name": "Jane Doe", "email": "jane@test.com"},
+				{"id": 2, "full_name": "John Smith", "email": "john@test.com"},
 			})
 		case http.MethodPost:
 			var body struct {
 				Customer *struct {
-					FullName string  `json:"full_name"`
-					Email    *string `json:"email,omitempty"`
+					FirstName string `json:"first_name"`
+					LastName  string `json:"last_name"`
 				} `json:"customer,omitempty"`
 			}
 			json.NewDecoder(r.Body).Decode(&body)
-			email := ""
-			if body.Customer != nil && body.Customer.Email != nil {
-				email = *body.Customer.Email
-			}
-			fullName := ""
+			firstName := ""
+			lastName := ""
 			if body.Customer != nil {
-				fullName = body.Customer.FullName
+				firstName = body.Customer.FirstName
+				lastName = body.Customer.LastName
 			}
 			writeJSON(w, http.StatusCreated, map[string]any{
-				"data": map[string]any{
-					"id":        3,
-					"full_name": fullName,
-					"email":     email,
-				},
+				"id":        3,
+				"full_name": firstName + " " + lastName,
 			})
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
 	})
 
-	// GET /api/customers/:id
-	mux.HandleFunc("/api/customers/", func(w http.ResponseWriter, r *http.Request) {
+	// GET/PATCH /customers/:id
+	mux.HandleFunc("/customers/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+token {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
 			return
 		}
-		id := strings.TrimPrefix(r.URL.Path, "/api/customers/")
+		id := strings.TrimPrefix(r.URL.Path, "/customers/")
 		if id == "999999" {
 			writeError(w, http.StatusNotFound, "not_found", "Resource not found")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
-			"data": map[string]any{"id": 1, "full_name": "Jane Doe"},
-		})
+		switch r.Method {
+		case http.MethodGet:
+			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "full_name": "Jane Doe"})
+		case http.MethodPatch:
+			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "full_name": "Jane Doe"})
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// GET /vehicles
+	mux.HandleFunc("/vehicles", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		if r.Method == http.MethodGet {
+			writeJSON(w, http.StatusOK, []map[string]any{
+				{"id": 1, "make": "Toyota", "model": "Camry", "year": 2020, "vin": "ABC123"},
+			})
+			return
+		}
+		if r.Method == http.MethodPost {
+			writeJSON(w, http.StatusCreated, map[string]any{"id": 9, "make": "Honda", "model": "Civic", "year": 2020})
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	// GET /vehicles/vin_decode
+	mux.HandleFunc("/vehicles/vin_decode", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"make": "Honda", "model": "Civic", "vin": "1HGCM82633A004352"})
+	})
+
+	// GET /vehicles/check_duplicate
+	mux.HandleFunc("/vehicles/check_duplicate", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"matches": []map[string]any{}})
+	})
+
+	// GET /vehicles/:id, PATCH /vehicles/:id, DELETE /vehicles/:id
+	mux.HandleFunc("/vehicles/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		id := strings.TrimPrefix(r.URL.Path, "/vehicles/")
+		if id == "999999" {
+			writeError(w, http.StatusNotFound, "not_found", "Resource not found")
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "make": "Toyota", "model": "Camry", "year": 2020})
+		case http.MethodPatch:
+			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "make": "Toyota", "model": "Camry", "year": 2020})
+		case http.MethodDelete:
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
 	})
 
 	srv := httptest.NewServer(mux)
@@ -202,5 +260,93 @@ func TestCustomersList_Markdown(t *testing.T) {
 	}
 	if !strings.Contains(out, "Jane Doe") {
 		t.Errorf("expected customer row, got: %s", out)
+	}
+}
+
+func TestCustomersUpdate_JSON(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"customers", "update", "1",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"id": 1`) {
+		t.Errorf("expected updated customer in output, got: %s", out)
+	}
+}
+
+func TestVehiclesList_AgentMode(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"vehicles", "list", "--agent",
+		"--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var data []map[string]any
+	if err := json.Unmarshal([]byte(out), &data); err != nil {
+		t.Fatalf("agent output should be raw JSON array: %v\n%s", err, out)
+	}
+	if len(data) != 1 {
+		t.Fatalf("expected 1 vehicle, got %d", len(data))
+	}
+}
+
+func TestVehiclesCreate_JSON201(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"vehicles", "create", "--make", "Honda", "--model", "Civic", "--year", "2020", "--customer-id", "1",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"make": "Honda"`) {
+		t.Errorf("expected created vehicle in output, got: %s", out)
+	}
+}
+
+func TestVehiclesDecodeVin_JSON(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"vehicles", "decode-vin", "1HGCM82633A004352",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"make": "Honda"`) {
+		t.Errorf("expected decoded vehicle in output, got: %s", out)
+	}
+}
+
+func TestVehiclesDuplicates_JSON(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"vehicles", "duplicates", "ABC123",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"matches"`) {
+		t.Errorf("expected matches in output, got: %s", out)
+	}
+}
+
+func TestVehiclesDelete_JSON(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"vehicles", "delete", "1",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "Vehicle 1 deleted") {
+		t.Errorf("expected delete confirmation in output, got: %s", out)
 	}
 }

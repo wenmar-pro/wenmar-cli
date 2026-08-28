@@ -78,7 +78,7 @@ func runAuthStatus(out io.Writer, configPath string) error {
 		return err
 	}
 
-	_, err = client.ListCustomers(context.Background(), nil)
+	_, err = client.ListCustomers(context.Background())
 	if err != nil {
 		fmt.Fprintln(out, " ✗")
 		fmt.Fprintf(out, "  Connection failed: %v\n", err)
