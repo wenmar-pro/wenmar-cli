@@ -13,15 +13,16 @@ import (
 )
 
 var (
-	tokenFlag   string
-	baseURLFlag string
-	mdFlag      bool
-	jsonFlag    bool
-	agentFlag   bool
-	quietFlag   bool
-	jqFlag      string
-	idsOnlyFlag bool
-	countFlag   bool
+	tokenFlag      string
+	baseURLFlag    string
+	mdFlag         bool
+	jsonFlag       bool
+	agentFlag      bool
+	quietFlag      bool
+	jqFlag         string
+	idsOnlyFlag    bool
+	countFlag      bool
+	configPathFlag string
 )
 
 var rootCmd = &cobra.Command{
@@ -70,6 +71,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "jq filter expression (implies --json)")
 	rootCmd.PersistentFlags().BoolVar(&idsOnlyFlag, "ids-only", false, "Print one ID per line (for shell loops)")
 	rootCmd.PersistentFlags().BoolVar(&countFlag, "count", false, "Print the count of results (bare integer)")
+	rootCmd.PersistentFlags().StringVar(&configPathFlag, "config-path", "", "Path to config file (for testing)")
 
 	defaultHelpFunc := rootCmd.HelpFunc()
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {

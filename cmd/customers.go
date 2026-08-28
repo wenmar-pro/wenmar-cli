@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
+	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
@@ -66,11 +67,18 @@ func init() {
 }
 
 func newSDKClient() (*wenmar.Client, error) {
-	token, err := auth.ResolveToken(tokenFlag)
+	configPath := configPathFlag
+	if configPath == "" {
+		p, err := config.ConfigPath()
+		if err == nil {
+			configPath = p
+		}
+	}
+	token, err := auth.ResolveTokenFrom(tokenFlag, configPath)
 	if err != nil {
 		return nil, err
 	}
-	baseURL := auth.ResolveBaseURL(baseURLFlag)
+	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
 	return wenmar.NewClient(baseURL, token)
 }
 
