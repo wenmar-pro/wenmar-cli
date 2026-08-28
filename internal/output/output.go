@@ -15,6 +15,8 @@ const (
 	ModeAgent
 	ModeJQ
 	ModeQuiet
+	ModeIDsOnly
+	ModeCount
 )
 
 type Breadcrumb struct {
@@ -32,9 +34,15 @@ type Meta struct {
 	HasNext bool `json:"has_next"`
 }
 
-func ResolveMode(md, json, agent, quiet bool, jq string) Mode {
+func ResolveMode(md, json, agent, quiet, idsOnly, count bool, jq string) Mode {
 	if jq != "" {
 		return ModeJQ
+	}
+	if count {
+		return ModeCount
+	}
+	if idsOnly {
+		return ModeIDsOnly
 	}
 	if agent {
 		return ModeAgent
@@ -83,6 +91,10 @@ func Render(w io.Writer, data any, summary string, meta *Meta, opts Options) err
 		return renderJSONRaw(w, data)
 	case ModeJQ:
 		return renderJQ(w, data, opts.JQFilter)
+	case ModeIDsOnly:
+		return renderIDsOnly(w, data)
+	case ModeCount:
+		return renderCount(w, data)
 	default:
 		return fmt.Errorf("unknown output mode")
 	}

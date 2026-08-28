@@ -484,3 +484,18 @@ func TestLocationsShow_JSON(t *testing.T) {
 		t.Errorf("expected location data in output, got: %s", out)
 	}
 }
+
+func TestCustomersList_Count(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"customers", "list", "--count",
+		"--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	trimmed := strings.TrimSpace(out)
+	if trimmed != "2" {
+		t.Errorf("expected count '2', got %q", trimmed)
+	}
+}

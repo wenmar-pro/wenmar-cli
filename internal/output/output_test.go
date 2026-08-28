@@ -119,13 +119,13 @@ func TestRender_QuietRawJSON(t *testing.T) {
 }
 
 func TestResolveMode_Quiet(t *testing.T) {
-	if mode := ResolveMode(false, false, false, true, ""); mode != ModeQuiet {
+	if mode := ResolveMode(false, false, false, true, false, false, ""); mode != ModeQuiet {
 		t.Errorf("expected ModeQuiet, got %v", mode)
 	}
 }
 
 func TestResolveMode_JQOverridesQuiet(t *testing.T) {
-	if mode := ResolveMode(false, false, true, true, ".[].id"); mode != ModeJQ {
+	if mode := ResolveMode(false, false, true, true, false, false, ".[].id"); mode != ModeJQ {
 		t.Errorf("expected ModeJQ to win over quiet, got %v", mode)
 	}
 }

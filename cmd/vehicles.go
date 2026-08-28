@@ -101,7 +101,7 @@ func runVehiclesShow(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
@@ -118,7 +118,7 @@ func runVehiclesList(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
@@ -149,7 +149,7 @@ func runVehiclesCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON201)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "Vehicle created.", nil, opts)
 }
@@ -177,7 +177,7 @@ func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "Vehicle updated.", nil, opts)
 }
@@ -198,7 +198,7 @@ func runVehiclesDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), nil, fmt.Sprintf("Vehicle %d deleted.", id), nil, opts)
 }
@@ -215,7 +215,7 @@ func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
@@ -232,7 +232,7 @@ func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, jqFlag)
+	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }

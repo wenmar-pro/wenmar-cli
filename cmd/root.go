@@ -20,6 +20,8 @@ var (
 	agentFlag   bool
 	quietFlag   bool
 	jqFlag      string
+	idsOnlyFlag bool
+	countFlag   bool
 )
 
 var rootCmd = &cobra.Command{
@@ -65,6 +67,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&agentFlag, "agent", false, "Output raw JSON data (no envelope)")
 	rootCmd.PersistentFlags().BoolVar(&quietFlag, "quiet", false, "Raw JSON output, no envelope, no agent discovery")
 	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "jq filter expression (implies --json)")
+	rootCmd.PersistentFlags().BoolVar(&idsOnlyFlag, "ids-only", false, "Print one ID per line (for shell loops)")
+	rootCmd.PersistentFlags().BoolVar(&countFlag, "count", false, "Print the count of results (bare integer)")
 
 	defaultHelpFunc := rootCmd.HelpFunc()
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
