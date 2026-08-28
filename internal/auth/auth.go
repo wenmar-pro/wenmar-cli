@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 )
@@ -53,6 +54,14 @@ func ResolveBaseURLFrom(flagURL, configPath string) string {
 	if configPath != "" {
 		if cfg, err := config.LoadFrom(configPath); err == nil && cfg.BaseURL != "" {
 			return cfg.BaseURL
+		}
+	}
+
+	// Check for per-repo .wenmar.yml (only base_url, only if trusted)
+	if cwd, err := os.Getwd(); err == nil {
+		repoPath := filepath.Join(cwd, ".wenmar.yml")
+		if repoCfg, err := config.LoadRepoConfig(repoPath); err == nil && repoCfg.BaseURL != "" {
+			return repoCfg.BaseURL
 		}
 	}
 

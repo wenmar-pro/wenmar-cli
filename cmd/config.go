@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
@@ -130,6 +131,15 @@ func runConfigPath(cmd *cobra.Command, args []string) error {
 }
 
 func runConfigTrust(cmd *cobra.Command, args []string) error {
-	// Implemented in Part 3 (per-repo config trust model)
-	return fmt.Errorf("config trust is not yet implemented")
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("could not determine current directory: %w", err)
+	}
+
+	if err := config.TrustRepo(cwd); err != nil {
+		return fmt.Errorf("could not trust repo: %w", err)
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "Trusted %s. Per-repo .wenmar.yml base_url will now be applied.\n", cwd)
+	return nil
 }
