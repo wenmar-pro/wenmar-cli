@@ -196,6 +196,15 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		}
 	})
 
+	// GET /account
+	mux.HandleFunc("/account", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"id": 1, "name": "Main Shop"})
+	})
+
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv
@@ -431,5 +440,19 @@ func TestWorkOrdersDelete_JSON(t *testing.T) {
 	}
 	if !strings.Contains(out, "Work order 1 deleted") {
 		t.Errorf("expected delete confirmation in output, got: %s", out)
+	}
+}
+
+func TestAccountShow_JSON(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"account", "show",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"name": "Main Shop"`) {
+		t.Errorf("expected account data in output, got: %s", out)
 	}
 }
