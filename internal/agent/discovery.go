@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -71,6 +73,9 @@ func buildCatalogRecursive(cmd *cobra.Command, parentPath string, commands *[]Co
 			})
 		})
 
+		// Extract positional args from the Use string (e.g. "show <id>" → [{Name: "id", Required: true}])
+		info.Args = extractArgs(sub)
+
 		// Only add leaf commands (commands with a Run function) to the catalog
 		if sub.Run != nil || sub.RunE != nil {
 			*commands = append(*commands, info)
@@ -79,4 +84,30 @@ func buildCatalogRecursive(cmd *cobra.Command, parentPath string, commands *[]Co
 		// Recurse into subcommands
 		buildCatalogRecursive(sub, path, commands)
 	}
+}
+
+// extractArgs parses positional arg names from a cobra command's Use string.
+// Example: "show <id>" → [{Name: "id", Required: true}]
+// Example: "list" → []
+// Example: "show [filter]" → [{Name: "filter", Required: false}]
+func extractArgs(cmd *cobra.Command) []ArgInfo {
+	var args []ArgInfo
+	fields := strings.Fields(cmd.Use)
+	if len(fields) <= 1 {
+		return args
+	}
+	// Skip the command name (first field), parse the rest
+	for _, field := range fields[1:] {
+		if !strings.HasPrefix(field, "<") && !strings.HasPrefix(field, "[") {
+			continue
+		}
+		name := strings.Trim(field, "<>[]")
+		required := strings.HasPrefix(field, "<")
+		args = append(args, ArgInfo{
+			Name:     name,
+			Type:     "string",
+			Required: required,
+		})
+	}
+	return args
 }

@@ -54,3 +54,39 @@ func TestBuildCatalog_JSONRoundTrip(t *testing.T) {
 		t.Error("round-trip mismatch")
 	}
 }
+
+func TestBuildCatalog_PopulatesArgs(t *testing.T) {
+	root := &cobra.Command{Use: "wenmar"}
+	show := &cobra.Command{
+		Use:    "show <id>",
+		Short:  "Show a resource",
+		Args:   cobra.ExactArgs(1),
+		RunE:   func(cmd *cobra.Command, args []string) error { return nil },
+	}
+	res := &cobra.Command{Use: "customers", Short: "Manage customers"}
+	res.AddCommand(show)
+	root.AddCommand(res)
+
+	catalog := BuildCatalog(root)
+
+	// Find the "customers show" command
+	var found *CommandInfo
+	for _, c := range catalog.Commands {
+		if c.Path == "customers show" {
+			found = &c
+			break
+		}
+	}
+	if found == nil {
+		t.Fatal("expected to find 'customers show' in catalog")
+	}
+	if len(found.Args) != 1 {
+		t.Fatalf("expected 1 arg, got %d", len(found.Args))
+	}
+	if found.Args[0].Name != "id" {
+		t.Errorf("expected arg name 'id', got %q", found.Args[0].Name)
+	}
+	if !found.Args[0].Required {
+		t.Error("expected arg to be required")
+	}
+}
