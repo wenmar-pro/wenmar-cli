@@ -17,5 +17,3 @@ require (
 	github.com/itchyny/timefmt-go v0.1.8 // indirect
 	github.com/oapi-codegen/runtime v1.7.0 // indirect
 )
-
-replace github.com/wenmar-pro/wenmar-sdk/go => /home/bendangelo/Projects/wenmar-sdk/go
