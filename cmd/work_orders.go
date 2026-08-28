@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 	"github.com/spf13/cobra"
 )
 
@@ -73,7 +73,7 @@ func init() {
 }
 
 func runWorkOrdersList(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -88,13 +88,16 @@ func runWorkOrdersList(cmd *cobra.Command, args []string) error {
 	summary := fmt.Sprintf("Page 1. More results: %v", paginator.HasNext())
 	meta := &output.Meta{HasNext: paginator.HasNext()}
 
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	if mode == output.ModeIDsOnly || mode == output.ModeCount {
+		output.PrintPaginationNotice(meta, 1)
+	}
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("work_orders")}
 	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
 }
 
 func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -110,27 +113,27 @@ func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	notice, err := checkTruncatedResponse(resp.HTTPResponse, "Response was truncated. Some line items may be missing.")
+	if err != nil {
+		return err
+	}
+
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("work_orders", args[0]), Notice: notice}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
 func runWorkOrdersCreate(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
 	setRequest("POST", "/work_orders")
 
-	body := generated.CreateWorkOrderJSONRequestBody{
-		WorkOrder: struct {
-			CustomerId int `json:"customer_id"`
-			VehicleId  int `json:"vehicle_id"`
-		}{
-			CustomerId: workOrderCreateCustomer,
-			VehicleId:  workOrderCreateVehicle,
-		},
+	body := wenmar.CreateWorkOrderRequest{
+		CustomerID: workOrderCreateCustomer,
+		VehicleID:  workOrderCreateVehicle,
 	}
 
 	resp, err := client.CreateWorkOrder(context.Background(), body)
@@ -139,13 +142,13 @@ func runWorkOrdersCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON201)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: createBreadcrumbs("work_orders", "10")}
 	return output.Render(cmd.OutOrStdout(), data, "Work order created.", nil, opts)
 }
 
 func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -156,12 +159,8 @@ func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("id must be an integer")
 	}
 
-	body := generated.UpdateWorkOrderJSONRequestBody{
-		WorkOrder: struct {
-			IntakeMethod string `json:"intake_method"`
-		}{
-			IntakeMethod: workOrderUpdateIntakeMethod,
-		},
+	body := wenmar.UpdateWorkOrderRequest{
+		IntakeMethod: workOrderUpdateIntakeMethod,
 	}
 
 	resp, err := client.UpdateWorkOrder(context.Background(), id, body)
@@ -170,8 +169,8 @@ func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("work_orders", args[0])}
 	return output.Render(cmd.OutOrStdout(), data, "Work order updated.", nil, opts)
 }
 
@@ -182,8 +181,8 @@ func runWorkOrdersDelete(cmd *cobra.Command, args []string) error {
 	}
 
 	if workOrdersDeleteDryRun {
-		mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("work_orders", args[0])}
 		dryRunData := map[string]any{
 			"dry_run":      true,
 			"would_delete": fmt.Sprintf("work_order:%d", id),
@@ -191,7 +190,7 @@ func runWorkOrdersDelete(cmd *cobra.Command, args []string) error {
 		return output.Render(cmd.OutOrStdout(), dryRunData, fmt.Sprintf("Would delete work order %d (dry run).", id), nil, opts)
 	}
 
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -202,7 +201,7 @@ func runWorkOrdersDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("work_orders")}
 	return output.Render(cmd.OutOrStdout(), nil, fmt.Sprintf("Work order %d deleted.", id), nil, opts)
 }

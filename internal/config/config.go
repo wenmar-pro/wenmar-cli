@@ -13,8 +13,10 @@ const (
 )
 
 type Config struct {
-	Token   string `yaml:"token"`
-	BaseURL string `yaml:"base_url"`
+	Token      string `yaml:"token"`
+	BaseURL    string `yaml:"base_url"`
+	AuthMethod string `yaml:"auth_method"`
+	LocationID string `yaml:"location_id"`
 }
 
 func ConfigPath() (string, error) {
@@ -113,4 +115,71 @@ func DeleteFrom(path string) error {
 		return fmt.Errorf("could not delete config file: %w", err)
 	}
 	return nil
+}
+
+// ValueWithSource pairs a resolved value with where it came from.
+type ValueWithSource struct {
+	Value  string
+	Source string
+}
+
+// ResolveWithProvenance resolves each config value and reports its source.
+// Sources are: "flag", "env", "keyring", "config file", "default".
+func ResolveWithProvenance(flagToken, flagBaseURL, flagLocation, configPath string) map[string]ValueWithSource {
+	result := map[string]ValueWithSource{}
+
+	// Token
+	switch {
+	case flagToken != "":
+		result["token"] = ValueWithSource{Value: flagToken, Source: "flag"}
+	case os.Getenv("WENMAR_TOKEN") != "":
+		result["token"] = ValueWithSource{Value: os.Getenv("WENMAR_TOKEN"), Source: "env WENMAR_TOKEN"}
+	default:
+		result["token"] = ValueWithSource{Value: "", Source: "none"}
+	}
+
+	// Base URL
+	switch {
+	case flagBaseURL != "":
+		result["base_url"] = ValueWithSource{Value: flagBaseURL, Source: "flag"}
+	case os.Getenv("WENMAR_URL") != "":
+		result["base_url"] = ValueWithSource{Value: os.Getenv("WENMAR_URL"), Source: "env WENMAR_URL"}
+	case configPath != "":
+		if cfg, err := LoadFrom(configPath); err == nil && cfg.BaseURL != "" {
+			result["base_url"] = ValueWithSource{Value: cfg.BaseURL, Source: "config file"}
+		} else {
+			result["base_url"] = ValueWithSource{Value: defaultBaseURL, Source: "default"}
+		}
+	default:
+		result["base_url"] = ValueWithSource{Value: defaultBaseURL, Source: "default"}
+	}
+
+	// Location ID
+	switch {
+	case flagLocation != "":
+		result["location_id"] = ValueWithSource{Value: flagLocation, Source: "flag"}
+	case os.Getenv("WENMAR_LOCATION_ID") != "":
+		result["location_id"] = ValueWithSource{Value: os.Getenv("WENMAR_LOCATION_ID"), Source: "env WENMAR_LOCATION_ID"}
+	case configPath != "":
+		if cfg, err := LoadFrom(configPath); err == nil && cfg.LocationID != "" {
+			result["location_id"] = ValueWithSource{Value: cfg.LocationID, Source: "config file"}
+		} else {
+			result["location_id"] = ValueWithSource{Value: "", Source: "none"}
+		}
+	default:
+		result["location_id"] = ValueWithSource{Value: "", Source: "none"}
+	}
+
+	// Auth method
+	if configPath != "" {
+		if cfg, err := LoadFrom(configPath); err == nil && cfg.AuthMethod != "" {
+			result["auth_method"] = ValueWithSource{Value: cfg.AuthMethod, Source: "config file"}
+		} else {
+			result["auth_method"] = ValueWithSource{Value: "static", Source: "default"}
+		}
+	} else {
+		result["auth_method"] = ValueWithSource{Value: "static", Source: "default"}
+	}
+
+	return result
 }

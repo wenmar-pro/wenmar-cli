@@ -35,6 +35,25 @@ Download the latest release from [GitHub Releases](https://github.com/wenmar-pro
 - `wenmar_<version>_linux_arm64.tar.gz`
 - `wenmar_<version>_windows_amd64.zip`
 
+### Package managers
+
+```bash
+# Homebrew (macOS / Linux)
+brew install wenmar-pro/tap/wenmar
+
+# Scoop (Windows)
+scoop install wenmar
+
+# AUR (Arch Linux)
+yay -S wenmar-cli
+
+# mise
+mise use -g github:wenmar-pro/wenmar-cli
+
+# deb / rpm / apk
+# Available as release assets (wenmar_<version>_<os>_<arch>.deb / .rpm / .apk)
+```
+
 ### Build from source
 
 ```bash
@@ -48,6 +67,14 @@ export WENMAR_TOKEN="your-api-token"
 ```
 
 Get a token from the Wenmar Pro settings page.
+
+```bash
+# Interactive setup (stores token in the system keyring)
+wenmar setup
+
+# Or store a token non-interactively
+wenmar auth login --token <your-api-token>
+```
 
 ## Usage
 
@@ -87,6 +114,12 @@ wenmar vehicles show 5
 | `--json` | Full JSON envelope `{ok, data, summary, meta}` |
 | `--agent` | Raw JSON data (no envelope) |
 | `--jq 'filter'` | jq-filtered JSON |
+| `--html` | HTML document |
+| `--styled` | Force human tables even when piped |
+
+When stdout is not a TTY (e.g. piped to another command) and no explicit
+output mode is set, wenmar emits raw JSON so the output is machine-readable.
+Use `--styled` to force human tables in a pipe.
 
 ## Exit codes
 
@@ -97,7 +130,12 @@ wenmar vehicles show 5
 | 2 | Auth failure |
 | 3 | Not found |
 | 4 | Validation error |
+| 5 | Rate limited |
 | 6 | Server error |
+| 7 | Conflict (e.g. duplicate VIN) |
+| 8 | Forbidden |
+| 9 | Truncated response without `--allow-partial` |
+| 10 | Network unreachable |
 
 ## Agent discovery
 

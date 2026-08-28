@@ -24,7 +24,7 @@ func init() {
 }
 
 func runAccountShow(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func runAccountShow(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("account")}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }

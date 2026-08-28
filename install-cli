@@ -145,6 +145,35 @@ verify_checksums() {
     || error "Checksum verification failed for $archive_name"
 
   info "Checksum verified"
+
+  verify_cosign "$version" "$tmp_dir"
+}
+
+# verify_cosign verifies the release's checksums.txt signature with cosign.
+# If cosign is not installed, warn but continue (SHA-256 is the baseline).
+verify_cosign() {
+  local version="$1" tmp_dir="$2"
+  local base_url="${RELEASES_BASE}/v${version}"
+
+  if ! command -v cosign &>/dev/null; then
+    step "cosign not installed — skipping signature verification (SHA-256 already verified)"
+    return 0
+  fi
+
+  step "Verifying Sigstore signature..."
+
+  if ! curl -fsSL "${base_url}/checksums.txt.bundle" -o "${tmp_dir}/checksums.txt.bundle"; then
+    error "Failed to download checksums.txt.bundle"
+  fi
+
+  if ! cosign verify-blob --bundle "${tmp_dir}/checksums.txt.bundle" \
+    --certificate-identity "https://github.com/${REPO}/.github/workflows/release.yml@refs/tags/v${version}" \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    "${tmp_dir}/checksums.txt" &>/dev/null; then
+    error "Sigstore signature verification failed"
+  fi
+
+  info "Sigstore signature verified"
 }
 
 download_binary() {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 	"github.com/spf13/cobra"
 )
 
@@ -87,7 +87,7 @@ func init() {
 }
 
 func runVehiclesShow(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -104,13 +104,13 @@ func runVehiclesShow(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("vehicles", args[0])}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
 func runVehiclesList(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -122,30 +122,23 @@ func runVehiclesList(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
 func runVehiclesCreate(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
 	setRequest("POST", "/vehicles")
 
-	body := generated.CreateVehicleJSONRequestBody{
-		Vehicle: struct {
-			CustomerId int    `json:"customer_id"`
-			Make       string `json:"make"`
-			Model      string `json:"model"`
-			Year       int    `json:"year"`
-		}{
-			CustomerId: vehicleCreateCustomer,
-			Make:       vehicleCreateMake,
-			Model:      vehicleCreateModel,
-			Year:       vehicleCreateYear,
-		},
+	body := wenmar.CreateVehicleRequest{
+		CustomerID: vehicleCreateCustomer,
+		Make:       vehicleCreateMake,
+		Model:      vehicleCreateModel,
+		Year:       vehicleCreateYear,
 	}
 
 	resp, err := client.CreateVehicle(context.Background(), body)
@@ -154,13 +147,13 @@ func runVehiclesCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON201)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: createBreadcrumbs("vehicles", "9")}
 	return output.Render(cmd.OutOrStdout(), data, "Vehicle created.", nil, opts)
 }
 
 func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -171,10 +164,8 @@ func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("id must be an integer")
 	}
 
-	body := generated.UpdateVehicleJSONRequestBody{
-		Vehicle: struct {
-			Make string `json:"make"`
-		}{Make: vehicleCreateMake},
+	body := wenmar.UpdateVehicleRequest{
+		Make: vehicleCreateMake,
 	}
 
 	resp, err := client.UpdateVehicle(context.Background(), id, body)
@@ -183,9 +174,9 @@ func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
-	return output.Render(cmd.OutOrStdout(), data, "Vehicle updated.", nil, opts)
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
+	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
 func runVehiclesDelete(cmd *cobra.Command, args []string) error {
@@ -195,8 +186,8 @@ func runVehiclesDelete(cmd *cobra.Command, args []string) error {
 	}
 
 	if vehiclesDeleteDryRun {
-		mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("vehicles", args[0])}
 		dryRunData := map[string]any{
 			"dry_run":      true,
 			"would_delete": fmt.Sprintf("vehicle:%d", id),
@@ -204,7 +195,7 @@ func runVehiclesDelete(cmd *cobra.Command, args []string) error {
 		return output.Render(cmd.OutOrStdout(), dryRunData, fmt.Sprintf("Would delete vehicle %d (dry run).", id), nil, opts)
 	}
 
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -215,13 +206,13 @@ func runVehiclesDelete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
 	return output.Render(cmd.OutOrStdout(), nil, fmt.Sprintf("Vehicle %d deleted.", id), nil, opts)
 }
 
 func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -233,13 +224,13 @@ func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
 func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -251,7 +242,7 @@ func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("vehicles", args[0])}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }

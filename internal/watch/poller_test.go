@@ -9,7 +9,23 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
+
+// newTestClient builds an SDK client pointed at the test server.
+func newTestClient(t *testing.T, url, token string) *wenmar.Client {
+	t.Helper()
+	cfg := wenmar.DefaultConfig()
+	cfg.BaseURL = url
+	cfg.MaxRetries = 0
+	cfg.CacheEnabled = false
+	c, err := wenmar.NewClient(cfg, wenmar.NewStaticTokenProvider(token))
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+	return c
+}
 
 func TestPoller_EmitsNewItems(t *testing.T) {
 	var requestCount int32
@@ -32,8 +48,8 @@ func TestPoller_EmitsNewItems(t *testing.T) {
 	defer srv.Close()
 
 	poller := &Poller{
-		URL:      srv.URL,
-		Token:    "test",
+		Client:   newTestClient(t, srv.URL, "test"),
+		Resource: "work_orders",
 		Interval: 100 * time.Millisecond,
 	}
 
@@ -101,8 +117,8 @@ func TestPoller_ExitOnFirst(t *testing.T) {
 	defer srv.Close()
 
 	poller := &Poller{
-		URL:         srv.URL,
-		Token:       "test",
+		Client:      newTestClient(t, srv.URL, "test"),
+		Resource:    "work_orders",
 		Interval:    100 * time.Millisecond,
 		ExitOnFirst: true,
 	}

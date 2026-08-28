@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
-	Short: "Run diagnostics: auth, connectivity, config, completion",
+	Short: "Run diagnostics: auth, connectivity, config, completion, skill",
 	RunE:  runDoctor,
 }
 
@@ -45,18 +47,47 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		results = append(results, DoctorResult{"config", "ok", path})
 	}
 
-	// Check 2: Token present
-	tokenPresent := cfgErr == nil && cfg.Token != ""
+	// Check 2: Token present (keyring or file or config)
+	tokenPresent := false
+	tokenSource := ""
+	store := authpkg.NewCredentialStore()
+	if tok, err := store.GetToken(context.Background()); err == nil && tok != nil && tok.AccessToken != "" {
+		tokenPresent = true
+		tokenSource = "keyring/file"
+	} else if cfgErr == nil && cfg.Token != "" {
+		tokenPresent = true
+		tokenSource = "config file"
+	}
 	if tokenPresent {
-		results = append(results, DoctorResult{"token", "ok", maskToken(cfg.Token)})
+		results = append(results, DoctorResult{"token", "ok", "present (" + tokenSource + ")"})
 	} else {
 		results = append(results, DoctorResult{"token", "fail", "No token configured. Run 'wenmar setup'."})
 		allOK = false
 	}
 
-	// Check 3: Base URL reachable + token valid
-	if tokenPresent && cfg != nil {
-		client, err := wenmar.NewClient(cfg.BaseURL, cfg.Token)
+	// Check 3: auth_method
+	authMethod := "static"
+	if cfgErr == nil && cfg.AuthMethod != "" {
+		authMethod = cfg.AuthMethod
+	}
+	results = append(results, DoctorResult{"auth_method", "ok", authMethod})
+
+	// Check 4: keyring accessible
+	if _, err := store.GetToken(context.Background()); err == nil {
+		results = append(results, DoctorResult{"keyring", "ok", "accessible"})
+	} else {
+		results = append(results, DoctorResult{"keyring", "warn", "keyring unavailable; using file fallback"})
+	}
+
+	// Check 5: connectivity
+	baseURL := "https://app.wenmarpro.com"
+	if cfgErr == nil && cfg != nil && cfg.BaseURL != "" {
+		baseURL = cfg.BaseURL
+	}
+	if tokenPresent {
+		wcfg := wenmar.DefaultConfig()
+		wcfg.BaseURL = baseURL
+		client, err := wenmar.NewClient(wcfg, wenmar.NewStaticTokenProvider(resolveDoctorToken(store, cfg)))
 		if err != nil {
 			results = append(results, DoctorResult{"connectivity", "fail", fmt.Sprintf("Client error: %v", err)})
 			allOK = false
@@ -66,14 +97,14 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 				results = append(results, DoctorResult{"connectivity", "fail", fmt.Sprintf("API error: %v", err)})
 				allOK = false
 			} else {
-				results = append(results, DoctorResult{"connectivity", "ok", cfg.BaseURL})
+				results = append(results, DoctorResult{"connectivity", "ok", baseURL})
 			}
 		}
 	} else {
 		results = append(results, DoctorResult{"connectivity", "skip", "No token — skipped"})
 	}
 
-	// Check 4: Shell completion (check if a known completion file exists)
+	// Check 6: Shell completion
 	home, _ := os.UserHomeDir()
 	completionFound := false
 	completionPath := ""
@@ -91,6 +122,14 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		results = append(results, DoctorResult{"completion", "ok", completionPath})
 	} else {
 		results = append(results, DoctorResult{"completion", "warn", "Not found. Run 'wenmar completion <shell>' to install."})
+	}
+
+	// Check 7: Skill installed
+	skillPath := filepath.Join(home, ".agents", "skills", "wenmar", "SKILL.md")
+	if _, err := os.Stat(skillPath); err == nil {
+		results = append(results, DoctorResult{"skill", "ok", skillPath})
+	} else {
+		results = append(results, DoctorResult{"skill", "warn", "Not found. Run 'wenmar skill install'."})
 	}
 
 	// Render
@@ -127,4 +166,14 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("doctor: some checks failed")
 	}
 	return nil
+}
+
+func resolveDoctorToken(store authpkg.CredentialStore, cfg *config.Config) string {
+	if tok, err := store.GetToken(context.Background()); err == nil && tok != nil && tok.AccessToken != "" {
+		return tok.AccessToken
+	}
+	if cfg != nil {
+		return cfg.Token
+	}
+	return ""
 }

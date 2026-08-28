@@ -5,23 +5,45 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/wenmar-pro/wenmar-cli/internal/agent"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
+var (
+	setupSkipAgents bool
+	setupSilent     bool
+)
+
 var setupCmd = &cobra.Command{
-	Use:   "setup",
+	Use:   "setup [claude|codex]",
 	Short: "Configure the Wenmar CLI with your API token",
-	Long:  "Interactive setup wizard. Prompts for your API token, tests it, and saves configuration to ~/.wenmar/config.",
+	Long:  "Interactive setup wizard. Prompts for your API token, tests it, and saves configuration. Optionally installs agent skills.",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 0 {
+			switch args[0] {
+			case "claude":
+				return runSetupClaude(cmd.OutOrStdout())
+			case "codex":
+				return runSetupCodex(cmd.OutOrStdout())
+			default:
+				return fmt.Errorf("unknown setup target %q (supported: claude, codex)", args[0])
+			}
+		}
 		return runSetupCmd(cmd.InOrStdin(), cmd.OutOrStdout())
 	},
 }
 
 func init() {
+	setupCmd.Flags().BoolVar(&setupSkipAgents, "skip-agents", false, "Skip agent skill installation")
+	setupCmd.Flags().BoolVar(&setupSilent, "silent-success", false, "Minimal output on success (for harnesses)")
 	rootCmd.AddCommand(setupCmd)
 }
 
@@ -71,7 +93,9 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 	}
 
 	fmt.Fprint(out, "  Verifying token...")
-	client, err := wenmar.NewClient(baseURL, token)
+	wcfg := wenmar.DefaultConfig()
+	wcfg.BaseURL = baseURL
+	client, err := wenmar.NewClient(wcfg, wenmar.NewStaticTokenProvider(token))
 	if err != nil {
 		fmt.Fprintln(out, " ✗")
 		return fmt.Errorf("failed to create client: %w", err)
@@ -86,12 +110,31 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 	fmt.Fprintln(out, " ✓")
 	fmt.Fprintf(out, "  Connected successfully to %s\n", baseURL)
 
-	cfg := &config.Config{Token: token, BaseURL: baseURL}
+	// Store the token in the keyring (with file fallback), not the config file.
+	store := authpkg.NewCredentialStore()
+	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
+		return fmt.Errorf("failed to store token: %w", err)
+	}
+
+	// Config file stores base_url and auth_method only.
+	cfg := &config.Config{BaseURL: baseURL, AuthMethod: "static"}
 	if err := config.SaveTo(configPath, cfg); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
 	fmt.Fprintf(out, "\n  Config saved to %s\n", configPath)
+
+	if !setupSkipAgents {
+		if err := installAgentSkill(out); err != nil {
+			fmt.Fprintf(out, "  (skill install skipped: %v)\n", err)
+		}
+	}
+
+	if setupSilent {
+		fmt.Fprintln(out, "  Setup complete.")
+		return nil
+	}
+
 	fmt.Fprintln(out, "\n  Next steps:")
 	fmt.Fprintln(out, "    wenmar customers list --md")
 	fmt.Fprintln(out, "    wenmar --help")
@@ -105,4 +148,41 @@ func maskToken(token string) string {
 		return strings.Repeat("*", len(token))
 	}
 	return token[:4] + "..." + token[len(token)-4:]
+}
+
+// installAgentSkill installs the wenmar skill for the given agent.
+func installAgentSkill(out io.Writer) error {
+	source, err := bundledSkillDir()
+	if err != nil {
+		return err
+	}
+	target, err := agent.SkillDir()
+	if err != nil {
+		return err
+	}
+	if err := agent.InstallSkill(source, target, false); err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "  Installed agent skill to %s\n", target)
+	return nil
+}
+
+func runSetupClaude(out io.Writer) error {
+	home, _ := os.UserHomeDir()
+	if _, err := os.Stat(filepath.Join(home, ".claude")); err != nil {
+		fmt.Fprintln(out, "  Claude Code not detected (~/.claude not found).")
+	}
+	if err := installAgentSkill(out); err != nil {
+		return err
+	}
+	fmt.Fprintln(out, "  Claude Code setup complete.")
+	return nil
+}
+
+func runSetupCodex(out io.Writer) error {
+	if err := installAgentSkill(out); err != nil {
+		return err
+	}
+	fmt.Fprintln(out, "  Codex setup complete.")
+	return nil
 }

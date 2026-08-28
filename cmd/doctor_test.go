@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 )
 
 func TestDoctor_AllPass(t *testing.T) {
@@ -56,6 +58,10 @@ func TestDoctor_JSON(t *testing.T) {
 }
 
 func TestDoctor_NoToken(t *testing.T) {
+	// Clear any credential-store token so the test is deterministic.
+	store := authpkg.NewCredentialStore()
+	_ = store.DeleteToken(context.Background())
+
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
 

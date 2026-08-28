@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 )
 
 func startFakeAPIReturning401(t *testing.T) *httptest.Server {
@@ -36,15 +38,25 @@ func TestSetup_WritesConfigOnValidToken(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	// Token should be stored in the credential store (file fallback), not config.
+	store := authpkg.NewCredentialStore()
+	tok, err := store.GetToken(context.Background())
+	if err != nil {
+		t.Fatalf("token not stored in credential store: %v", err)
+	}
+	if tok.AccessToken != "test-token" {
+		t.Errorf("expected token 'test-token', got '%s'", tok.AccessToken)
+	}
+
 	cfg, err := config.LoadFrom(configPath)
 	if err != nil {
 		t.Fatalf("config not written: %v", err)
 	}
-	if cfg.Token != "test-token" {
-		t.Errorf("expected token 'test-token', got '%s'", cfg.Token)
-	}
 	if cfg.BaseURL != ts.URL {
 		t.Errorf("expected base_url '%s', got '%s'", ts.URL, cfg.BaseURL)
+	}
+	if cfg.AuthMethod != "static" {
+		t.Errorf("expected auth_method 'static', got '%s'", cfg.AuthMethod)
 	}
 
 	if !strings.Contains(output.String(), "✓") {
@@ -76,9 +88,14 @@ func TestAuthStatus_ShowsMaskedToken(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
 	config.SaveTo(configPath, &config.Config{
-		Token:   "abcdefghijklmnop",
 		BaseURL: "http://localhost:99999", // won't connect, but masking test doesn't need it
 	})
+
+	// Use the --token flag path (highest precedence) so the test is
+	// independent of any keyring/credential-store state.
+	oldToken := tokenFlag
+	tokenFlag = "abcdefghijklmnop"
+	defer func() { tokenFlag = oldToken }()
 
 	var output bytes.Buffer
 	_ = runAuthStatus(&output, configPath)

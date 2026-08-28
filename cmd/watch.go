@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -22,6 +21,9 @@ var (
 	watchExitOnFirst bool
 	watchEvents      string
 	watchRunSync     string
+	watchRunAsync    string
+	watchLocation    string
+	watchResource    string
 )
 
 var watchCmd = &cobra.Command{
@@ -33,6 +35,7 @@ are added, changed, or removed. Events are emitted as JSON to stdout.
   wenmar watch --resource work_orders
   wenmar watch --resource work_orders --exit-on-first --json
   wenmar watch --resource work_orders --events new,changed --interval 5s
+  wenmar watch --resource customers --location loc_abc
 
 No Rails SSE endpoint required — this uses polling v1.`,
 	RunE: runWatch,
@@ -43,6 +46,9 @@ func init() {
 	watchCmd.Flags().BoolVar(&watchExitOnFirst, "exit-on-first", false, "Exit after the first poll (for scripts)")
 	watchCmd.Flags().StringVar(&watchEvents, "events", "", "Comma-separated event types (new,changed,removed)")
 	watchCmd.Flags().StringVar(&watchRunSync, "run-sync", "", "Script to run for each event (event JSON piped to stdin)")
+	watchCmd.Flags().StringVar(&watchRunAsync, "run-async", "", "Script to run for each event without blocking the poll loop")
+	watchCmd.Flags().StringVar(&watchLocation, "location", "", "Location ID to scope the polled endpoint")
+	watchCmd.Flags().StringVar(&watchResource, "resource", "work_orders", "Resource to watch (work_orders, customers, vehicles)")
 	rootCmd.AddCommand(watchCmd)
 }
 
@@ -55,15 +61,15 @@ func runWatch(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	token, err := auth.ResolveTokenFrom(tokenFlag, configPath)
+	client, err := newClient()
 	if err != nil {
 		return err
 	}
-	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
 
-	// Build the URL to poll
-	resource := "work_orders" // default; could be a flag in the future
-	url := fmt.Sprintf("%s/%s", baseURL, resource)
+	locationID := watchLocation
+	if locationID == "" {
+		locationID = auth.ResolveLocationID(locationFlag, configPath)
+	}
 
 	// Parse event filter
 	var eventTypes map[string]bool
@@ -75,8 +81,9 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	}
 
 	poller := &watch.Poller{
-		URL:         url,
-		Token:       token,
+		Client:      client,
+		Resource:    watchResource,
+		LocationID:  locationID,
 		Interval:    watchInterval,
 		ExitOnFirst: watchExitOnFirst,
 		EventTypes:  eventTypes,
@@ -100,6 +107,10 @@ func runWatch(cmd *cobra.Command, args []string) error {
 			runSyncScript(watchRunSync, e)
 			return
 		}
+		if watchRunAsync != "" {
+			go runSyncScript(watchRunAsync, e)
+			return
+		}
 		enc.Encode(e)
 	})
 }
@@ -116,8 +127,9 @@ func splitComma(s string) []string {
 
 func runSyncScript(script string, e watch.Event) {
 	// Pipe the event JSON to the script's stdin
+	data, _ := json.Marshal(e)
 	cmd := exec.Command(script)
-	cmd.Stdin = strings.NewReader(fmt.Sprintf("%v", e))
+	cmd.Stdin = strings.NewReader(string(data))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Run()

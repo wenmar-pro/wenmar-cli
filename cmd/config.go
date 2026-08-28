@@ -45,8 +45,14 @@ var configTrustCmd = &cobra.Command{
 	RunE:  runConfigTrust,
 }
 
+var configShowCmd = &cobra.Command{
+	Use:   "show",
+	Short: "Show resolved config values with their source",
+	RunE:  runConfigShow,
+}
+
 func init() {
-	configCmd.AddCommand(configGetCmd, configSetCmd, configListCmd, configPathCmd, configTrustCmd)
+	configCmd.AddCommand(configGetCmd, configSetCmd, configListCmd, configPathCmd, configTrustCmd, configShowCmd)
 	rootCmd.AddCommand(configCmd)
 }
 
@@ -141,5 +147,29 @@ func runConfigTrust(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Trusted %s. Per-repo .wenmar.yml base_url will now be applied.\n", cwd)
+	return nil
+}
+
+func runConfigShow(cmd *cobra.Command, args []string) error {
+	path, err := resolveConfigPath()
+	if err != nil {
+		return err
+	}
+
+	values := config.ResolveWithProvenance(tokenFlag, baseURLFlag, locationFlag, path)
+
+	// Mask the token for display.
+	if v, ok := values["token"]; ok && v.Value != "" {
+		v.Value = maskToken(v.Value)
+		values["token"] = v
+	}
+
+	for _, key := range []string{"token", "base_url", "location_id", "auth_method"} {
+		v, ok := values[key]
+		if !ok {
+			continue
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "%-12s %s  (from: %s)\n", key+":", v.Value, v.Source)
+	}
 	return nil
 }

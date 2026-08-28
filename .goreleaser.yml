@@ -30,8 +30,33 @@ archives:
         formats: [zip]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
+nfpms:
+  - id: packages
+    package_name: wenmar
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - deb
+      - rpm
+      - apk
+    homepage: https://github.com/Wenmar-Pro/wenmar-cli
+    description: Wenmar Pro automotive shop management CLI
+    maintainer: Wenmar Pro <support@wenmarpro.com>
+    license: MIT
+
 checksum:
   name_template: "checksums.txt"
+
+signs:
+  - id: cosign
+    cmd: cosign
+    signature: "${artifact}.bundle"
+    args:
+      - sign-blob
+      - --bundle
+      - "${signature}"
+      - "${artifact}"
+    artifacts: checksum
+    output: true
 
 release:
   draft: true

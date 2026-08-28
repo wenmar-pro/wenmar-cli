@@ -11,7 +11,7 @@ func renderJSONRaw(w io.Writer, data any) error {
 	return enc.Encode(data)
 }
 
-func renderJSON(w io.Writer, data any, summary string, meta *Meta, breadcrumbs []Breadcrumb) error {
+func renderJSON(w io.Writer, data any, summary string, meta *Meta, breadcrumbs []Breadcrumb, notice string) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 
@@ -27,6 +27,9 @@ func renderJSON(w io.Writer, data any, summary string, meta *Meta, breadcrumbs [
 	}
 	if len(breadcrumbs) > 0 {
 		envelope["breadcrumbs"] = breadcrumbs
+	}
+	if notice != "" {
+		envelope["notice"] = notice
 	}
 	return enc.Encode(envelope)
 }

@@ -1,14 +1,14 @@
 package tui
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 // WorkOrderItem is a minimal work order representation for the TUI.
@@ -25,60 +25,123 @@ type WorkOrderItem struct {
 	} `json:"vehicle"`
 }
 
+// view is the current TUI screen.
+type view int
+
+const (
+	viewList view = iota
+	viewDetail
+)
+
 type BoardModel struct {
+	client     *wenmar.Client
+	locationID string
+	interval   time.Duration
+
 	items       []WorkOrderItem
 	cursor      int
-	baseURL     string
-	token       string
 	loading     bool
 	err         error
 	lastRefresh time.Time
+	online      bool
+
+	view   view
+	detail *DetailModel
 }
 
-func NewBoard(baseURL, token string) BoardModel {
+// NewBoard creates a dispatch board backed by the SDK client. If locationID
+// is non-empty, requests are scoped to that location.
+func NewBoard(client *wenmar.Client, locationID string, interval time.Duration) BoardModel {
+	if interval <= 0 {
+		interval = 10 * time.Second
+	}
 	return BoardModel{
-		baseURL: baseURL,
-		token:   token,
-		loading: true,
+		client:     client,
+		locationID: locationID,
+		interval:   interval,
+		loading:    true,
+		view:       viewList,
 	}
 }
 
 func (m BoardModel) Init() tea.Cmd {
-	return fetchWorkOrders(m.baseURL, m.token)
+	return tea.Batch(fetchWorkOrders(m.client, m.locationID), tick(m.interval))
 }
 
 func (m BoardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch {
-		case keyMatches(msg, Keys.Quit):
-			return m, tea.Quit
-		case keyMatches(msg, Keys.Down):
-			if m.cursor < len(m.items)-1 {
-				m.cursor++
-			}
-		case keyMatches(msg, Keys.Up):
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case keyMatches(msg, Keys.Refresh):
-			m.loading = true
-			return m, fetchWorkOrders(m.baseURL, m.token)
+		if m.view == viewDetail && m.detail != nil {
+			return m.updateDetail(msg)
 		}
+		return m.updateList(msg)
 	case fetchResultMsg:
 		m.loading = false
 		m.err = msg.err
-		m.items = msg.items
-		m.lastRefresh = time.Now()
-		if m.cursor >= len(m.items) {
-			m.cursor = len(m.items) - 1
+		m.online = msg.err == nil
+		if msg.err == nil {
+			m.items = msg.items
+			m.lastRefresh = time.Now()
+			if m.cursor >= len(m.items) {
+				m.cursor = len(m.items) - 1
+			}
 		}
+		return m, nil
+	case tickMsg:
+		return m, fetchWorkOrders(m.client, m.locationID)
 	}
+	return m, nil
+}
 
+func (m BoardModel) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case keyMatches(msg, Keys.Quit):
+		return m, tea.Quit
+	case keyMatches(msg, Keys.Down):
+		if m.cursor < len(m.items)-1 {
+			m.cursor++
+		}
+	case keyMatches(msg, Keys.Up):
+		if m.cursor > 0 {
+			m.cursor--
+		}
+	case keyMatches(msg, Keys.Enter):
+		if len(m.items) > 0 {
+			item := m.items[m.cursor]
+			m.detail = NewDetailModel(m.client, m.locationID, item.ID)
+			m.view = viewDetail
+			return m, m.detail.Init()
+		}
+	case keyMatches(msg, Keys.Refresh) || keyMatches(msg, Keys.RefreshAlt):
+		m.loading = true
+		return m, fetchWorkOrders(m.client, m.locationID)
+	}
+	return m, nil
+}
+
+func (m BoardModel) updateDetail(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case keyMatches(msg, Keys.Back):
+		m.view = viewList
+		m.detail = nil
+		return m, nil
+	case keyMatches(msg, Keys.Quit):
+		return m, tea.Quit
+	}
+	if m.detail != nil {
+		return m.detail.Update(msg)
+	}
 	return m, nil
 }
 
 func (m BoardModel) View() string {
+	if m.view == viewDetail && m.detail != nil {
+		return m.detail.View()
+	}
+	return m.viewList()
+}
+
+func (m BoardModel) viewList() string {
 	if m.loading {
 		return "  Loading work orders...\n"
 	}
@@ -111,7 +174,16 @@ func (m BoardModel) View() string {
 	}
 
 	// Footer
-	s += "\n" + HelpStyle.Render("  ↑↓ navigate • r refresh • q quit • ? help") + "\n"
+	status := "● offline"
+	if m.online {
+		status = "● online"
+	}
+	statusStyle := StatusOffline
+	if m.online {
+		statusStyle = StatusOnline
+	}
+	s += "\n" + HelpStyle.Render(fmt.Sprintf("  %s  last refresh %s  •  ↑↓ navigate • enter detail • r refresh • q quit • ? help",
+		statusStyle.Render(status), m.lastRefresh.Format("15:04:05"))) + "\n"
 	return s
 }
 
@@ -120,27 +192,42 @@ type fetchResultMsg struct {
 	err   error
 }
 
-func fetchWorkOrders(baseURL, token string) tea.Cmd {
-	return func() tea.Msg {
-		url := fmt.Sprintf("%s/work_orders", baseURL)
-		req, _ := http.NewRequest("GET", url, nil)
-		req.Header.Set("Authorization", "Bearer "+token)
-		req.Header.Set("Accept", "application/json")
+type tickMsg struct{}
 
-		resp, err := http.DefaultClient.Do(req)
+func tick(interval time.Duration) tea.Cmd {
+	return tea.Tick(interval, func(time.Time) tea.Msg {
+		return tickMsg{}
+	})
+}
+
+// fetchWorkOrders fetches the work order list through the SDK client.
+func fetchWorkOrders(client *wenmar.Client, locationID string) tea.Cmd {
+	return func() tea.Msg {
+		ctx := context.Background()
+		var resp *generated.ListWorkOrdersResponse
+		var err error
+		if locationID != "" {
+			lc, lerr := client.ForLocation(ctx, locationID)
+			if lerr != nil {
+				return fetchResultMsg{err: lerr}
+			}
+			resp, err = lc.ListWorkOrders(ctx)
+		} else {
+			resp, err = client.ListWorkOrders(ctx)
+		}
 		if err != nil {
 			return fetchResultMsg{err: err}
 		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode >= 400 {
-			body, _ := io.ReadAll(resp.Body)
-			return fetchResultMsg{err: fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))}
+		if resp.JSON200 == nil {
+			return fetchResultMsg{items: nil}
 		}
-
-		var items []WorkOrderItem
-		if err := json.NewDecoder(resp.Body).Decode(&items); err != nil {
-			return fetchResultMsg{err: err}
+		items := make([]WorkOrderItem, 0, len(*resp.JSON200))
+		for _, wo := range *resp.JSON200 {
+			items = append(items, WorkOrderItem{
+				ID:              wo.Id,
+				WorkOrderNumber: wo.WorkOrderNumber,
+				Status:          wo.Status,
+			})
 		}
 		return fetchResultMsg{items: items}
 	}

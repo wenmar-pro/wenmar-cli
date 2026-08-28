@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
@@ -18,21 +22,13 @@ var authCmd = &cobra.Command{
 
 var authLoginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Configure your API token (same as `wenmar setup`)",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return runSetupCmd(cmd.InOrStdin(), cmd.OutOrStdout())
-	},
-}
-
-var authLogoutCmd = &cobra.Command{
-	Use:   "logout",
-	Short: "Delete your saved API token",
+	Short: "Store your API token (OAuth browser flow coming in a future release)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configPath, err := config.ConfigPath()
 		if err != nil {
 			return err
 		}
-		return runAuthLogout(configPath)
+		return runAuthLogin(cmd.InOrStdin(), cmd.OutOrStdout(), configPath)
 	},
 }
 
@@ -48,12 +44,86 @@ var authStatusCmd = &cobra.Command{
 	},
 }
 
+var authTokenCmd = &cobra.Command{
+	Use:   "token",
+	Short: "Print the bearer token to stdout (for scripts)",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		configPath, err := config.ConfigPath()
+		if err != nil {
+			return err
+		}
+		return runAuthToken(cmd.OutOrStdout(), configPath)
+	},
+}
+
+var authRefreshCmd = &cobra.Command{
+	Use:   "refresh",
+	Short: "Refresh the stored token (OAuth only)",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		configPath, err := config.ConfigPath()
+		if err != nil {
+			return err
+		}
+		return runAuthRefresh(cmd.OutOrStdout(), configPath)
+	},
+}
+
+var authLogoutCmd = &cobra.Command{
+	Use:   "logout",
+	Short: "Delete your saved API token",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		configPath, err := config.ConfigPath()
+		if err != nil {
+			return err
+		}
+		return runAuthLogout(configPath)
+	},
+}
+
 func init() {
-	authCmd.AddCommand(authLoginCmd, authLogoutCmd, authStatusCmd)
+	authCmd.AddCommand(authLoginCmd, authStatusCmd, authTokenCmd, authRefreshCmd, authLogoutCmd)
 	rootCmd.AddCommand(authCmd)
 }
 
+func runAuthLogin(in io.Reader, out io.Writer, configPath string) error {
+	token := tokenFlag
+	if token == "" {
+		fmt.Fprintln(out, "  OAuth browser flow will be added in a future release. For now, enter your API token.")
+		fmt.Fprint(out, "  Enter your API token: ")
+		var line string
+		if _, err := fmt.Fscanln(in, &line); err != nil {
+			return fmt.Errorf("could not read token: %w", err)
+		}
+		token = strings.TrimSpace(line)
+	}
+	if token == "" {
+		return fmt.Errorf("token is required")
+	}
+
+	store := authpkg.NewCredentialStore()
+	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
+		return fmt.Errorf("failed to store token: %w", err)
+	}
+
+	// Save base_url to config if not already present.
+	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
+	cfg, err := config.LoadFrom(configPath)
+	if err != nil {
+		cfg = &config.Config{}
+	}
+	cfg.BaseURL = baseURL
+	cfg.AuthMethod = "static"
+	if err := config.SaveTo(configPath, cfg); err != nil {
+		return fmt.Errorf("failed to save config: %w", err)
+	}
+
+	fmt.Fprintln(out, "  Token stored.")
+	return nil
+}
+
 func runAuthLogout(configPath string) error {
+	store := authpkg.NewCredentialStore()
+	_ = store.DeleteToken(context.Background())
 	if err := config.DeleteFrom(configPath); err != nil {
 		return fmt.Errorf("failed to delete config: %w", err)
 	}
@@ -62,23 +132,26 @@ func runAuthLogout(configPath string) error {
 }
 
 func runAuthStatus(out io.Writer, configPath string) error {
-	cfg, err := config.LoadFrom(configPath)
+	rt, err := auth.ResolveTokenWithSource(tokenFlag, configPath)
 	if err != nil {
-		fmt.Fprintln(out, "  Not logged in. Run `wenmar setup` to configure.")
+		fmt.Fprintln(out, "  Not logged in. Run `wenmar auth login` to configure.")
 		os.Exit(2)
 	}
 
-	fmt.Fprintf(out, "  Token:      %s\n", maskToken(cfg.Token))
-	fmt.Fprintf(out, "  Base URL:   %s\n", cfg.BaseURL)
+	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
+	fmt.Fprintf(out, "  Token:      %s  (from: %s)\n", maskToken(rt.Token), rt.Source)
+	fmt.Fprintf(out, "  Base URL:   %s\n", baseURL)
 	fmt.Fprint(out, "  Testing connection...")
 
-	client, err := wenmar.NewClient(cfg.BaseURL, cfg.Token)
+	wcfg := wenmar.DefaultConfig()
+	wcfg.BaseURL = baseURL
+	client, err := wenmar.NewClient(wcfg, wenmar.NewStaticTokenProvider(rt.Token))
 	if err != nil {
 		fmt.Fprintln(out, " ✗")
 		return err
 	}
 
-	_, err = client.ListCustomers(context.Background())
+	_, err = client.ListAccount(context.Background())
 	if err != nil {
 		fmt.Fprintln(out, " ✗")
 		fmt.Fprintf(out, "  Connection failed: %v\n", err)
@@ -87,5 +160,30 @@ func runAuthStatus(out io.Writer, configPath string) error {
 
 	fmt.Fprintln(out, " ✓")
 	fmt.Fprintln(out, "  Connected.")
+	return nil
+}
+
+func runAuthToken(out io.Writer, configPath string) error {
+	rt, err := auth.ResolveTokenWithSource(tokenFlag, configPath)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(out, rt.Token)
+	return nil
+}
+
+func runAuthRefresh(out io.Writer, configPath string) error {
+	store := authpkg.NewCredentialStore()
+	manager := authpkg.NewAuthManager(store, nil)
+	if err := manager.Refresh(context.Background()); err != nil {
+		if errors.Is(err, authpkg.ErrOAuthNotImplemented) {
+			fmt.Fprintln(out, "  OAuth token refresh is not yet implemented. Re-run `wenmar auth login` to get a new token.")
+			return nil
+		}
+		// No stored token — still show the guidance.
+		fmt.Fprintln(out, "  OAuth token refresh is not yet implemented. Re-run `wenmar auth login` to get a new token.")
+		return nil
+	}
+	fmt.Fprintln(out, "  Token refreshed.")
 	return nil
 }

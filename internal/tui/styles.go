@@ -30,6 +30,16 @@ var (
 	StatusInProgress = lipgloss.NewStyle().Foreground(warnColor)
 	StatusCompleted  = lipgloss.NewStyle().Foreground(lipgloss.Color("34")) // green
 
+	StatusOnline  = lipgloss.NewStyle().Foreground(lipgloss.Color("34")) // green
+	StatusOffline = lipgloss.NewStyle().Foreground(errorColor)           // red
+
+	DetailLabelStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(accentColor)
+
+	DetailValueStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("15"))
+
 	BorderStyle = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(mutedColor).

@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"strings"
 	"sync"
 	"time"
+
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 // Event represents a change detected by the poller.
@@ -22,10 +21,12 @@ type Event struct {
 
 // Poller polls a list endpoint on an interval, diffs the results against
 // the previous state, and emits events for new, changed, and removed items.
+// It fetches through the SDK client so it inherits auth, retry, and caching.
 type Poller struct {
-	URL         string
-	Token       string
-	Interval    time.Duration
+	Client     *wenmar.Client
+	Resource   string // "work_orders", "customers", "vehicles"
+	LocationID string
+	Interval   time.Duration
 	ExitOnFirst bool
 
 	// Filters
@@ -81,29 +82,26 @@ func (p *Poller) poll(ctx context.Context, emit func(Event)) error {
 	}
 
 	now := time.Now()
+	resource := p.Resource
 
-	// Diff: find new and changed items
-	prevByID := prev
-	respByID := resp
-
-	for id, item := range respByID {
-		oldItem, exists := prevByID[id]
+	for id, item := range resp {
+		oldItem, exists := prev[id]
 		if !exists {
-			p.maybeEmit(emit, Event{Type: "new", ID: item["id"], Resource: detectResource(p.URL), At: now})
+			p.maybeEmit(emit, Event{Type: "new", ID: item["id"], Resource: resource, At: now})
 			continue
 		}
 
 		// Check for changed fields
 		changed := diffFields(oldItem, item)
 		if len(changed) > 0 {
-			p.maybeEmit(emit, Event{Type: "changed", ID: item["id"], Resource: detectResource(p.URL), ChangedFields: changed, At: now})
+			p.maybeEmit(emit, Event{Type: "changed", ID: item["id"], Resource: resource, ChangedFields: changed, At: now})
 		}
 	}
 
 	// Find removed items
-	for id, item := range prevByID {
-		if _, exists := respByID[id]; !exists {
-			p.maybeEmit(emit, Event{Type: "removed", ID: item["id"], Resource: detectResource(p.URL), At: now})
+	for id, item := range prev {
+		if _, exists := resp[id]; !exists {
+			p.maybeEmit(emit, Event{Type: "removed", ID: item["id"], Resource: resource, At: now})
 		}
 	}
 
@@ -117,31 +115,59 @@ func (p *Poller) maybeEmit(emit func(Event), e Event) {
 	emit(e)
 }
 
+// fetch retrieves the current list of items through the SDK client.
 func (p *Poller) fetch(ctx context.Context) (map[string]map[string]any, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", p.URL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+p.Token)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	client := p.Client
+	if p.LocationID != "" {
+		lc, err := client.ForLocation(ctx, p.LocationID)
+		if err != nil {
+			return nil, err
+		}
+		client = lc.Client
 	}
 
 	var items []map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&items); err != nil {
-		return nil, fmt.Errorf("could not decode response: %w", err)
+	switch p.Resource {
+	case "customers":
+		resp, err := client.ListCustomers(ctx)
+		if err != nil {
+			return nil, err
+		}
+		items = decodeList(resp.JSON200)
+	case "vehicles":
+		resp, err := client.ListVehicles(ctx)
+		if err != nil {
+			return nil, err
+		}
+		items = decodeList(resp.JSON200)
+	default: // work_orders
+		resp, err := client.ListWorkOrders(ctx)
+		if err != nil {
+			return nil, err
+		}
+		items = decodeList(resp.JSON200)
 	}
 
 	return indexByID(items), nil
+}
+
+// decodeList converts a typed list response into generic maps for diffing.
+func decodeList[T any](list *[]T) []map[string]any {
+	if list == nil {
+		return nil
+	}
+	items := make([]map[string]any, 0, len(*list))
+	for _, item := range *list {
+		b, err := json.Marshal(item)
+		if err != nil {
+			continue
+		}
+		var m map[string]any
+		if json.Unmarshal(b, &m) == nil {
+			items = append(items, m)
+		}
+	}
+	return items
 }
 
 func indexByID(items []map[string]any) map[string]map[string]any {
@@ -166,18 +192,4 @@ func diffFields(old, new map[string]any) map[string]any {
 
 func valuesEqual(a, b any) bool {
 	return fmt.Sprintf("%v", a) == fmt.Sprintf("%v", b)
-}
-
-func detectResource(url string) string {
-	// Simple heuristic: /work_orders → "work_order", /customers → "customer"
-	if strings.Contains(url, "/work_orders") {
-		return "work_order"
-	}
-	if strings.Contains(url, "/customers") {
-		return "customer"
-	}
-	if strings.Contains(url, "/vehicles") {
-		return "vehicle"
-	}
-	return "unknown"
 }

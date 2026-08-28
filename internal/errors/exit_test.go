@@ -2,6 +2,7 @@ package errors
 
 import (
 	"errors"
+	"net"
 	"testing"
 
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
@@ -59,5 +60,53 @@ func TestExitCode_UnknownAPIError(t *testing.T) {
 	code := ExitCode(err)
 	if code != 6 {
 		t.Errorf("expected 6 for unknown 5xx, got %d", code)
+	}
+}
+
+func TestExitCode_Forbidden(t *testing.T) {
+	err := &wenmar.APIError{Code: "forbidden", StatusCode: 403}
+	code := ExitCode(err)
+	if code != 8 {
+		t.Errorf("expected 8 for forbidden, got %d", code)
+	}
+}
+
+func TestExitCode_ForbiddenByStatus(t *testing.T) {
+	err := &wenmar.APIError{Code: "unknown", StatusCode: 403}
+	code := ExitCode(err)
+	if code != 8 {
+		t.Errorf("expected 8 for 403, got %d", code)
+	}
+}
+
+func TestExitCode_Conflict(t *testing.T) {
+	err := &wenmar.APIError{Code: "conflict", StatusCode: 409}
+	code := ExitCode(err)
+	if code != 7 {
+		t.Errorf("expected 7 for conflict, got %d", code)
+	}
+}
+
+func TestExitCode_ConflictByStatus(t *testing.T) {
+	err := &wenmar.APIError{Code: "unknown", StatusCode: 409}
+	code := ExitCode(err)
+	if code != 7 {
+		t.Errorf("expected 7 for 409, got %d", code)
+	}
+}
+
+func TestExitCode_Partial(t *testing.T) {
+	err := &PartialError{Message: "truncated"}
+	code := ExitCode(err)
+	if code != 9 {
+		t.Errorf("expected 9 for partial, got %d", code)
+	}
+}
+
+func TestExitCode_Offline(t *testing.T) {
+	err := &net.DNSError{IsNotFound: true}
+	code := ExitCode(err)
+	if code != 10 {
+		t.Errorf("expected 10 for network error, got %d", code)
 	}
 }

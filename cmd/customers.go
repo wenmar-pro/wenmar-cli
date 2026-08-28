@@ -7,12 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/auth"
-	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	"github.com/spf13/cobra"
 )
 
@@ -67,27 +64,6 @@ func init() {
 	rootCmd.AddCommand(customersCmd)
 }
 
-func newSDKClient() (*wenmar.Client, error) {
-	configPath := configPathFlag
-	if configPath == "" {
-		p, err := config.ConfigPath()
-		if err == nil {
-			configPath = p
-		}
-	}
-	rt, err := auth.ResolveTokenWithSource(tokenFlag, configPath)
-	if err != nil {
-		return nil, err
-	}
-	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
-	currentDebugInfo = &errors.DebugInfo{
-		TokenSource: string(rt.Source),
-		TokenMasked: errors.MaskToken(rt.Token),
-		BaseURL:     baseURL,
-	}
-	return wenmar.NewClient(baseURL, rt.Token)
-}
-
 // setRequest records the HTTP method and path for the current command so the
 // error handler can show which request failed.
 func setRequest(method, path string) {
@@ -99,7 +75,7 @@ func setRequest(method, path string) {
 }
 
 func runCustomersList(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -114,13 +90,16 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 	summary := fmt.Sprintf("Page 1. More results: %v", paginator.HasNext())
 	meta := &output.Meta{HasNext: paginator.HasNext()}
 
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	if mode == output.ModeIDsOnly || mode == output.ModeCount {
+		output.PrintPaginationNotice(meta, 1)
+	}
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("customers")}
 	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
 }
 
 func runCustomersShow(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -137,27 +116,22 @@ func runCustomersShow(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("customers", args[0])}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
 func runCustomersCreate(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
 	setRequest("POST", "/customers")
 
 	firstName, lastName := splitName(customerCreateFullName)
-	body := generated.CreateCustomerJSONRequestBody{
-		Customer: struct {
-			FirstName string `json:"first_name"`
-			LastName  string `json:"last_name"`
-		}{
-			FirstName: firstName,
-			LastName:  lastName,
-		},
+	body := wenmar.CreateCustomerRequest{
+		FirstName: firstName,
+		LastName:  lastName,
 	}
 
 	resp, err := client.CreateCustomer(context.Background(), body)
@@ -166,13 +140,13 @@ func runCustomersCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON201)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: createBreadcrumbs("customers", "3")}
 	return output.Render(cmd.OutOrStdout(), data, "Customer created.", nil, opts)
 }
 
 func runCustomersUpdate(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
+	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
@@ -183,15 +157,15 @@ func runCustomersUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("id must be an integer")
 	}
 
-	body := generated.UpdateCustomerJSONRequestBody{}
+	body := wenmar.UpdateCustomerRequest{}
 	resp, err := client.UpdateCustomer(context.Background(), id, body)
 	if err != nil {
 		return err
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("customers", args[0])}
 	return output.Render(cmd.OutOrStdout(), data, "Customer updated.", nil, opts)
 }
 

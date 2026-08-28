@@ -14,6 +14,9 @@ var commandsCmd = &cobra.Command{
 	Short: "List all commands as JSON (for agent discovery)",
 	Run: func(cmd *cobra.Command, args []string) {
 		catalog := agent.BuildCatalog(rootCmd)
+		for _, t := range helpTopics {
+			catalog.AddTopic(t.name, t.title)
+		}
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(catalog); err != nil {

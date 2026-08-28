@@ -15,6 +15,7 @@ import (
 var (
 	tokenFlag      string
 	baseURLFlag    string
+	locationFlag   string
 	mdFlag         bool
 	jsonFlag       bool
 	agentFlag      bool
@@ -22,6 +23,9 @@ var (
 	jqFlag         string
 	idsOnlyFlag    bool
 	countFlag      bool
+	htmlFlag       bool
+	styledFlag     bool
+	allowPartial   bool
 	configPathFlag string
 	debugFlag      bool
 )
@@ -69,6 +73,7 @@ func init() {
 	rootCmd.SetVersionTemplate(versionString() + "\n")
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "API bearer token (or set WENMAR_TOKEN env)")
 	rootCmd.PersistentFlags().StringVar(&baseURLFlag, "base-url", "", "API base URL (default: https://app.wenmarpro.com)")
+	rootCmd.PersistentFlags().StringVar(&locationFlag, "location", "", "Location ID to scope requests (or set WENMAR_LOCATION_ID)")
 	rootCmd.PersistentFlags().BoolVarP(&mdFlag, "md", "m", false, "Output as GFM table")
 	rootCmd.PersistentFlags().BoolVar(&mdFlag, "markdown", false, "Output as GFM table (alias for --md)")
 	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output as full JSON envelope {ok, data, summary, meta}")
@@ -77,6 +82,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "jq filter expression (implies --json)")
 	rootCmd.PersistentFlags().BoolVar(&idsOnlyFlag, "ids-only", false, "Print one ID per line (for shell loops)")
 	rootCmd.PersistentFlags().BoolVar(&countFlag, "count", false, "Print the count of results (bare integer)")
+	rootCmd.PersistentFlags().BoolVar(&htmlFlag, "html", false, "Output as an HTML document")
+	rootCmd.PersistentFlags().BoolVar(&styledFlag, "styled", false, "Force human tables even when piped")
+	rootCmd.PersistentFlags().BoolVar(&allowPartial, "allow-partial", false, "Accept truncated responses (adds a notice to the envelope)")
 	rootCmd.PersistentFlags().StringVar(&configPathFlag, "config-path", "", "Path to config file (for testing)")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Print request debug info (token source, base URL, method/path) to stderr")
 
