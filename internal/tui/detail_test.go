@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,7 +30,6 @@ func TestDetailModel_FetchesWorkOrder(t *testing.T) {
 	defer srv.Close()
 
 	client := newTestClient(t, srv.URL, "test")
-	m := NewDetailModel(client, "", 1)
 	msg := fetchWorkOrderDetail(client, "", 1)()
 
 	res, ok := msg.(detailResultMsg)
@@ -50,6 +48,4 @@ func TestDetailModel_FetchesWorkOrder(t *testing.T) {
 	if res.wo.Customer.FullName != "Jane Doe" {
 		t.Errorf("expected customer 'Jane Doe', got %q", res.wo.Customer.FullName)
 	}
-	_ = m
-	_ = context.Background()
 }

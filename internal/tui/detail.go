@@ -10,7 +10,7 @@ import (
 )
 
 // DetailModel shows a single work order with customer, vehicle, status, and
-// timestamps, plus actions (start time tracking, mark complete, refresh).
+// timestamps. It is read-only for the POC.
 type DetailModel struct {
 	client     *wenmar.Client
 	locationID string
@@ -19,7 +19,6 @@ type DetailModel struct {
 	wo      *generated.WorkOrder
 	loading bool
 	err     error
-	notice  string
 }
 
 // NewDetailModel creates a detail view for the given work order ID.
@@ -48,17 +47,6 @@ func (m *DetailModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case keyMatches(msg, Keys.Refresh) || keyMatches(msg, Keys.RefreshAlt):
 			m.loading = true
-			return m, fetchWorkOrderDetail(m.client, m.locationID, m.id)
-		case keyMatches(msg, Keys.Complete):
-			return m, markWorkOrderComplete(m.client, m.locationID, m.id)
-		case keyMatches(msg, Keys.Start):
-			m.notice = "Time tracking requires an API endpoint (POST /work_orders/{id}/time_entries) not yet available."
-		}
-	case completeResultMsg:
-		if msg.err != nil {
-			m.err = msg.err
-		} else {
-			m.notice = "Work order marked complete."
 			return m, fetchWorkOrderDetail(m.client, m.locationID, m.id)
 		}
 	}
@@ -105,20 +93,12 @@ func (m *DetailModel) View() string {
 	s += fmt.Sprintf("  Updated: %s\n", wo.UpdatedAt)
 	s += "\n"
 
-	if m.notice != "" {
-		s += HelpStyle.Render("  "+m.notice) + "\n\n"
-	}
-
-	s += HelpStyle.Render("  esc back • r refresh • c mark complete • s start time • q quit") + "\n"
+	s += HelpStyle.Render("  esc back • r refresh • q quit") + "\n"
 	return s
 }
 
 type detailResultMsg struct {
 	wo  *generated.WorkOrder
-	err error
-}
-
-type completeResultMsg struct {
 	err error
 }
 
@@ -140,22 +120,5 @@ func fetchWorkOrderDetail(client *wenmar.Client, locationID string, id int) tea.
 			return detailResultMsg{err: err}
 		}
 		return detailResultMsg{wo: resp.JSON200}
-	}
-}
-
-func markWorkOrderComplete(client *wenmar.Client, locationID string, id int) tea.Cmd {
-	return func() tea.Msg {
-		ctx := context.Background()
-		var err error
-		if locationID != "" {
-			lc, lerr := client.ForLocation(ctx, locationID)
-			if lerr != nil {
-				return completeResultMsg{err: lerr}
-			}
-			err = lc.StageTransition(ctx, id, "completed")
-		} else {
-			err = client.StageTransition(ctx, id, "completed")
-		}
-		return completeResultMsg{err: err}
 	}
 }

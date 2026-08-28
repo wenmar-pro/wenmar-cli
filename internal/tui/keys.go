@@ -14,6 +14,11 @@ type KeyMap struct {
 	Filter     key.Binding
 	Quit       key.Binding
 	Help       key.Binding
+	Tab        key.Binding
+	ShiftTab   key.Binding
+	Tab1       key.Binding
+	Tab2       key.Binding
+	Tab3       key.Binding
 }
 
 var Keys = KeyMap{
@@ -60,5 +65,25 @@ var Keys = KeyMap{
 	Help: key.NewBinding(
 		key.WithKeys("?"),
 		key.WithHelp("?", "help"),
+	),
+	Tab: key.NewBinding(
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "next tab"),
+	),
+	ShiftTab: key.NewBinding(
+		key.WithKeys("shift+tab"),
+		key.WithHelp("shift+tab", "previous tab"),
+	),
+	Tab1: key.NewBinding(
+		key.WithKeys("1"),
+		key.WithHelp("1", "work orders"),
+	),
+	Tab2: key.NewBinding(
+		key.WithKeys("2"),
+		key.WithHelp("2", "customers"),
+	),
+	Tab3: key.NewBinding(
+		key.WithKeys("3"),
+		key.WithHelp("3", "vehicles"),
 	),
 }

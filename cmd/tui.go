@@ -51,7 +51,8 @@ func runTUI(cmd *cobra.Command, args []string) error {
 		locationID = auth.ResolveLocationID(locationFlag, configPath)
 	}
 
-	model := tui.NewBoard(client, locationID, tuiInterval)
+	model := tui.NewApp(client, locationID, tuiInterval)
+	model.SetInitialWorkOrder(tuiWorkOrder)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {

@@ -48,4 +48,17 @@ var (
 	HelpStyle = lipgloss.NewStyle().
 		Foreground(mutedColor).
 		Italic(true)
+
+	TabActiveStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("15")).
+		Background(accentColor).
+		Padding(0, 1)
+
+	TabInactiveStyle = lipgloss.NewStyle().
+		Foreground(mutedColor).
+		Padding(0, 1)
+
+	TabBarStyle = lipgloss.NewStyle().
+		MarginBottom(1)
 )
