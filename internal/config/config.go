@@ -10,8 +10,6 @@ import (
 
 const (
 	defaultBaseURL = "https://app.wenmarpro.com"
-	configDir      = ".wenmar"
-	configFile     = "config"
 )
 
 type Config struct {
@@ -20,11 +18,34 @@ type Config struct {
 }
 
 func ConfigPath() (string, error) {
-	home, err := os.UserHomeDir()
+	// Try XDG path first
+	newPath, err := xdgConfigPath()
 	if err != nil {
-		return "", fmt.Errorf("could not determine home directory: %w", err)
+		return "", err
 	}
-	return filepath.Join(home, configDir, configFile), nil
+
+	// Check if new config exists
+	if _, err := os.Stat(newPath); err == nil {
+		return newPath, nil
+	}
+
+	// Try migrating from old path
+	oldPath, err := oldConfigPath()
+	if err != nil {
+		return newPath, nil
+	}
+
+	migrated, err := migrateOldConfig(oldPath)
+	if err != nil {
+		// Log but don't fail — fall back to new path
+		return newPath, nil
+	}
+
+	if migrated {
+		fmt.Fprintf(os.Stderr, "  Migrated config from ~/.wenmar/ to ~/.config/wenmar/\n")
+	}
+
+	return newPath, nil
 }
 
 func Load() (*Config, error) {
