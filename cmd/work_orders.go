@@ -54,6 +54,7 @@ var (
 	workOrderCreateCustomer     int
 	workOrderCreateVehicle      int
 	workOrderUpdateIntakeMethod string
+	workOrdersDeleteDryRun      bool
 )
 
 func init() {
@@ -65,6 +66,7 @@ func init() {
 	workOrdersCreateCmd.MarkFlagRequired("vehicle-id")
 
 	workOrdersUpdateCmd.Flags().StringVar(&workOrderUpdateIntakeMethod, "intake-method", "", "Intake method (e.g. drop_off, walk_in)")
+	workOrdersDeleteCmd.Flags().BoolVar(&workOrdersDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
 
 	workOrdersCmd.AddCommand(workOrdersListCmd, workOrdersShowCmd, workOrdersCreateCmd, workOrdersUpdateCmd, workOrdersDeleteCmd)
 	rootCmd.AddCommand(workOrdersCmd)
@@ -170,14 +172,24 @@ func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
 }
 
 func runWorkOrdersDelete(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
-	if err != nil {
-		return err
-	}
-
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
 		return fmt.Errorf("id must be an integer")
+	}
+
+	if workOrdersDeleteDryRun {
+		mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
+		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+		dryRunData := map[string]any{
+			"dry_run":      true,
+			"would_delete": fmt.Sprintf("work_order:%d", id),
+		}
+		return output.Render(cmd.OutOrStdout(), dryRunData, fmt.Sprintf("Would delete work order %d (dry run).", id), nil, opts)
+	}
+
+	client, err := newSDKClient()
+	if err != nil {
+		return err
 	}
 
 	_, err = client.DeleteWorkOrder(context.Background(), id)

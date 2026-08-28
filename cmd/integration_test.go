@@ -24,6 +24,7 @@ func TestMain(m *testing.M) {
 func execute(args ...string) (string, error) {
 	// Reset global output flags so prior tests don't leak state.
 	mdFlag, jsonFlag, agentFlag, jqFlag = false, false, false, ""
+	idsOnlyFlag, countFlag = false, false
 	rootCmd.SetArgs(args)
 	buf := &bytes.Buffer{}
 	rootCmd.SetOut(buf)
@@ -511,5 +512,39 @@ func TestCustomersList_MarkdownAlias(t *testing.T) {
 	}
 	if !strings.Contains(out, "| id |") {
 		t.Errorf("expected GFM table header, got: %s", out)
+	}
+}
+
+func TestVehiclesDelete_DryRun(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"vehicles", "delete", "42", "--dry-run",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"dry_run": true`) {
+		t.Errorf("expected dry_run:true in output, got: %s", out)
+	}
+	if !strings.Contains(out, `"would_delete"`) {
+		t.Errorf("expected would_delete field in output, got: %s", out)
+	}
+	if strings.Contains(out, "Vehicle 42 deleted") {
+		t.Error("expected dry-run to NOT actually delete, but got delete confirmation")
+	}
+}
+
+func TestWorkOrdersDelete_DryRun(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"work_orders", "delete", "42", "--dry-run",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"dry_run": true`) {
+		t.Errorf("expected dry_run:true in output, got: %s", out)
 	}
 }

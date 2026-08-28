@@ -64,10 +64,11 @@ var vehiclesDuplicatesCmd = &cobra.Command{
 }
 
 var (
-	vehicleCreateMake string
-	vehicleCreateModel string
-	vehicleCreateYear int
+	vehicleCreateMake     string
+	vehicleCreateModel    string
+	vehicleCreateYear     int
 	vehicleCreateCustomer int
+	vehiclesDeleteDryRun  bool
 )
 
 func init() {
@@ -79,6 +80,7 @@ func init() {
 	vehiclesCreateCmd.MarkFlagRequired("model")
 	vehiclesCreateCmd.MarkFlagRequired("year")
 	vehiclesCreateCmd.MarkFlagRequired("customer-id")
+	vehiclesDeleteCmd.Flags().BoolVar(&vehiclesDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
 
 	vehiclesCmd.AddCommand(vehiclesShowCmd, vehiclesListCmd, vehiclesCreateCmd, vehiclesUpdateCmd, vehiclesDeleteCmd, vehiclesDecodeVinCmd, vehiclesDuplicatesCmd)
 	rootCmd.AddCommand(vehiclesCmd)
@@ -183,14 +185,24 @@ func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 }
 
 func runVehiclesDelete(cmd *cobra.Command, args []string) error {
-	client, err := newSDKClient()
-	if err != nil {
-		return err
-	}
-
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
 		return fmt.Errorf("id must be an integer")
+	}
+
+	if vehiclesDeleteDryRun {
+		mode := output.ResolveMode(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag)
+		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: output.CaptureBreadcrumbs()}
+		dryRunData := map[string]any{
+			"dry_run":      true,
+			"would_delete": fmt.Sprintf("vehicle:%d", id),
+		}
+		return output.Render(cmd.OutOrStdout(), dryRunData, fmt.Sprintf("Would delete vehicle %d (dry run).", id), nil, opts)
+	}
+
+	client, err := newSDKClient()
+	if err != nil {
+		return err
 	}
 
 	_, err = client.DeleteVehicle(context.Background(), id)
