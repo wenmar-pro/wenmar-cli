@@ -205,6 +205,20 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		writeJSON(w, http.StatusOK, map[string]any{"id": 1, "name": "Main Shop"})
 	})
 
+	// GET /locations/:id
+	mux.HandleFunc("/locations/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		id := strings.TrimPrefix(r.URL.Path, "/locations/")
+		if id == "999999" {
+			writeError(w, http.StatusNotFound, "not_found", "Resource not found")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"id": 1, "name": "Bay 1"})
+	})
+
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv
@@ -454,5 +468,19 @@ func TestAccountShow_JSON(t *testing.T) {
 	}
 	if !strings.Contains(out, `"name": "Main Shop"`) {
 		t.Errorf("expected account data in output, got: %s", out)
+	}
+}
+
+func TestLocationsShow_JSON(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"locations", "show", "1",
+		"--json", "--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `"name": "Bay 1"`) {
+		t.Errorf("expected location data in output, got: %s", out)
 	}
 }
