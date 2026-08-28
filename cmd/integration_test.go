@@ -548,3 +548,33 @@ func TestWorkOrdersDelete_DryRun(t *testing.T) {
 		t.Errorf("expected dry_run:true in output, got: %s", out)
 	}
 }
+
+func TestCompletion_Bash(t *testing.T) {
+	out, err := execute("completion", "bash")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "bash completion") && !strings.Contains(out, "_wenmar") {
+		t.Errorf("expected bash completion script, got: %s", out[:200])
+	}
+}
+
+func TestCompletion_Zsh(t *testing.T) {
+	out, err := execute("completion", "zsh")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "_wenmar") {
+		t.Errorf("expected zsh completion script, got: %s", out[:200])
+	}
+}
+
+func TestCompletion_Fish(t *testing.T) {
+	out, err := execute("completion", "fish")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "wenmar") {
+		t.Errorf("expected fish completion script, got: %s", out[:200])
+	}
+}
