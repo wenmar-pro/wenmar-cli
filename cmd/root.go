@@ -23,7 +23,13 @@ var (
 	idsOnlyFlag    bool
 	countFlag      bool
 	configPathFlag string
+	debugFlag      bool
 )
+
+// currentDebugInfo is populated by newSDKClient() with the request context
+// (token source, base URL) and by setRequest() with the method/path, so the
+// error handler can print useful diagnostics on failure.
+var currentDebugInfo *errors.DebugInfo
 
 var rootCmd = &cobra.Command{
 	Use:           "wenmar",
@@ -51,7 +57,7 @@ func Execute() {
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		errors.PrintError(os.Stderr, err, currentDebugInfo)
 		os.Exit(errors.ExitCode(err))
 	}
 }
@@ -72,6 +78,24 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&idsOnlyFlag, "ids-only", false, "Print one ID per line (for shell loops)")
 	rootCmd.PersistentFlags().BoolVar(&countFlag, "count", false, "Print the count of results (bare integer)")
 	rootCmd.PersistentFlags().StringVar(&configPathFlag, "config-path", "", "Path to config file (for testing)")
+	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Print request debug info (token source, base URL, method/path) to stderr")
+
+	// When --debug is set, surface the request context on success too.
+	rootCmd.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
+		if debugFlag && currentDebugInfo != nil {
+			fmt.Fprintln(os.Stderr, "DEBUG:")
+			if currentDebugInfo.TokenMasked != "" {
+				fmt.Fprintf(os.Stderr, "  token:    %s  (%s)\n", currentDebugInfo.TokenMasked, currentDebugInfo.TokenSource)
+			}
+			if currentDebugInfo.BaseURL != "" {
+				fmt.Fprintf(os.Stderr, "  base URL: %s\n", currentDebugInfo.BaseURL)
+			}
+			if currentDebugInfo.Method != "" && currentDebugInfo.Path != "" {
+				fmt.Fprintf(os.Stderr, "  request:  %s %s\n", currentDebugInfo.Method, currentDebugInfo.Path)
+			}
+		}
+		return nil
+	}
 
 	defaultHelpFunc := rootCmd.HelpFunc()
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {

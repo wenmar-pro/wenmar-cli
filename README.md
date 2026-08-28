@@ -2,15 +2,15 @@
 
 A command-line interface for the [Wenmar Pro](https://wenmarpro.com) automotive shop management software.
 
-Built on the [wenmar-sdk Go module](https://github.com/Wenmar-Pro/wenmar-sdk). Single static binary, no runtime dependencies.
-- [API documentation](https://github.com/Wenmar-Pro/wenmar-api) — full API reference in the wenmar-api repo
+Built on the [wenmar-sdk Go module](https://github.com/wenmar-pro/wenmar-sdk). Single static binary, no runtime dependencies.
+- [API documentation](https://github.com/wenmar-pro/wenmar-api) — full API reference in the wenmar-api repo
 
 ## Install
 
 ### macOS / Linux / WSL2 (curl)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
+curl -fsSL https://raw.githubusercontent.com/wenmar-pro/wenmar-cli/main/install-cli | bash
 ```
 
 The script detects your OS/arch, downloads the latest release, verifies
@@ -21,13 +21,13 @@ PATH if needed.
 To install a specific version or into a custom directory:
 
 ```bash
-WENMAR_VERSION=0.1.0 curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
-WENMAR_BIN_DIR=~/custom/bin curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
+WENMAR_VERSION=0.1.0 curl -fsSL https://raw.githubusercontent.com/wenmar-pro/wenmar-cli/main/install-cli | bash
+WENMAR_BIN_DIR=~/custom/bin curl -fsSL https://raw.githubusercontent.com/wenmar-pro/wenmar-cli/main/install-cli | bash
 ```
 
 ### Binary download
 
-Download the latest release from [GitHub Releases](https://github.com/Wenmar-Pro/wenmar-cli/releases) for your platform:
+Download the latest release from [GitHub Releases](https://github.com/wenmar-pro/wenmar-cli/releases) for your platform:
 
 - `wenmar_<version>_darwin_arm64.tar.gz` (Apple Silicon)
 - `wenmar_<version>_darwin_amd64.tar.gz` (Intel Mac)
@@ -38,7 +38,7 @@ Download the latest release from [GitHub Releases](https://github.com/Wenmar-Pro
 ### Build from source
 
 ```bash
-go install github.com/Wenmar-Pro/wenmar-cli/cmd/wenmar@latest
+go install github.com/wenmar-pro/wenmar-cli/cmd/wenmar@latest
 ```
 
 ## Setup

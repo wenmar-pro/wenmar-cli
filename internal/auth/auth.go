@@ -10,6 +10,22 @@ import (
 
 const defaultBaseURL = "https://app.wenmarpro.com"
 
+// TokenSource describes where a resolved API token came from.
+type TokenSource string
+
+const (
+	SourceFlag   TokenSource = "--token flag"
+	SourceEnv    TokenSource = "WENMAR_TOKEN env"
+	SourceConfig TokenSource = "config file"
+	SourceNone   TokenSource = "none"
+)
+
+// ResolvedToken pairs a token with the source it was resolved from.
+type ResolvedToken struct {
+	Token  string
+	Source TokenSource
+}
+
 func ResolveToken(flagToken string) (string, error) {
 	cfg, _ := config.Load()
 	configPath := ""
@@ -20,21 +36,31 @@ func ResolveToken(flagToken string) (string, error) {
 }
 
 func ResolveTokenFrom(flagToken, configPath string) (string, error) {
+	rt, err := ResolveTokenWithSource(flagToken, configPath)
+	if err != nil {
+		return "", err
+	}
+	return rt.Token, nil
+}
+
+// ResolveTokenWithSource resolves a token and reports where it came from,
+// so callers can surface useful diagnostics on auth failures.
+func ResolveTokenWithSource(flagToken, configPath string) (ResolvedToken, error) {
 	if flagToken != "" {
-		return flagToken, nil
+		return ResolvedToken{Token: flagToken, Source: SourceFlag}, nil
 	}
 
 	if envToken := os.Getenv("WENMAR_TOKEN"); envToken != "" {
-		return envToken, nil
+		return ResolvedToken{Token: envToken, Source: SourceEnv}, nil
 	}
 
 	if configPath != "" {
 		if cfg, err := config.LoadFrom(configPath); err == nil && cfg.Token != "" {
-			return cfg.Token, nil
+			return ResolvedToken{Token: cfg.Token, Source: SourceConfig}, nil
 		}
 	}
 
-	return "", fmt.Errorf("API token required. Run `wenmar setup` to configure, or set --token / WENMAR_TOKEN env var")
+	return ResolvedToken{}, fmt.Errorf("API token required. Run `wenmar setup` to configure, or set --token / WENMAR_TOKEN env var")
 }
 
 func ResolveBaseURL(flagURL string) string {
@@ -47,7 +73,7 @@ func ResolveBaseURLFrom(flagURL, configPath string) string {
 		return flagURL
 	}
 
-	if envURL := os.Getenv("WENMAR_BASE_URL"); envURL != "" {
+	if envURL := os.Getenv("WENMAR_URL"); envURL != "" {
 		return envURL
 	}
 

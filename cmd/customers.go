@@ -9,6 +9,7 @@ import (
 
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
@@ -74,12 +75,27 @@ func newSDKClient() (*wenmar.Client, error) {
 			configPath = p
 		}
 	}
-	token, err := auth.ResolveTokenFrom(tokenFlag, configPath)
+	rt, err := auth.ResolveTokenWithSource(tokenFlag, configPath)
 	if err != nil {
 		return nil, err
 	}
 	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
-	return wenmar.NewClient(baseURL, token)
+	currentDebugInfo = &errors.DebugInfo{
+		TokenSource: string(rt.Source),
+		TokenMasked: errors.MaskToken(rt.Token),
+		BaseURL:     baseURL,
+	}
+	return wenmar.NewClient(baseURL, rt.Token)
+}
+
+// setRequest records the HTTP method and path for the current command so the
+// error handler can show which request failed.
+func setRequest(method, path string) {
+	if currentDebugInfo == nil {
+		currentDebugInfo = &errors.DebugInfo{}
+	}
+	currentDebugInfo.Method = method
+	currentDebugInfo.Path = path
 }
 
 func runCustomersList(cmd *cobra.Command, args []string) error {
@@ -87,6 +103,7 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/customers")
 
 	resp, paginator, err := client.ListCustomersWithPagination(context.Background())
 	if err != nil {
@@ -107,6 +124,7 @@ func runCustomersShow(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/customers/"+args[0])
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
@@ -129,6 +147,7 @@ func runCustomersCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("POST", "/customers")
 
 	firstName, lastName := splitName(customerCreateFullName)
 	body := generated.CreateCustomerJSONRequestBody{
@@ -157,6 +176,7 @@ func runCustomersUpdate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("PATCH", "/customers/"+args[0])
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {

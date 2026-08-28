@@ -28,6 +28,7 @@ func runAccountShow(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/account")
 
 	resp, err := client.ListAccount(context.Background())
 	if err != nil {

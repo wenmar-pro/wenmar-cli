@@ -29,6 +29,7 @@ func runLocationsShow(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/locations/"+args[0])
 
 	resp, err := client.ShowLocation(context.Background(), args[0])
 	if err != nil {

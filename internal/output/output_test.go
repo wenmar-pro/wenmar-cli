@@ -24,6 +24,26 @@ func TestRender_MD(t *testing.T) {
 	}
 }
 
+func TestRender_MD_LargeIntegerIDs(t *testing.T) {
+	var buf bytes.Buffer
+	// JSON unmarshalling produces float64 for numbers; large IDs must not
+	// render in scientific notation.
+	data := []map[string]any{
+		{"id": float64(1043910119), "name": "Jane"},
+	}
+	err := Render(&buf, data, "", nil, Options{Mode: ModeMD})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	output := buf.String()
+	if contains(output, "1.043910119e+09") {
+		t.Errorf("expected no scientific notation, got: %s", output)
+	}
+	if !contains(output, "1043910119") {
+		t.Errorf("expected full integer id, got: %s", output)
+	}
+}
+
 func TestRender_JSON(t *testing.T) {
 	var buf bytes.Buffer
 	data := []map[string]any{

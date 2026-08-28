@@ -30,7 +30,7 @@ func renderMarkdown(w io.Writer, data any, summary string) error {
 	for _, item := range items {
 		values := make([]string, len(headers))
 		for i, h := range headers {
-			values[i] = fmt.Sprintf("%v", item[h])
+			values[i] = formatValue(item[h])
 		}
 		fmt.Fprintf(w, "| %s |\n", strings.Join(values, " | "))
 	}
@@ -40,6 +40,16 @@ func renderMarkdown(w io.Writer, data any, summary string) error {
 		fmt.Fprintln(w, summary)
 	}
 	return nil
+}
+
+// formatValue renders a cell value for the markdown table. JSON numbers
+// unmarshal to float64; whole-number floats (e.g. large integer IDs) are
+// printed without a decimal point or scientific notation.
+func formatValue(v any) string {
+	if f, ok := v.(float64); ok && f == float64(int64(f)) {
+		return fmt.Sprintf("%d", int64(f))
+	}
+	return fmt.Sprintf("%v", v)
 }
 
 func toSlice(data any) []map[string]any {

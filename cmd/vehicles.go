@@ -91,6 +91,7 @@ func runVehiclesShow(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/vehicles/"+args[0])
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
@@ -113,6 +114,7 @@ func runVehiclesList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/vehicles")
 
 	resp, err := client.ListVehicles(context.Background())
 	if err != nil {
@@ -130,6 +132,7 @@ func runVehiclesCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("POST", "/vehicles")
 
 	body := generated.CreateVehicleJSONRequestBody{
 		Vehicle: struct {
@@ -161,6 +164,7 @@ func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("PATCH", "/vehicles/"+args[0])
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
@@ -204,6 +208,7 @@ func runVehiclesDelete(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("DELETE", "/vehicles/"+args[0])
 
 	_, err = client.DeleteVehicle(context.Background(), id)
 	if err != nil {
@@ -220,6 +225,7 @@ func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/vehicles/vin_decode")
 
 	resp, err := client.DecodeVin(context.Background(), args[0])
 	if err != nil {
@@ -237,6 +243,7 @@ func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/vehicles/check_duplicate")
 
 	resp, err := client.CheckDuplicate(context.Background(), args[0])
 	if err != nil {

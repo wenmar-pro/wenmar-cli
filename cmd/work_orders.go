@@ -77,6 +77,7 @@ func runWorkOrdersList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/work_orders")
 
 	resp, paginator, err := client.ListWorkOrdersWithPagination(context.Background())
 	if err != nil {
@@ -97,6 +98,7 @@ func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("GET", "/work_orders/"+args[0])
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
@@ -119,6 +121,7 @@ func runWorkOrdersCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("POST", "/work_orders")
 
 	body := generated.CreateWorkOrderJSONRequestBody{
 		WorkOrder: struct {
@@ -146,6 +149,7 @@ func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("PATCH", "/work_orders/"+args[0])
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
@@ -191,6 +195,7 @@ func runWorkOrdersDelete(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	setRequest("DELETE", "/work_orders/"+args[0])
 
 	_, err = client.DeleteWorkOrder(context.Background(), id)
 	if err != nil {

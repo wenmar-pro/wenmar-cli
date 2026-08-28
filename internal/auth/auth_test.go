@@ -44,8 +44,8 @@ func TestResolveToken_ErrorWhenNoToken(t *testing.T) {
 }
 
 func TestResolveBaseURL_FlagTakesPrecedence(t *testing.T) {
-	os.Setenv("WENMAR_BASE_URL", "https://env.example.com")
-	defer os.Unsetenv("WENMAR_BASE_URL")
+	os.Setenv("WENMAR_URL", "https://env.example.com")
+	defer os.Unsetenv("WENMAR_URL")
 
 	url := ResolveBaseURL("https://flag.example.com")
 	if url != "https://flag.example.com" {
@@ -54,8 +54,8 @@ func TestResolveBaseURL_FlagTakesPrecedence(t *testing.T) {
 }
 
 func TestResolveBaseURL_EnvVarFallback(t *testing.T) {
-	os.Setenv("WENMAR_BASE_URL", "https://env.example.com")
-	defer os.Unsetenv("WENMAR_BASE_URL")
+	os.Setenv("WENMAR_URL", "https://env.example.com")
+	defer os.Unsetenv("WENMAR_URL")
 
 	url := ResolveBaseURL("")
 	if url != "https://env.example.com" {
@@ -64,7 +64,7 @@ func TestResolveBaseURL_EnvVarFallback(t *testing.T) {
 }
 
 func TestResolveBaseURL_Default(t *testing.T) {
-	os.Unsetenv("WENMAR_BASE_URL")
+	os.Unsetenv("WENMAR_URL")
 
 	url := ResolveBaseURL("")
 	if url != "https://app.wenmarpro.com" {

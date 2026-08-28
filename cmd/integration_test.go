@@ -15,7 +15,7 @@ import (
 func TestMain(m *testing.M) {
 	// Ensure tests never inherit a real token or base URL.
 	os.Unsetenv("WENMAR_TOKEN")
-	os.Unsetenv("WENMAR_BASE_URL")
+	os.Unsetenv("WENMAR_URL")
 	code := m.Run()
 	os.Exit(code)
 }
@@ -25,6 +25,7 @@ func execute(args ...string) (string, error) {
 	// Reset global output flags so prior tests don't leak state.
 	mdFlag, jsonFlag, agentFlag, jqFlag = false, false, false, ""
 	idsOnlyFlag, countFlag = false, false
+	currentDebugInfo = nil
 	rootCmd.SetArgs(args)
 	buf := &bytes.Buffer{}
 	rootCmd.SetOut(buf)
@@ -576,5 +577,77 @@ func TestCompletion_Fish(t *testing.T) {
 	}
 	if !strings.Contains(out, "wenmar") {
 		t.Errorf("expected fish completion script, got: %s", out[:200])
+	}
+}
+
+func TestCustomersList_WrongToken_DebugOutput(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	_, err := execute(
+		"customers", "list",
+		"--base-url", srv.URL, "--token", "wrong-token",
+	)
+	if err == nil {
+		t.Fatal("expected error for wrong token")
+	}
+
+	var buf bytes.Buffer
+	errors.PrintError(&buf, err, currentDebugInfo)
+	out := buf.String()
+
+	for _, want := range []string{
+		"ERROR:",
+		"token:",
+		"base URL:",
+		"request:  GET /customers",
+		"status:   401",
+		"Hint: the token may be invalid",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("expected debug output to contain %q, got:\n%s", want, out)
+		}
+	}
+}
+
+func TestCustomersShow_NotFound_DebugOutput(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	_, err := execute(
+		"customers", "show", "999999",
+		"--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err == nil {
+		t.Fatal("expected error for 404")
+	}
+
+	var buf bytes.Buffer
+	errors.PrintError(&buf, err, currentDebugInfo)
+	out := buf.String()
+
+	if !strings.Contains(out, "request:  GET /customers/999999") {
+		t.Errorf("expected request line with path, got:\n%s", out)
+	}
+	if !strings.Contains(out, "status:   404") {
+		t.Errorf("expected status 404, got:\n%s", out)
+	}
+}
+
+func TestCustomersList_DebugFlag_Success(t *testing.T) {
+	srv := startFakeAPI(t, "secret-token")
+	out, err := execute(
+		"customers", "list", "--json", "--debug",
+		"--base-url", srv.URL, "--token", "secret-token",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// stdout must still be clean JSON (debug goes to stderr, which execute
+	// does not capture).
+	var env struct {
+		OK bool `json:"ok"`
+	}
+	if err := json.Unmarshal([]byte(out), &env); err != nil {
+		t.Fatalf("stdout should be clean JSON envelope: %v\n%s", err, out)
+	}
+	if !env.OK {
+		t.Error("expected ok:true in envelope")
 	}
 }
