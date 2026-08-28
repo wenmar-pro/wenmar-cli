@@ -54,10 +54,10 @@ func printDebugBlock(w io.Writer, info *DebugInfo, apiErr *wenmar.APIError) {
 	if apiErr.StatusCode != 0 {
 		printDebugLine(w, "status", fmt.Sprintf("%d", apiErr.StatusCode), "")
 	}
-	if len(apiErr.Details) > 0 {
+	if fe := apiErr.FieldErrors(); len(fe) > 0 {
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "  field errors:")
-		for field, msgs := range apiErr.Details {
+		for field, msgs := range fe {
 			fmt.Fprintf(w, "    %s: %v\n", field, msgs)
 		}
 	}

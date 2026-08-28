@@ -47,7 +47,7 @@ func TestPrintError_ValidationDetails(t *testing.T) {
 		StatusCode: 422,
 		Method:     "POST",
 		Path:       "/customers",
-		Details:    map[string]any{"full_name": []any{"can't be blank"}},
+		FieldErrorsMap: map[string]any{"full_name": []any{"can't be blank"}},
 	}
 	info := &DebugInfo{TokenSource: "--token flag", TokenMasked: "abcd...wxyz", BaseURL: "http://localhost:3000"}
 

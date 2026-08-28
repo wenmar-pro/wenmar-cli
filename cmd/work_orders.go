@@ -50,6 +50,41 @@ var workOrdersDeleteCmd = &cobra.Command{
 	RunE:  runWorkOrdersDelete,
 }
 
+var workOrdersEstimateCmd = &cobra.Command{
+	Use:   "estimate <id>",
+	Short: "Show the estimate tab (services) for a work order",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runWorkOrdersTab("estimate"),
+}
+
+var workOrdersWipCmd = &cobra.Command{
+	Use:   "wip <id>",
+	Short: "Show the work-in-progress tab (services) for a work order",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runWorkOrdersTab("wip"),
+}
+
+var workOrdersInspectionCmd = &cobra.Command{
+	Use:   "inspection <id>",
+	Short: "Show the inspection tab (inspection reports) for a work order",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runWorkOrdersTab("inspection"),
+}
+
+var workOrdersPartsCmd = &cobra.Command{
+	Use:   "parts <id>",
+	Short: "Show the parts tab (services) for a work order",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runWorkOrdersTab("parts"),
+}
+
+var workOrdersPaymentsCmd = &cobra.Command{
+	Use:   "payments <id>",
+	Short: "Show the payments tab (payments) for a work order",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runWorkOrdersTab("payments"),
+}
+
 var (
 	workOrderCreateCustomer     int
 	workOrderCreateVehicle      int
@@ -68,7 +103,8 @@ func init() {
 	workOrdersUpdateCmd.Flags().StringVar(&workOrderUpdateIntakeMethod, "intake-method", "", "Intake method (e.g. drop_off, walk_in)")
 	workOrdersDeleteCmd.Flags().BoolVar(&workOrdersDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
 
-	workOrdersCmd.AddCommand(workOrdersListCmd, workOrdersShowCmd, workOrdersCreateCmd, workOrdersUpdateCmd, workOrdersDeleteCmd)
+	workOrdersCmd.AddCommand(workOrdersListCmd, workOrdersShowCmd, workOrdersCreateCmd, workOrdersUpdateCmd, workOrdersDeleteCmd,
+		workOrdersEstimateCmd, workOrdersWipCmd, workOrdersInspectionCmd, workOrdersPartsCmd, workOrdersPaymentsCmd)
 	rootCmd.AddCommand(workOrdersCmd)
 }
 
@@ -204,4 +240,59 @@ func runWorkOrdersDelete(cmd *cobra.Command, args []string) error {
 	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("work_orders")}
 	return output.Render(cmd.OutOrStdout(), nil, fmt.Sprintf("Work order %d deleted.", id), nil, opts)
+}
+
+// runWorkOrdersTab returns a RunE that fetches a work order sub-collection
+// (estimate/wip/inspection/parts/payments) and renders it generically.
+func runWorkOrdersTab(tab string) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		client, err := newScopedClient(context.Background())
+		if err != nil {
+			return err
+		}
+		setRequest("GET", fmt.Sprintf("/work_orders/%s/%s", args[0], tab))
+
+		id, err := strconv.Atoi(args[0])
+		if err != nil {
+			return fmt.Errorf("id must be an integer")
+		}
+
+		var data any
+		switch tab {
+		case "estimate":
+			resp, err := client.ShowWorkOrderEstimate(context.Background(), id)
+			if err != nil {
+				return err
+			}
+			data = extractData(resp.JSON200)
+		case "wip":
+			resp, err := client.ShowWorkOrderWip(context.Background(), id)
+			if err != nil {
+				return err
+			}
+			data = extractData(resp.JSON200)
+		case "inspection":
+			resp, err := client.ShowWorkOrderInspection(context.Background(), id)
+			if err != nil {
+				return err
+			}
+			data = extractData(resp.JSON200)
+		case "parts":
+			resp, err := client.ShowWorkOrderParts(context.Background(), id)
+			if err != nil {
+				return err
+			}
+			data = extractData(resp.JSON200)
+		case "payments":
+			resp, err := client.ShowWorkOrderPayments(context.Background(), id)
+			if err != nil {
+				return err
+			}
+			data = extractData(resp.JSON200)
+		}
+
+		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("work_orders", args[0])}
+		return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	}
 }
