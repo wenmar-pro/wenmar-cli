@@ -3,6 +3,7 @@
 A command-line interface for the [Wenmar Pro](https://wenmarpro.com) automotive shop management software.
 
 Built on the [wenmar-sdk Go module](https://github.com/Wenmar-Pro/wenmar-sdk). Single static binary, no runtime dependencies.
+- [API documentation](https://github.com/Wenmar-Pro/wenmar-api) — full API reference in the wenmar-api repo
 
 ## Install
 
