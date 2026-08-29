@@ -69,12 +69,13 @@ type Spec struct {
 type PathItem map[string]Operation // keyed by HTTP method (get, post, patch, delete, put)
 
 type Operation struct {
-	OperationID string         `yaml:"operationId"`
-	Summary     string         `yaml:"summary"`
-	Tags        []string       `yaml:"tags"`
-	Parameters  []Parameter    `yaml:"parameters"`
-	RequestBody *RequestBody   `yaml:"requestBody"`
-	Responses   map[string]Response `yaml:"responses"`
+	OperationID  string              `yaml:"operationId"`
+	Summary      string              `yaml:"summary"`
+	Tags         []string            `yaml:"tags"`
+	Parameters   []Parameter         `yaml:"parameters"`
+	RequestBody  *RequestBody        `yaml:"requestBody"`
+	Responses    map[string]Response `yaml:"responses"`
+	XPaginated   bool                `yaml:"x-paginated"`
 }
 
 type Parameter struct {
@@ -120,12 +121,14 @@ func loadSpec(path string) (*Spec, error) {
 type Overrides struct {
 	Commands      map[string]CommandOverride `yaml:"commands"`
 	FlagOverrides map[string]map[string]FlagOverride `yaml:"flag_overrides"`
+	Exclude       []string                   `yaml:"exclude"`
 }
 
 type CommandOverride struct {
 	Resource string `yaml:"resource"`
 	Command  string `yaml:"command"`
 	Summary  string `yaml:"summary"`
+	Method   string `yaml:"method"` // override SDK method name if it differs from operationId mapping
 }
 
 type FlagOverride struct {

@@ -1,3 +1,4 @@
+//go:build !generated
 package cmd
 
 import (
@@ -175,7 +176,7 @@ func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
 }
 
 func runWorkOrdersDelete(cmd *cobra.Command, args []string) error {
-	return runDelete(cmd, args, "Work order", "work_orders", "/work_orders/", workOrdersDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+	return runDelete(cmd, args, "Work order", "work_orders", idPath("/work_orders/"), workOrdersDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
 		return client.DeleteWorkOrder(ctx, id)
 	})
 }

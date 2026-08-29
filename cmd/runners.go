@@ -205,7 +205,7 @@ func runAction(cmd *cobra.Command, args []string, resource, method string, pathF
 // the dry-run block. resourceLabel is the display name (e.g. "Driver",
 // "Work order"); resourceSlug is the slug for breadcrumbs (e.g. "drivers",
 // "work_orders").
-func runDelete(cmd *cobra.Command, args []string, resourceLabel, resourceSlug, pathPrefix string,
+func runDelete(cmd *cobra.Command, args []string, resourceLabel, resourceSlug string, pathFn func(args []string) string,
 	dryRun bool,
 	deleter func(ctx context.Context, client *wenmar.Client, id int) (any, error)) error {
 	id, err := strconv.Atoi(args[0])
@@ -227,7 +227,7 @@ func runDelete(cmd *cobra.Command, args []string, resourceLabel, resourceSlug, p
 	if err != nil {
 		return err
 	}
-	setRequest("DELETE", pathPrefix+args[0])
+	setRequest("DELETE", pathFn(args))
 
 	_, err = deleter(context.Background(), client, id)
 	if err != nil {

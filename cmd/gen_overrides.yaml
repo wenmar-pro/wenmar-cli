@@ -2,6 +2,35 @@
 # This file is hand-maintained — the generator reads it to produce
 # ergonomic command names and groupings.
 
+# Operations to exclude from generation (no SDK wrapper yet, or
+# requires hand-written flag/param logic).
+exclude:
+  - get_customers_vehicle_history
+  - delete_customer
+  - list_team
+  - get_work_orders_summary
+  - create_work_order_payment
+  - update_tags
+  - create_customer_tag
+  - create_vehicle_tag
+  # Query-param operations need special handling (params -> SDK args)
+  - check_customer_duplicate
+  - check_vehicle_duplicate
+  - lookup_customer
+  - lookup_vehicle
+  - prefill_vehicle
+  - decode_vin
+  # Paginated lists need WithPagination SDK methods (keep hand-written)
+  - list_customers
+  - list_vehicles
+  - list_work_orders
+  # Work order tabs use custom runner pattern
+  - show_work_order_estimate
+  - show_work_order_wip
+  - show_work_order_inspection
+  - show_work_order_parts
+  - show_work_order_payments
+
 # Map operationId -> CLI resource (cobra parent command name) and
 # subcommand name. If an operationId is not listed here, the generator
 # auto-derives from the path.
@@ -11,210 +40,258 @@ commands:
     resource: account
     command: show
     summary: Show account details
+    method: ListAccount
 
   # vendors (trivial, auto-derivable)
   list_vendors:
     resource: vendors
     command: list
     summary: List all vendors, paginated via the Link header
+    method: ListVendors
   show_vendor:
     resource: vendors
     command: show
     summary: Show a single vendor by ID
+    method: ShowVendor
 
   # locations
   show_location:
     resource: locations
     command: show
     summary: Show a location by ID
+    method: ShowLocation
 
   # statements
   list_customers_statements:
     resource: statements
     command: list
     summary: List statements for a customer, paginated via the Link header
+    method: ListStatements
   show_statement:
     resource: statements
     command: show
     summary: Show a single statement by ID
+    method: ShowStatement
 
   # drivers (nested under /customers but CLI groups as their own resource)
   list_customers_drivers:
     resource: drivers
     command: list
     summary: List drivers for a customer, paginated via the Link header
+    method: ListDrivers
   show_driver:
     resource: drivers
     command: show
     summary: Show a single driver by ID
+    method: ShowDriver
   create_driver:
     resource: drivers
     command: create
     summary: Create a new driver for a customer
+    method: CreateDriver
   update_driver:
     resource: drivers
     command: update
     summary: Update a driver by ID
+    method: UpdateDriver
   delete_driver:
     resource: drivers
     command: delete
     summary: Delete a driver by ID
+    method: DeleteDriver
 
   # customers
   list_customers:
     resource: customers
     command: list
     summary: List all customers, paginated via the Link header
+    method: ListCustomers
   show_customer:
     resource: customers
     command: show
     summary: Show a single customer by ID
+    method: ShowCustomer
   create_customer:
     resource: customers
     command: create
     summary: Create a new customer
+    method: CreateCustomer
   update_customer:
     resource: customers
     command: update
     summary: Update a customer by ID
+    method: UpdateCustomer
   delete_customer:
     resource: customers
     command: delete
     summary: Delete a customer by ID
+    method: DeleteCustomer
   merge_customer:
     resource: customers
     command: merge
     summary: Merge a source customer into this keeper
+    method: MergeCustomer
   lookup_customer:
     resource: customers
     command: lookup
     summary: Search customers by name/email/phone
+    method: LookupCustomer
   check_customer_duplicate:
     resource: customers
     command: duplicates
     summary: Check for duplicate customers
+    method: CheckCustomerDuplicate
   list_customers_vehicles:
     resource: customers
     command: vehicles
     summary: List a customer's vehicles
+    method: ListCustomerVehicles
   list_customers_work_orders:
     resource: customers
     command: work-orders
     summary: List a customer's work orders
+    method: ListCustomerWorkOrders
 
   # vehicles
   list_vehicles:
     resource: vehicles
     command: list
     summary: List all vehicles
+    method: ListVehicles
   show_vehicle:
     resource: vehicles
     command: show
     summary: Show a single vehicle by ID
+    method: ShowVehicle
   create_vehicle:
     resource: vehicles
     command: create
     summary: Create a new vehicle
+    method: CreateVehicle
   update_vehicle:
     resource: vehicles
     command: update
     summary: Update a vehicle by ID
+    method: UpdateVehicle
   delete_vehicle:
     resource: vehicles
     command: delete
     summary: Delete a vehicle by ID
+    method: DeleteVehicle
   decode_vin:
     resource: vehicles
     command: decode-vin
     summary: Decode a VIN into make/model
+    method: DecodeVin
   check_vehicle_duplicate:
     resource: vehicles
     command: duplicates
     summary: Check for duplicate vehicles matching a VIN
+    method: CheckVehicleDuplicate
   transfer_vehicle:
     resource: vehicles
     command: transfer
     summary: Transfer a vehicle to a new customer
+    method: TransferVehicle
   merge_vehicle:
     resource: vehicles
     command: merge
     summary: Merge a source vehicle into this keeper
+    method: MergeVehicle
   prefill_vehicle:
     resource: vehicles
     command: prefill
     summary: Prefill vehicle data from a VIN
+    method: PrefillVehicle
   lookup_vehicle:
     resource: vehicles
     command: lookup
     summary: Search vehicles by make/model/plate/vin
+    method: LookupVehicle
   list_vehicles_work_orders:
     resource: vehicles
     command: work-orders
     summary: List a vehicle's work orders
+    method: ListVehicleWorkOrders
 
   # work_orders
   list_work_orders:
     resource: work_orders
     command: list
     summary: List all work orders, paginated via the Link header
+    method: ListWorkOrders
   show_work_order:
     resource: work_orders
     command: show
     summary: Show a single work order by ID
+    method: ShowWorkOrder
   create_work_order:
     resource: work_orders
     command: create
     summary: Create a new work order
+    method: CreateWorkOrder
   update_work_order:
     resource: work_orders
     command: update
     summary: Update a work order by ID
+    method: UpdateWorkOrder
   delete_work_order:
     resource: work_orders
     command: delete
     summary: Delete a work order by ID
+    method: DeleteWorkOrder
   show_work_order_estimate:
     resource: work_orders
     command: estimate
     summary: Show the estimate tab (services) for a work order
+    method: ShowWorkOrderEstimate
   show_work_order_wip:
     resource: work_orders
     command: wip
     summary: Show the work-in-progress tab (services) for a work order
+    method: ShowWorkOrderWip
   show_work_order_inspection:
     resource: work_orders
     command: inspection
     summary: Show the inspection tab (inspection reports) for a work order
+    method: ShowWorkOrderInspection
   show_work_order_parts:
     resource: work_orders
     command: parts
     summary: Show the parts tab (services) for a work order
+    method: ShowWorkOrderParts
   show_work_order_payments:
     resource: work_orders
     command: payments
     summary: Show the payments tab (payments) for a work order
+    method: ShowWorkOrderPayments
   create_work_order_payment:
     resource: work_orders
     command: create-payment
     summary: Create a payment against a work order
+    method: CreateWorkOrderPayment
 
   # tags
   list_tags:
     resource: tags
     command: list
     summary: List all customer and vehicle tags
+    method: ListTags
   update_tags:
     resource: tags
     command: update
     summary: Bulk update/destroy customer and vehicle tags
+    method: UpdateTags
   create_customer_tag:
     resource: tags
     command: create
     summary: Create a customer or vehicle tag
+    method: CreateCustomerTag
   create_vehicle_tag:
     resource: tags
     command: create
     summary: Create a customer or vehicle tag
+    method: CreateVehicleTag
 
 # Flag overrides: map request body fields to flag names with help text.
 # Fields not listed here auto-derive from the property name (snake_case -> kebab-case).

@@ -1,3 +1,4 @@
+//go:build !generated
 package cmd
 
 import (
@@ -126,7 +127,7 @@ func runDriversUpdate(cmd *cobra.Command, args []string) error {
 }
 
 func runDriversDelete(cmd *cobra.Command, args []string) error {
-	return runDelete(cmd, args, "Driver", "drivers", fmt.Sprintf("/customers/%d/drivers/", driversCustomerID), driversDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+	return runDelete(cmd, args, "Driver", "drivers", func(a []string) string { return fmt.Sprintf("/customers/%d/drivers/%s", driversCustomerID, a[0]) }, driversDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
 		return client.DeleteDriver(ctx, driversCustomerID, id)
 	})
 }

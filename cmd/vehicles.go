@@ -1,3 +1,4 @@
+//go:build !generated
 package cmd
 
 import (
@@ -234,7 +235,7 @@ func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 }
 
 func runVehiclesDelete(cmd *cobra.Command, args []string) error {
-	return runDelete(cmd, args, "Vehicle", "vehicles", "/vehicles/", vehiclesDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+	return runDelete(cmd, args, "Vehicle", "vehicles", idPath("/vehicles/"), vehiclesDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
 		return client.DeleteVehicle(ctx, id)
 	})
 }
