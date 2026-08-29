@@ -16,20 +16,34 @@ type CommandGroup struct {
 
 // GenCommand represents one cobra command to emit.
 type GenCommand struct {
-	OperationID  string
-	Resource     string
-	Command      string
-	Summary      string
-	Method       string
-	Path         string
-	PathParams   []Parameter
-	QueryParams  []Parameter
-	RequestBody  *RequestBody
-	IsPaginated  bool
-	ExtraPathParams []Parameter
-	HasIDParam   bool
-	IDType       string
-	SDKMethod    string // override for SDK method name
+	OperationID     string
+	Resource        string
+	Command         string
+	Summary         string
+	Method          string
+	Path            string
+	PathParams      []Parameter
+	QueryParams     []Parameter
+	RequestBody     *RequestBody
+	IsPaginated     bool
+	ExtraPathParams  []Parameter
+	HasIDParam      bool
+	IDType          string
+	SDKMethod       string
+	RequestStruct   string // SDK request struct name
+	BodyFields      []BodyField
+}
+
+// BodyField represents a scalar field from the request body schema
+// that becomes a CLI flag.
+type BodyField struct {
+	JSONName  string // snake_case (e.g. "full_name")
+	GoName    string // PascalCase (e.g. "FullName")
+	FlagName  string // kebab-case (e.g. "full-name")
+	Type      string // "string", "integer", "boolean"
+	Required  bool
+	IsPointer bool   // true if the SDK struct field is a pointer type
+	HelpText  string
 }
 
 // groupOperations reads the spec and overrides to produce command groups.
@@ -116,6 +130,10 @@ func buildCommand(op Operation, method, path string, overrides *Overrides) *GenC
 		if ov.Method != "" {
 			cmd.SDKMethod = ov.Method
 		}
+		if ov.RequestStruct != "" {
+			cmd.RequestStruct = ov.RequestStruct
+			cmd.BodyFields = parseBodyFields(op, ov.RequestStruct)
+		}
 		return cmd
 	}
 
@@ -167,6 +185,11 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides) (string, er
 		if classifyCommand(cmd) == "delete" {
 			dryRunVar := flagVarName(cmd.Resource, "delete_dry_run")
 			flagVarsSeen[dryRunVar] = "bool"
+		}
+		// Body field flags.
+		for _, bf := range cmd.BodyFields {
+			vn := bodyFieldVarName(cmd.Resource, bf.GoName)
+			flagVarsSeen[vn] = goType(bf.Type)
 		}
 	}
 
@@ -225,7 +248,7 @@ func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) {
 
 func needsExactArgs(cmdType string) bool {
 	switch cmdType {
-	case "show", "showStr", "update", "delete":
+	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate":
 		return true
 	default:
 		return false
@@ -247,11 +270,17 @@ func classifyCommand(cmd GenCommand) string {
 		}
 		return "list"
 	case "post":
+		if cmd.HasIDParam && cmd.RequestBody != nil && isSubAction(cmd) {
+			return "actionCreate" // e.g. merge — POST to /resource/{id}/action
+		}
 		if cmd.RequestBody != nil {
 			return "create"
 		}
 		return "action"
 	case "patch":
+		if cmd.HasIDParam && cmd.RequestBody != nil && isSubAction(cmd) {
+			return "actionUpdate" // e.g. transfer — PATCH to /resource/{id}/action
+		}
 		if cmd.RequestBody != nil {
 			return "update"
 		}
@@ -265,11 +294,23 @@ func classifyCommand(cmd GenCommand) string {
 
 func useArgsSuffix(cmdType string, cmd GenCommand) string {
 	switch cmdType {
-	case "show", "showStr", "update", "delete":
+	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate":
 		return " <id>"
 	default:
 		return ""
 	}
+}
+
+// isSubAction returns true if the path has a sub-action after {id}
+// (e.g. /vehicles/{id}/transfer, /customers/{id}/merge).
+func isSubAction(cmd GenCommand) bool {
+	path := cmd.Path
+	idPos := strings.Index(path, "{id}")
+	if idPos < 0 {
+		return false
+	}
+	afterID := path[idPos+len("{id}"):]
+	return strings.Contains(afterID, "/")
 }
 
 func cmdVarName(cmd GenCommand) string {
@@ -278,6 +319,26 @@ func cmdVarName(cmd GenCommand) string {
 
 func runHandlerName(cmd GenCommand) string {
 	return "run" + titleCase(toCamelCase(cmd.Resource)) + titleCase(cmd.Command)
+}
+
+// wrapPtr wraps a value in strPtr() or boolPtr() for optional pointer fields.
+func wrapPtr(goType string, val jen.Code) jen.Code {
+	switch goType {
+	case "integer":
+		return jen.Id("intPtr").Call(val)
+	case "string":
+		return jen.Id("strPtr").Call(val)
+	case "boolean":
+		return jen.Id("boolPtr").Call(val)
+	default:
+		return jen.Id("strPtr").Call(val)
+	}
+}
+
+// bodyFieldVarName generates the Go variable name for a body field flag.
+// e.g. resource="drivers", goName="FullName" -> "driversCreateFullName"
+func bodyFieldVarName(resource string, goName string) string {
+	return toCamelCase(resource) + goName
 }
 
 // flagVarName generates the Go variable name for a flag.
@@ -298,6 +359,16 @@ func emitFlagRegistration(g *jen.Group, cmd GenCommand) {
 		args := []jen.Code{jen.Op("&").Id(varName), jen.Lit(flagName), DefaultForType(p.Schema.Type), jen.Lit(helpText)}
 		g.Id(cmdVar).Dot("Flags").Call().Dot(flagBindMethod(p.Schema.Type)).Call(args...)
 		g.Id(cmdVar).Dot("MarkFlagRequired").Call(jen.Lit(flagName))
+	}
+
+	// Body field flags.
+	for _, bf := range cmd.BodyFields {
+		varName := bodyFieldVarName(cmd.Resource, bf.GoName)
+		args := []jen.Code{jen.Op("&").Id(varName), jen.Lit(bf.FlagName), DefaultForType(bf.Type), jen.Lit(bf.HelpText)}
+		g.Id(cmdVar).Dot("Flags").Call().Dot(flagBindMethod(bf.Type)).Call(args...)
+		if bf.Required {
+			g.Id(cmdVar).Dot("MarkFlagRequired").Call(jen.Lit(bf.FlagName))
+		}
 	}
 
 	// Delete gets --dry-run.
@@ -358,6 +429,10 @@ func emitHandler(f *jen.File, cmd GenCommand, cmdType string, overrides *Overrid
 			emitDeleteHandler(g, cmd)
 		case "update":
 			emitUpdateHandler(g, cmd)
+		case "actionCreate":
+			emitActionCreateHandler(g, cmd)
+		case "actionUpdate":
+			emitActionUpdateHandler(g, cmd)
 		default:
 			emitActionHandler(g, cmd)
 		}
@@ -403,6 +478,113 @@ func requestPathExpr(cmd GenCommand) jen.Code {
 	return jen.Qual("fmt", "Sprintf").Call(allArgs...)
 }
 
+// parseBodyFields extracts scalar fields from the request body schema
+// and maps them to Go struct field names. Array and object fields are
+// skipped (they need hand-written flag logic).
+func parseBodyFields(op Operation, requestStruct string) []BodyField {
+	if op.RequestBody == nil {
+		return nil
+	}
+	media, ok := op.RequestBody.Content["application/json"]
+	if !ok {
+		return nil
+	}
+	schema := media.Schema
+
+	// Unwrap wrapper object (e.g. { customer: { ... } }).
+	props := schemaProps(schema)
+	if props == nil {
+		return nil
+	}
+
+	// Check if there's a single wrapper property that's an object.
+	if len(props) == 1 {
+		for propName, propSchema := range props {
+			if propSchema.Type == "object" {
+				// It's a wrapper — use the inner object's properties.
+				return extractScalarFields(propSchema, requestStruct)
+			}
+			// Not a wrapper — flat body.
+			_ = propName
+		}
+	}
+
+	// Flat body (e.g. merge_customer: { source_customer_id: int }).
+	return extractScalarFields(schema, requestStruct)
+}
+
+// extractScalarFields returns BodyFields for scalar properties of a schema.
+// Array and object fields are skipped.
+func extractScalarFields(schema Schema, requestStruct string) []BodyField {
+	props := schemaProps(schema)
+	if props == nil {
+		return nil
+	}
+	var required []string
+	if schema.Required != nil {
+		required = *schema.Required
+	}
+
+	var fields []BodyField
+	for name, prop := range props {
+		// Skip arrays and objects — they need hand-written flag logic.
+		if prop.Type == "array" || prop.Type == "object" {
+			continue
+		}
+		f := BodyField{
+			JSONName:  name,
+			GoName:    snakeToPascal(name),
+			FlagName:  kebabCase(name),
+			Type:      prop.Type,
+			Required:  contains(required, name),
+			IsPointer: !contains(required, name), // optional fields are pointers
+			HelpText:   prettifyParamName(name),
+		}
+		if f.Required {
+			f.HelpText += " (required)"
+		}
+		fields = append(fields, f)
+	}
+	sort.Slice(fields, func(i, j int) bool {
+		return fields[i].FlagName < fields[j].FlagName
+	})
+	return fields
+}
+
+// schemaProps extracts the "properties" map from a Schema.
+// The OpenAPI spec uses inline schemas, so we need to parse the
+// raw YAML map. Since our Schema struct doesn't have Properties,
+// we use a raw map approach.
+func schemaProps(schema Schema) map[string]Schema {
+	return schema.Properties
+}
+
+// snakeToPascal converts snake_case to PascalCase.
+func snakeToPascal(s string) string {
+	parts := strings.Split(s, "_")
+	for i, p := range parts {
+		if p == "" {
+			continue
+		}
+		// Special cases for Go naming
+		if p == "id" {
+			parts[i] = "ID"
+		} else {
+			parts[i] = strings.ToUpper(p[:1]) + p[1:]
+		}
+	}
+	return strings.Join(parts, "")
+}
+
+func contains(s []string, v string) bool {
+	for _, x := range s {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
+
 // pathFnForRunner wraps the path prefix in a func(args []string) string
 // that the runners expect.
 func pathFnForRunner(cmd GenCommand) jen.Code {
@@ -415,10 +597,31 @@ func pathFnForRunner(cmd GenCommand) jen.Code {
 		}
 		return jen.Id("idPath").Call(jen.Lit(path[:idPos]))
 	}
-	// Complex case: prefix includes flag vars, wrap in a closure.
+	// Complex case: prefix includes flag vars and args[0] for {id}.
+	// Build: func(a []string) string { return fmt.Sprintf("/customers/%d/drivers/%s", driversCustomerID, a[0]) }
 	return jen.Func().Params(jen.Id("a").Index().Id("string")).Id("string").Block(
-		jen.Return(pathPrefixForRunner(cmd)),
+		jen.Return(pathWithIDExpr(cmd)),
 	)
+}
+
+// pathWithIDExpr builds the Sprintf expression for a path that includes
+// both extra path params (flags) and the {id} positional arg.
+func pathWithIDExpr(cmd GenCommand) jen.Code {
+	path := cmd.Path
+	fmtStr := path
+	args := []jen.Code{}
+	for _, p := range cmd.PathParams {
+		placeholder := "{" + p.Name + "}"
+		if p.Name == "id" {
+			fmtStr = strings.ReplaceAll(fmtStr, placeholder, "%s")
+			args = append(args, jen.Id("a").Index(jen.Lit(0)))
+		} else {
+			fmtStr = strings.ReplaceAll(fmtStr, placeholder, "%d")
+			args = append(args, jen.Id(flagVarName(cmd.Resource, p.Name)))
+		}
+	}
+	allArgs := append([]jen.Code{jen.Lit(fmtStr)}, args...)
+	return jen.Qual("fmt", "Sprintf").Call(allArgs...)
 }
 
 // pathPrefixForRunner builds the path prefix expression for runShow/runDelete/runUpdate.
@@ -538,14 +741,118 @@ func emitListPaginatedHandler(g *jen.Group, cmd GenCommand) {
 
 func emitCreateHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
-	g.Comment("TODO: implement create handler — construct request body from flags and call client." + cmd.OperationID)
-	g.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("create %s not yet generated"), jen.Lit(resource)))
+	summary := titleCase(singularize(resource)) + " created."
+
+	// Build the body builder closure.
+	bodyBuilder := jen.Func().Params().Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
+		if cmd.RequestStruct == "" || len(cmd.BodyFields) == 0 {
+			bg.Return(jen.Nil(), jen.Nil())
+			return
+		}
+		// Construct: req := wenmar.CreateDriverRequest{FullName: driversCreateFullName, Phone: driversCreatePhone}
+		dict := jen.Dict{}
+		for _, bf := range cmd.BodyFields {
+			varName := bodyFieldVarName(cmd.Resource, bf.GoName)
+			if bf.IsPointer {
+				dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
+			} else {
+				dict[jen.Id(bf.GoName)] = jen.Id(varName)
+			}
+		}
+		bg.Id("req").Op(":=").Qual(wenmarPkg, cmd.RequestStruct).Values(dict)
+		bg.Return(jen.Id("req"), jen.Nil())
+	})
+
+	// Build the sender closure.
+	sdkMethod := sdkMethodNameFor(cmd)
+	sender := jen.Func().Params(
+		jen.Id("ctx").Qual("context", "Context"),
+		jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+		jen.Id("body").Any(),
+	).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
+		if cmd.RequestStruct == "" || len(cmd.BodyFields) == 0 {
+			bg.Return(jen.Nil(), jen.Nil())
+			return
+		}
+		callArgs := sdkCallArgs(cmd, false)
+		callArgs = append(callArgs, jen.Id("body").Assert(jen.Qual(wenmarPkg, cmd.RequestStruct)))
+		bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(callArgs...)
+		bg.If(jen.Id("err").Op("!=").Nil()).Block(
+			jen.Return(jen.Nil(), jen.Id("err")),
+		)
+		bg.Return(jen.Id("resp").Dot("JSON201"), jen.Nil())
+	})
+
+	g.Return(jen.Id("runCreate").Call(
+		jen.Id("cmd"),
+		jen.Lit(resource),
+		requestPathExpr(cmd),
+		jen.Lit(summary),
+		bodyBuilder,
+		sender,
+	))
 }
 
 func emitUpdateHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
-	g.Comment("TODO: implement update handler — construct request body from flags and call client." + cmd.OperationID)
-	g.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("update %s not yet generated"), jen.Lit(resource)))
+	summary := titleCase(singularize(resource)) + " updated."
+
+	// Build the body builder closure (takes id as param).
+	bodyBuilder := jen.Func().Params(jen.Id("id").Id("int")).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
+		if cmd.RequestStruct == "" || len(cmd.BodyFields) == 0 {
+			bg.Return(jen.Nil(), jen.Nil())
+			return
+		}
+		dict := jen.Dict{}
+		for _, bf := range cmd.BodyFields {
+			varName := bodyFieldVarName(cmd.Resource, bf.GoName)
+			if bf.IsPointer {
+				dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
+			} else {
+				dict[jen.Id(bf.GoName)] = jen.Id(varName)
+			}
+		}
+		bg.Id("req").Op(":=").Qual(wenmarPkg, cmd.RequestStruct).Values(dict)
+		bg.Return(jen.Id("req"), jen.Nil())
+	})
+
+	// Build the sender closure.
+	sdkMethod := sdkMethodNameFor(cmd)
+	sender := jen.Func().Params(
+		jen.Id("ctx").Qual("context", "Context"),
+		jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+		jen.Id("id").Id("int"),
+		jen.Id("body").Any(),
+	).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
+		if cmd.RequestStruct == "" || len(cmd.BodyFields) == 0 {
+			bg.Return(jen.Nil(), jen.Nil())
+			return
+		}
+		callArgs := sdkCallArgs(cmd, true)
+		callArgs = append(callArgs, jen.Id("body").Assert(jen.Qual(wenmarPkg, cmd.RequestStruct)))
+		bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(callArgs...)
+		bg.If(jen.Id("err").Op("!=").Nil()).Block(
+			jen.Return(jen.Nil(), jen.Id("err")),
+		)
+		bg.Return(jen.Id("resp").Dot("JSON200"), jen.Nil())
+	})
+
+	g.Return(jen.Id("runUpdate").Call(
+		jen.Id("cmd"), jen.Id("args"),
+		jen.Lit(resource), pathFnForRunner(cmd), jen.Lit(summary),
+		bodyBuilder,
+		sender,
+	))
+}
+
+// pathPrefixString returns the raw string prefix for runUpdate.
+func pathPrefixString(cmd GenCommand) string {
+	path := cmd.Path
+	idPos := strings.Index(path, "{id}")
+	if idPos < 0 {
+		return path + "/"
+	}
+	return path[:idPos]
 }
 
 func emitDeleteHandler(g *jen.Group, cmd GenCommand) {
@@ -566,6 +873,58 @@ func emitDeleteHandler(g *jen.Group, cmd GenCommand) {
 			bg.Return(jen.Id("client").Dot(sdkMethodNameFor(cmd)).Call(callArgs...))
 		}),
 	))
+}
+
+func emitActionCreateHandler(g *jen.Group, cmd GenCommand) {
+	resource := cmd.Resource
+	summary := titleCase(singularize(resource)) + " action completed."
+
+	bodyBuilder := jen.Func().Params(jen.Id("id").Id("int")).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
+		if cmd.RequestStruct == "" || len(cmd.BodyFields) == 0 {
+			bg.Return(jen.Nil(), jen.Nil())
+			return
+		}
+		dict := jen.Dict{}
+		for _, bf := range cmd.BodyFields {
+			varName := bodyFieldVarName(cmd.Resource, bf.GoName)
+			if bf.IsPointer {
+				dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
+			} else {
+				dict[jen.Id(bf.GoName)] = jen.Id(varName)
+			}
+		}
+		bg.Id("req").Op(":=").Qual(wenmarPkg, cmd.RequestStruct).Values(dict)
+		bg.Return(jen.Id("req"), jen.Nil())
+	})
+
+	sdkMethod := sdkMethodNameFor(cmd)
+	sender := jen.Func().Params(
+		jen.Id("ctx").Qual("context", "Context"),
+		jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+		jen.Id("id").Id("int"),
+		jen.Id("body").Any(),
+	).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
+		callArgs := sdkCallArgs(cmd, true)
+		callArgs = append(callArgs, jen.Id("body").Assert(jen.Qual(wenmarPkg, cmd.RequestStruct)))
+		bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(callArgs...)
+		bg.If(jen.Id("err").Op("!=").Nil()).Block(
+			jen.Return(jen.Nil(), jen.Id("err")),
+		)
+		bg.Return(jen.Id("resp").Dot("JSON200"), jen.Nil())
+	})
+
+	g.Return(jen.Id("runAction").Call(
+		jen.Id("cmd"), jen.Id("args"),
+		jen.Lit(resource), jen.Lit(strings.ToUpper(cmd.Method)),
+		pathFnForRunner(cmd), jen.Lit(summary),
+		bodyBuilder,
+		sender,
+	))
+}
+
+func emitActionUpdateHandler(g *jen.Group, cmd GenCommand) {
+	// Same as actionCreate but with PATCH method.
+	emitActionCreateHandler(g, cmd)
 }
 
 func emitActionHandler(g *jen.Group, cmd GenCommand) {

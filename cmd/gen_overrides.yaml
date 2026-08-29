@@ -89,11 +89,13 @@ commands:
     command: create
     summary: Create a new driver for a customer
     method: CreateDriver
+    request_struct: CreateDriverRequest
   update_driver:
     resource: drivers
     command: update
     summary: Update a driver by ID
     method: UpdateDriver
+    request_struct: UpdateDriverRequest
   delete_driver:
     resource: drivers
     command: delete
@@ -116,11 +118,13 @@ commands:
     command: create
     summary: Create a new customer
     method: CreateCustomer
+    request_struct: CreateCustomerRequest
   update_customer:
     resource: customers
     command: update
     summary: Update a customer by ID
     method: UpdateCustomer
+    request_struct: UpdateCustomerRequest
   delete_customer:
     resource: customers
     command: delete
@@ -131,6 +135,7 @@ commands:
     command: merge
     summary: Merge a source customer into this keeper
     method: MergeCustomer
+    request_struct: MergeCustomerRequest
   lookup_customer:
     resource: customers
     command: lookup
@@ -168,6 +173,7 @@ commands:
     command: create
     summary: Create a new vehicle
     method: CreateVehicle
+    request_struct: CreateVehicleRequest
   update_vehicle:
     resource: vehicles
     command: update
@@ -193,11 +199,13 @@ commands:
     command: transfer
     summary: Transfer a vehicle to a new customer
     method: TransferVehicle
+    request_struct: TransferVehicleRequest
   merge_vehicle:
     resource: vehicles
     command: merge
     summary: Merge a source vehicle into this keeper
     method: MergeVehicle
+    request_struct: MergeVehicleRequest
   prefill_vehicle:
     resource: vehicles
     command: prefill
@@ -230,11 +238,13 @@ commands:
     command: create
     summary: Create a new work order
     method: CreateWorkOrder
+    request_struct: CreateWorkOrderRequest
   update_work_order:
     resource: work_orders
     command: update
     summary: Update a work order by ID
     method: UpdateWorkOrder
+    request_struct: UpdateWorkOrderRequest
   delete_work_order:
     resource: work_orders
     command: delete

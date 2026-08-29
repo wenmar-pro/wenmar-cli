@@ -199,7 +199,7 @@ func runCustomersCreate(cmd *cobra.Command, args []string) error {
 }
 
 func runCustomersUpdate(cmd *cobra.Command, args []string) error {
-	return runUpdate(cmd, args, "customers", "/customers/", "Customer updated.", func(id int) (any, error) {
+	return runUpdate(cmd, args, "customers", idPath("/customers/"), "Customer updated.", func(id int) (any, error) {
 		req := wenmar.UpdateCustomerRequest{}
 		applyCustomerUpdateFlags(&req)
 		return req, nil
@@ -289,15 +289,6 @@ func splitName(full string) (string, string) {
 	}
 	return parts[0], strings.Join(parts[1:], " ")
 }
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func boolPtr(b bool) *bool { return &b }
 
 func parseLabelValue(s string) (string, string) {
 	parts := strings.SplitN(s, "|", 2)

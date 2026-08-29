@@ -86,9 +86,11 @@ type Parameter struct {
 }
 
 type Schema struct {
-	Type  string   `yaml:"type"`
-	Ref   string   `yaml:"$ref"`
-	Items *Schema  `yaml:"items"`
+	Type       string             `yaml:"type"`
+	Ref        string             `yaml:"$ref"`
+	Items      *Schema            `yaml:"items"`
+	Properties map[string]Schema  `yaml:"properties"`
+	Required   *[]string          `yaml:"required"`
 }
 
 type RequestBody struct {
@@ -125,10 +127,11 @@ type Overrides struct {
 }
 
 type CommandOverride struct {
-	Resource string `yaml:"resource"`
-	Command  string `yaml:"command"`
-	Summary  string `yaml:"summary"`
-	Method   string `yaml:"method"` // override SDK method name if it differs from operationId mapping
+	Resource      string `yaml:"resource"`
+	Command       string `yaml:"command"`
+	Summary       string `yaml:"summary"`
+	Method        string `yaml:"method"`        // override SDK method name
+	RequestStruct string `yaml:"request_struct"` // SDK request struct name (e.g. "CreateDriverRequest")
 }
 
 type FlagOverride struct {

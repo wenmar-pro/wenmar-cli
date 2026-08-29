@@ -221,7 +221,7 @@ func runVehiclesCreate(cmd *cobra.Command, args []string) error {
 }
 
 func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
-	return runUpdate(cmd, args, "vehicles", "/vehicles/", "", func(id int) (any, error) {
+	return runUpdate(cmd, args, "vehicles", idPath("/vehicles/"), "", func(id int) (any, error) {
 		req := wenmar.UpdateVehicleRequest{Make: vehicleUpdateMake}
 		applyVehicleUpdateFlags(&req)
 		return req, nil

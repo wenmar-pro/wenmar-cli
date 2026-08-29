@@ -162,10 +162,10 @@ func runCreate(cmd *cobra.Command, resource, path, summary string,
 
 // runUpdate is the shared skeleton for "update <id>" commands where the ID
 // is an integer.
-func runUpdate(cmd *cobra.Command, args []string, resource, pathPrefix, summary string,
+func runUpdate(cmd *cobra.Command, args []string, resource string, pathFn func(args []string) string, summary string,
 	bodyBuilder func(id int) (any, error),
 	sender func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error)) error {
-	return runAction(cmd, args, resource, "PATCH", idPath(pathPrefix), summary, bodyBuilder, sender)
+	return runAction(cmd, args, resource, "PATCH", pathFn, summary, bodyBuilder, sender)
 }
 
 // runAction is the shared skeleton for id-scoped mutation commands (PATCH/POST

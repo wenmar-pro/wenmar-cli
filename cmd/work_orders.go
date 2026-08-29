@@ -162,7 +162,7 @@ func runWorkOrdersCreate(cmd *cobra.Command, args []string) error {
 }
 
 func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
-	return runUpdate(cmd, args, "work_orders", "/work_orders/", "Work order updated.", func(id int) (any, error) {
+	return runUpdate(cmd, args, "work_orders", idPath("/work_orders/"), "Work order updated.", func(id int) (any, error) {
 		return wenmar.UpdateWorkOrderRequest{
 			IntakeMethod: workOrderUpdateIntakeMethod,
 		}, nil

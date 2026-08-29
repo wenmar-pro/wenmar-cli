@@ -113,7 +113,7 @@ func runDriversCreate(cmd *cobra.Command, args []string) error {
 }
 
 func runDriversUpdate(cmd *cobra.Command, args []string) error {
-	return runUpdate(cmd, args, "drivers", fmt.Sprintf("/customers/%d/drivers/", driversCustomerID), "Driver updated.", func(id int) (any, error) {
+	return runUpdate(cmd, args, "drivers", func(a []string) string { return fmt.Sprintf("/customers/%d/drivers/%s", driversCustomerID, a[0]) }, "Driver updated.", func(id int) (any, error) {
 		return wenmar.UpdateDriverRequest{
 			FullName: driverUpdateFullName,
 		}, nil

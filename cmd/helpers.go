@@ -17,9 +17,7 @@ func setRequest(method, path string) {
 }
 
 // extractData converts the generated response's JSON200 field to a
-// generic map/slice for the output renderer. The generated types have
-// pointer fields and nested structs — we marshal to JSON and back to
-// get a clean map[string]any or []map[string]any.
+// generic map/slice for the output renderer.
 func extractData(json200 any) any {
 	if json200 == nil {
 		return nil
@@ -37,3 +35,14 @@ func extractData(json200 any) any {
 	}
 	return result
 }
+
+func strPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func boolPtr(b bool) *bool { return &b }
+
+func intPtr(i int) *int { return &i }
