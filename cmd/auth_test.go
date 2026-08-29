@@ -15,6 +15,7 @@ import (
 func TestRunAuthLogin_StaticTokenStillWorks(t *testing.T) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config")
+	defer clearStoredCredentials(t)
 
 	tokenFlag = "static-token-123"
 	defer func() { tokenFlag = "" }()
@@ -75,16 +76,37 @@ func TestAuthToken_PrintsToken(t *testing.T) {
 	}
 }
 
-func TestAuthRefresh_NotImplemented(t *testing.T) {
+func TestAuthRefresh_StaticTokenGuidance(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
+
+	// Seed a static (non-OAuth) token so the codepath is deterministic —
+	// other tests may have left tokens in the shared real credential store.
+	credsPath := credentialsJSONPath(t)
+	seedCredsFile(t, `{"access_token":"static-only"}`)
 
 	var output bytes.Buffer
 	if err := runAuthRefresh(&output, configPath); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(output.String(), "not yet implemented") {
-		t.Errorf("expected guidance about OAuth not implemented, got: %s", output.String())
+	if !strings.Contains(output.String(), "No OAuth token to refresh") {
+		t.Errorf("expected static-token guidance, got: %s", output.String())
+	}
+	_ = credsPath
+}
+
+func TestAuthRefresh_NotLoggedIn(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config")
+
+	clearStoredCredentials(t)
+
+	var output bytes.Buffer
+	if err := runAuthRefresh(&output, configPath); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output.String(), "Not logged in") {
+		t.Errorf("expected not-logged-in guidance, got: %s", output.String())
 	}
 }
 
@@ -102,5 +124,38 @@ func TestAuthLogout_ClearsCredentials(t *testing.T) {
 
 	if _, err := os.Stat(configPath); !os.IsNotExist(err) {
 		t.Error("config file should be deleted")
+	}
+}
+
+// credentialsJSONPath returns the real file-fallback credentials path used by
+// the SDK's NewCredentialStore.
+func credentialsJSONPath(t *testing.T) string {
+	t.Helper()
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".config", "wenmar", "credentials.json")
+}
+
+// seedCredsFile writes (or removes, when empty) the file-fallback credentials
+// used by the keyring-less test environment.
+func seedCredsFile(t *testing.T, contents string) {
+	t.Helper()
+	path := credentialsJSONPath(t)
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(contents), 0600); err != nil {
+		t.Fatalf("write credentials: %v", err)
+	}
+}
+
+// clearStoredCredentials removes credentials from both the real keyring and
+// the file fallback. runAuthLogin / runAuthRefresh write to the real OS
+// keyring via the SDK, so tests that touch credentials must clean up after
+// themselves or they leak into other tests.
+func clearStoredCredentials(t *testing.T) {
+	t.Helper()
+	store := authpkg.NewCredentialStore()
+	if err := store.DeleteToken(context.Background()); err != nil {
+		t.Logf("cleanup: delete credentials: %v", err)
 	}
 }

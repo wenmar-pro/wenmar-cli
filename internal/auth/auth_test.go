@@ -48,9 +48,11 @@ func TestResolveToken_EnvVarFallback(t *testing.T) {
 }
 
 func TestResolveToken_ErrorWhenNoToken(t *testing.T) {
-		os.Unsetenv("WENMAR_TOKEN")
+	os.Unsetenv("WENMAR_TOKEN")
+	configPath := filepath.Join(t.TempDir(), "config")
 
-	_, err := ResolveToken("")
+	// emptyStore keeps this deterministic regardless of the real keyring.
+	_, err := ResolveTokenWithSourceFrom("", configPath, emptyStore{})
 	if err == nil {
 		t.Fatal("expected error when no token provided")
 	}

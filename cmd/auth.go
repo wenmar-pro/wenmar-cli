@@ -195,16 +195,27 @@ func runAuthToken(out io.Writer, configPath string) error {
 
 func runAuthRefresh(out io.Writer, configPath string) error {
 	store := authpkg.NewCredentialStore()
-	manager := authpkg.NewAuthManager(store, nil)
+	manager, err := auth.ResolveAuthManager(tokenFlag, configPath)
+	if err != nil {
+		fmt.Fprintln(out, "  Not logged in. Run `wenmar auth login` to authenticate.")
+		return nil
+	}
+	_ = manager // ResolveAuthManager already wired the refresh function
+
+	tok, err := store.GetToken(context.Background())
+	if err != nil || tok == nil || tok.RefreshToken == "" {
+		fmt.Fprintln(out, "  No OAuth token to refresh. Using static token — re-run `wenmar auth login` to get a new token.")
+		return nil
+	}
+
 	if err := manager.Refresh(context.Background()); err != nil {
 		if errors.Is(err, authpkg.ErrOAuthNotImplemented) {
 			fmt.Fprintln(out, "  OAuth token refresh is not yet implemented. Re-run `wenmar auth login` to get a new token.")
 			return nil
 		}
-		// No stored token — still show the guidance.
-		fmt.Fprintln(out, "  OAuth token refresh is not yet implemented. Re-run `wenmar auth login` to get a new token.")
-		return nil
+		return fmt.Errorf("token refresh failed: %w", err)
 	}
+
 	fmt.Fprintln(out, "  Token refreshed.")
 	return nil
 }

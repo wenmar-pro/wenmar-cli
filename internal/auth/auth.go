@@ -119,6 +119,18 @@ func ResolveAuthManagerWithStore(flagToken, configPath string, store authpkg.Cre
 		manager := authpkg.NewAuthManager(store, nil)
 		provider := &authpkg.CredentialStoreProvider{Store: store, Manager: manager}
 		manager.Provider = provider
+
+		// Wire OAuth refresh if the stored token has a refresh_token
+		// and the config indicates OAuth auth method.
+		if tok.RefreshToken != "" {
+			baseURL := ResolveBaseURLFrom("", configPath)
+			if cfg, err := config.LoadFrom(configPath); err == nil && cfg.AuthMethod == "oauth" {
+				manager.SetRefreshFn(func(ctx context.Context, refreshToken string) (*authpkg.Token, error) {
+					return authpkg.RefreshToken(ctx, baseURL+"/oauth/token", "wenmar-cli", refreshToken)
+				})
+			}
+		}
+
 		return manager, nil
 	}
 
