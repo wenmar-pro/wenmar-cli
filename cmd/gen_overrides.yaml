@@ -1,0 +1,247 @@
+# gen_overrides.yaml maps OpenAPI operations to CLI command names.
+# This file is hand-maintained — the generator reads it to produce
+# ergonomic command names and groupings.
+
+# Map operationId -> CLI resource (cobra parent command name) and
+# subcommand name. If an operationId is not listed here, the generator
+# auto-derives from the path.
+commands:
+  # account
+  list_account:
+    resource: account
+    command: show
+    summary: Show account details
+
+  # vendors (trivial, auto-derivable)
+  list_vendors:
+    resource: vendors
+    command: list
+    summary: List all vendors, paginated via the Link header
+  show_vendor:
+    resource: vendors
+    command: show
+    summary: Show a single vendor by ID
+
+  # locations
+  show_location:
+    resource: locations
+    command: show
+    summary: Show a location by ID
+
+  # statements
+  list_customers_statements:
+    resource: statements
+    command: list
+    summary: List statements for a customer, paginated via the Link header
+  show_statement:
+    resource: statements
+    command: show
+    summary: Show a single statement by ID
+
+  # drivers (nested under /customers but CLI groups as their own resource)
+  list_customers_drivers:
+    resource: drivers
+    command: list
+    summary: List drivers for a customer, paginated via the Link header
+  show_driver:
+    resource: drivers
+    command: show
+    summary: Show a single driver by ID
+  create_driver:
+    resource: drivers
+    command: create
+    summary: Create a new driver for a customer
+  update_driver:
+    resource: drivers
+    command: update
+    summary: Update a driver by ID
+  delete_driver:
+    resource: drivers
+    command: delete
+    summary: Delete a driver by ID
+
+  # customers
+  list_customers:
+    resource: customers
+    command: list
+    summary: List all customers, paginated via the Link header
+  show_customer:
+    resource: customers
+    command: show
+    summary: Show a single customer by ID
+  create_customer:
+    resource: customers
+    command: create
+    summary: Create a new customer
+  update_customer:
+    resource: customers
+    command: update
+    summary: Update a customer by ID
+  delete_customer:
+    resource: customers
+    command: delete
+    summary: Delete a customer by ID
+  merge_customer:
+    resource: customers
+    command: merge
+    summary: Merge a source customer into this keeper
+  lookup_customer:
+    resource: customers
+    command: lookup
+    summary: Search customers by name/email/phone
+  check_customer_duplicate:
+    resource: customers
+    command: duplicates
+    summary: Check for duplicate customers
+  list_customers_vehicles:
+    resource: customers
+    command: vehicles
+    summary: List a customer's vehicles
+  list_customers_work_orders:
+    resource: customers
+    command: work-orders
+    summary: List a customer's work orders
+
+  # vehicles
+  list_vehicles:
+    resource: vehicles
+    command: list
+    summary: List all vehicles
+  show_vehicle:
+    resource: vehicles
+    command: show
+    summary: Show a single vehicle by ID
+  create_vehicle:
+    resource: vehicles
+    command: create
+    summary: Create a new vehicle
+  update_vehicle:
+    resource: vehicles
+    command: update
+    summary: Update a vehicle by ID
+  delete_vehicle:
+    resource: vehicles
+    command: delete
+    summary: Delete a vehicle by ID
+  decode_vin:
+    resource: vehicles
+    command: decode-vin
+    summary: Decode a VIN into make/model
+  check_vehicle_duplicate:
+    resource: vehicles
+    command: duplicates
+    summary: Check for duplicate vehicles matching a VIN
+  transfer_vehicle:
+    resource: vehicles
+    command: transfer
+    summary: Transfer a vehicle to a new customer
+  merge_vehicle:
+    resource: vehicles
+    command: merge
+    summary: Merge a source vehicle into this keeper
+  prefill_vehicle:
+    resource: vehicles
+    command: prefill
+    summary: Prefill vehicle data from a VIN
+  lookup_vehicle:
+    resource: vehicles
+    command: lookup
+    summary: Search vehicles by make/model/plate/vin
+  list_vehicles_work_orders:
+    resource: vehicles
+    command: work-orders
+    summary: List a vehicle's work orders
+
+  # work_orders
+  list_work_orders:
+    resource: work_orders
+    command: list
+    summary: List all work orders, paginated via the Link header
+  show_work_order:
+    resource: work_orders
+    command: show
+    summary: Show a single work order by ID
+  create_work_order:
+    resource: work_orders
+    command: create
+    summary: Create a new work order
+  update_work_order:
+    resource: work_orders
+    command: update
+    summary: Update a work order by ID
+  delete_work_order:
+    resource: work_orders
+    command: delete
+    summary: Delete a work order by ID
+  show_work_order_estimate:
+    resource: work_orders
+    command: estimate
+    summary: Show the estimate tab (services) for a work order
+  show_work_order_wip:
+    resource: work_orders
+    command: wip
+    summary: Show the work-in-progress tab (services) for a work order
+  show_work_order_inspection:
+    resource: work_orders
+    command: inspection
+    summary: Show the inspection tab (inspection reports) for a work order
+  show_work_order_parts:
+    resource: work_orders
+    command: parts
+    summary: Show the parts tab (services) for a work order
+  show_work_order_payments:
+    resource: work_orders
+    command: payments
+    summary: Show the payments tab (payments) for a work order
+  create_work_order_payment:
+    resource: work_orders
+    command: create-payment
+    summary: Create a payment against a work order
+
+  # tags
+  list_tags:
+    resource: tags
+    command: list
+    summary: List all customer and vehicle tags
+  update_tags:
+    resource: tags
+    command: update
+    summary: Bulk update/destroy customer and vehicle tags
+  create_customer_tag:
+    resource: tags
+    command: create
+    summary: Create a customer or vehicle tag
+  create_vehicle_tag:
+    resource: tags
+    command: create
+    summary: Create a customer or vehicle tag
+
+# Flag overrides: map request body fields to flag names with help text.
+# Fields not listed here auto-derive from the property name (snake_case -> kebab-case).
+flag_overrides:
+  create_customer:
+    customer.first_name:
+      flag: full-name
+      help: Customer full name
+    customer.last_name:
+      help: Customer last name
+  create_vehicle:
+    vehicle.make:
+      required: true
+      help: Vehicle make
+    vehicle.model:
+      required: true
+      help: Vehicle model
+    vehicle.year:
+      required: true
+      help: Vehicle year
+    vehicle.customer_id:
+      required: true
+      help: Customer ID
+  create_work_order:
+    work_order.customer_id:
+      required: true
+      help: Customer ID
+    work_order.vehicle_id:
+      required: true
+      help: Vehicle ID
