@@ -85,3 +85,39 @@ func TestAppModel_HelpToggle(t *testing.T) {
 		t.Fatal("expected help hidden after second '?'")
 	}
 }
+
+func TestAppModel_SidebarToggle(t *testing.T) {
+	m := NewApp(nil, "", 0)
+	if m.layout.sidebar.visible {
+		t.Fatal("expected sidebar hidden initially")
+	}
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("`")})
+	m = updated.(AppModel)
+	if !m.layout.sidebar.visible {
+		t.Fatal("expected sidebar visible after backtick")
+	}
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("`")})
+	m = updated.(AppModel)
+	if m.layout.sidebar.visible {
+		t.Fatal("expected sidebar hidden after second backtick")
+	}
+}
+
+func TestAppModel_SearchFocusOnSlash(t *testing.T) {
+	m := NewApp(nil, "", 0)
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("/")})
+	m = updated.(AppModel)
+	if !m.layout.topBar.searchFocused {
+		t.Fatal("expected search focused after '/'")
+	}
+}
+
+func TestAppModel_SearchUnfocusOnEscape(t *testing.T) {
+	m := NewApp(nil, "", 0)
+	m.layout.topBar.FocusSearch()
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEscape})
+	m = updated.(AppModel)
+	if m.layout.topBar.searchFocused {
+		t.Fatal("expected search unfocused after escape")
+	}
+}

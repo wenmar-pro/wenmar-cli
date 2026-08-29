@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -29,6 +30,10 @@ type AppModel struct {
 	tabs   []tab
 	active int
 
+	layout         LayoutModel
+	accountName    string
+	accountFetched bool
+
 	online      bool
 	lastRefresh time.Time
 	showHelp    bool
@@ -51,6 +56,7 @@ func NewApp(client *wenmar.Client, locationID string, interval time.Duration) Ap
 			NewCustomerList(client, locationID),
 			NewVehicleList(client, locationID),
 		},
+		layout: NewLayout(),
 	}
 }
 
@@ -61,11 +67,14 @@ func (m *AppModel) SetInitialWorkOrder(id int) {
 }
 
 func (m AppModel) Init() tea.Cmd {
-	cmds := make([]tea.Cmd, 0, len(m.tabs)+1)
+	cmds := make([]tea.Cmd, 0, len(m.tabs)+2)
 	for _, t := range m.tabs {
 		cmds = append(cmds, t.Init())
 	}
 	cmds = append(cmds, tick(m.interval))
+	if m.client != nil {
+		cmds = append(cmds, fetchAccountName(m.client))
+	}
 	if m.initialWorkOrder > 0 {
 		m.active = 0
 		if wo, ok := m.tabs[0].(*WorkOrderList); ok {
@@ -76,6 +85,27 @@ func (m AppModel) Init() tea.Cmd {
 }
 
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Handle account fetch result.
+	if r, ok := msg.(accountResultMsg); ok {
+		if r.err == nil {
+			m.accountName = r.name
+			m.accountFetched = true
+			m.layout.topBar.SetAccountName(r.name)
+		}
+		return m, nil
+	}
+
+	// Handle search filter message — delegate to active tab if it's
+	// the customer list (the only tab with server-side filtering).
+	if f, ok := msg.(searchFilterMsg); ok {
+		if cl, ok := m.tabs[m.active].(*CustomerList); ok {
+			cl.SetSearchQuery(f.query)
+			cl.startLoading()
+			return m, cl.Init()
+		}
+		return m, nil
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return m.updateKey(msg)
@@ -85,6 +115,21 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case workOrderListResultMsg, customerListResultMsg, vehicleListResultMsg:
 		m.updateOnline(msg)
 	}
+
+	// If search is focused, route to top bar.
+	if m.layout.topBar.searchFocused {
+		var cmd tea.Cmd
+		m.layout.topBar, cmd = m.layout.topBar.Update(msg)
+		return m, cmd
+	}
+
+	// If sidebar is visible and not in search, route to sidebar.
+	if m.layout.sidebar.visible && !m.layout.topBar.searchFocused {
+		var cmd tea.Cmd
+		m.layout.sidebar, cmd = m.layout.sidebar.Update(msg)
+		return m, cmd
+	}
+
 	// Delegate non-key messages to the active tab.
 	updated, cmd := m.tabs[m.active].Update(msg)
 	m.tabs[m.active] = updated
@@ -113,11 +158,41 @@ func (m *AppModel) updateOnline(msg tea.Msg) {
 }
 
 func (m AppModel) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// If search is focused, route all keys to the top bar.
+	if m.layout.topBar.searchFocused {
+		var cmd tea.Cmd
+		m.layout.topBar, cmd = m.layout.topBar.Update(msg)
+		return m, cmd
+	}
+
+	// If sidebar is visible, route keys to sidebar (except toggle and quit).
+	if m.layout.sidebar.visible {
+		switch {
+		case keyMatches(msg, Keys.SidebarToggle):
+			m.layout.sidebar.Toggle()
+			return m, nil
+		case keyMatches(msg, Keys.Quit):
+			return m, tea.Quit
+		case keyMatches(msg, Keys.Help):
+			m.showHelp = !m.showHelp
+			return m, nil
+		}
+		var cmd tea.Cmd
+		m.layout.sidebar, cmd = m.layout.sidebar.Update(msg)
+		return m, cmd
+	}
+
 	switch {
 	case keyMatches(msg, Keys.Quit):
 		return m, tea.Quit
 	case keyMatches(msg, Keys.Help):
 		m.showHelp = !m.showHelp
+		return m, nil
+	case keyMatches(msg, Keys.SidebarToggle):
+		m.layout.sidebar.Toggle()
+		return m, nil
+	case keyMatches(msg, Keys.FocusSearch):
+		m.layout.topBar.FocusSearch()
 		return m, nil
 	case keyMatches(msg, Keys.Tab):
 		m.active = (m.active + 1) % len(m.tabs)
@@ -142,27 +217,12 @@ func (m AppModel) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m AppModel) View() string {
-	var s strings.Builder
-	s.WriteString(m.renderTabBar())
-	s.WriteString(m.tabs[m.active].View(0))
+	m.layout.SetContent(m.tabs[m.active].View(0))
+	m.layout.SetFooter(m.renderFooter())
 	if m.showHelp {
-		s.WriteString("\n" + m.renderHelp())
+		m.layout.SetContent(m.tabs[m.active].View(0) + "\n" + m.renderHelp())
 	}
-	s.WriteString("\n" + m.renderFooter())
-	return s.String()
-}
-
-func (m AppModel) renderTabBar() string {
-	var b strings.Builder
-	for i, t := range m.tabs {
-		label := t.Title()
-		if i == m.active {
-			b.WriteString(TabActiveStyle.Render(" " + label + " "))
-		} else {
-			b.WriteString(TabInactiveStyle.Render(" " + label + " "))
-		}
-	}
-	return TabBarStyle.Render(b.String()) + "\n"
+	return m.layout.View(80, 24)
 }
 
 func (m AppModel) renderFooter() string {
@@ -202,4 +262,22 @@ func (m AppModel) renderHelp() string {
 		b.WriteString(fmt.Sprintf("  %-18s %s\n", r[0], r[1]))
 	}
 	return b.String()
+}
+
+type accountResultMsg struct {
+	name string
+	err  error
+}
+
+func fetchAccountName(client *wenmar.Client) tea.Cmd {
+	return func() tea.Msg {
+		resp, err := client.ListAccount(context.Background())
+		if err != nil {
+			return accountResultMsg{err: err}
+		}
+		if resp.JSON200 != nil {
+			return accountResultMsg{name: resp.JSON200.Name}
+		}
+		return accountResultMsg{}
+	}
 }
