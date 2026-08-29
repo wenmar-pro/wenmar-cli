@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -119,5 +120,16 @@ func TestAppModel_SearchUnfocusOnEscape(t *testing.T) {
 	m = updated.(AppModel)
 	if m.layout.topBar.searchFocused {
 		t.Fatal("expected search unfocused after escape")
+	}
+}
+
+func TestAppModel_FooterContainsSidebarHint(t *testing.T) {
+	m := NewApp(nil, "", 0)
+	footer := m.renderFooter()
+	if !strings.Contains(footer, "`") {
+		t.Error("expected footer to contain backtick hint for sidebar")
+	}
+	if !strings.Contains(footer, "/") {
+		t.Error("expected footer to contain '/' hint for search")
 	}
 }

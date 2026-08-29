@@ -240,7 +240,7 @@ func (m AppModel) renderFooter() string {
 	if !m.lastRefresh.IsZero() {
 		refresh = "  last refresh " + m.lastRefresh.Format("15:04:05")
 	}
-	return HelpStyle.Render(fmt.Sprintf("  %s%s%s  •  ↑↓ move • enter detail • tab switch • r refresh • ? help • q quit",
+	return HelpStyle.Render(fmt.Sprintf("  %s%s%s  •  ↑↓ move • enter detail • tab switch • ` sidebar • / search • ? help • q quit",
 		statusStyle.Render(status), loc, refresh))
 }
 
