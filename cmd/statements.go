@@ -3,10 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"strconv"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	"github.com/spf13/cobra"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 var statementsCmd = &cobra.Command{
@@ -39,42 +38,21 @@ func init() {
 }
 
 func runStatementsList(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", fmt.Sprintf("/customers/%d/statements", statementsCustomerID))
-
-	resp, err := client.ListStatements(context.Background(), statementsCustomerID)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("statements")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "statements", fmt.Sprintf("/customers/%d/statements", statementsCustomerID), func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.ListStatements(ctx, statementsCustomerID)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runStatementsShow(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/statements/"+args[0])
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	resp, err := client.ShowStatement(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("statements", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runShow(cmd, args, "statements", "GET", idPath("/statements/"), func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ShowStatement(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }

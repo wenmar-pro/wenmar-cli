@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/output"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	"github.com/spf13/cobra"
+	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 var vehiclesCmd = &cobra.Command{
@@ -98,32 +96,32 @@ var vehiclesWorkOrdersCmd = &cobra.Command{
 }
 
 var (
-	vehicleCreateMake           string
-	vehicleCreateModel          string
-	vehicleCreateYear           int
-	vehicleCreateCustomer       int
-	vehiclesDeleteDryRun        bool
-	vehicleUpdateMake           string
-	vehicleVin                  string
-	vehicleSubmodel             string
-	vehicleBodyStyle            string
-	vehicleEngine               string
-	vehicleTransmission         string
-	vehicleDrivetrain           string
-	vehicleColor                string
-	vehiclePlate                string
-	vehiclePlateState           string
-	vehicleOdometer             int
-	vehicleOdometerUnit         string
-	vehicleUnitNumber           string
-	vehicleFleetIdentifier      string
-	vehicleProductionDate       string
-	vehicleNotes                string
-	vehicleTagIDs               []int
-	vehicleTransferCustomerID   int
-	vehicleTransferMode         string
-	vehicleMergeSourceID        int
-	vehiclePrefillVIN           string
+	vehicleCreateMake         string
+	vehicleCreateModel        string
+	vehicleCreateYear         int
+	vehicleCreateCustomer     int
+	vehiclesDeleteDryRun      bool
+	vehicleUpdateMake         string
+	vehicleVin                string
+	vehicleSubmodel           string
+	vehicleBodyStyle          string
+	vehicleEngine             string
+	vehicleTransmission       string
+	vehicleDrivetrain         string
+	vehicleColor              string
+	vehiclePlate              string
+	vehiclePlateState         string
+	vehicleOdometer           int
+	vehicleOdometerUnit       string
+	vehicleUnitNumber         string
+	vehicleFleetIdentifier    string
+	vehicleProductionDate     string
+	vehicleNotes              string
+	vehicleTagIDs             []int
+	vehicleTransferCustomerID int
+	vehicleTransferMode       string
+	vehicleMergeSourceID      int
+	vehiclePrefillVIN         string
 )
 
 func init() {
@@ -184,208 +182,126 @@ func init() {
 }
 
 func runVehiclesShow(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/vehicles/"+args[0])
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	resp, err := client.ShowVehicle(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("vehicles", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runShow(cmd, args, "vehicles", "GET", idPath("/vehicles/"), func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ShowVehicle(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runVehiclesList(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/vehicles")
-
-	resp, err := client.ListVehicles(context.Background())
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "vehicles", "/vehicles", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.ListVehicles(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runVehiclesCreate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("POST", "/vehicles")
-
-	body := generated.CreateVehicleJSONRequestBody{
-		Vehicle: struct {
-			BodyStyle         *string        `json:"body_style,omitempty"`
-			Color             *string        `json:"color,omitempty"`
-			CustomerId        int            `json:"customer_id"`
-			Drivetrain        *string        `json:"drivetrain,omitempty"`
-			Engine            *string        `json:"engine,omitempty"`
-			FleetIdentifier   *string        `json:"fleet_identifier,omitempty"`
-			LicensePlate      *string        `json:"license_plate,omitempty"`
-			LicensePlateState *string        `json:"license_plate_state,omitempty"`
-			Make              string         `json:"make"`
-			Model             string         `json:"model"`
-			Notes             *string        `json:"notes,omitempty"`
-			OdometerReading   *int           `json:"odometer_reading,omitempty"`
-			OdometerUnit      *string        `json:"odometer_unit,omitempty"`
-			ProductionDate    *string        `json:"production_date,omitempty"`
-			Submodel          *string        `json:"submodel,omitempty"`
-			Transmission      *string        `json:"transmission,omitempty"`
-			UnitNumber        *string        `json:"unit_number,omitempty"`
-			VehicleTagIds     *[]interface{} `json:"vehicle_tag_ids,omitempty"`
-			Vin               *string        `json:"vin,omitempty"`
-			Year              int            `json:"year"`
-		}{
-			CustomerId: vehicleCreateCustomer,
-			Make:       vehicleCreateMake,
-			Model:      vehicleCreateModel,
-			Year:       vehicleCreateYear,
-		},
-	}
-	applyVehicleFlags(&body)
-
-	resp, err := client.CreateVehicle(context.Background(), body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON201)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: createBreadcrumbs("vehicles", "9")}
-	return output.Render(cmd.OutOrStdout(), data, "Vehicle created.", nil, opts)
+	return runCreate(cmd, "vehicles", "/vehicles", "Vehicle created.", func() (any, error) {
+		body := generated.CreateVehicleJSONRequestBody{
+			Vehicle: struct {
+				BodyStyle         *string        `json:"body_style,omitempty"`
+				Color             *string        `json:"color,omitempty"`
+				CustomerId        int            `json:"customer_id"`
+				Drivetrain        *string        `json:"drivetrain,omitempty"`
+				Engine            *string        `json:"engine,omitempty"`
+				FleetIdentifier   *string        `json:"fleet_identifier,omitempty"`
+				LicensePlate      *string        `json:"license_plate,omitempty"`
+				LicensePlateState *string        `json:"license_plate_state,omitempty"`
+				Make              string         `json:"make"`
+				Model             string         `json:"model"`
+				Notes             *string        `json:"notes,omitempty"`
+				OdometerReading   *int           `json:"odometer_reading,omitempty"`
+				OdometerUnit      *string        `json:"odometer_unit,omitempty"`
+				ProductionDate    *string        `json:"production_date,omitempty"`
+				Submodel          *string        `json:"submodel,omitempty"`
+				Transmission      *string        `json:"transmission,omitempty"`
+				UnitNumber        *string        `json:"unit_number,omitempty"`
+				VehicleTagIds     *[]interface{} `json:"vehicle_tag_ids,omitempty"`
+				Vin               *string        `json:"vin,omitempty"`
+				Year              int            `json:"year"`
+			}{
+				CustomerId: vehicleCreateCustomer,
+				Make:       vehicleCreateMake,
+				Model:      vehicleCreateModel,
+				Year:       vehicleCreateYear,
+			},
+		}
+		applyVehicleFlags(&body)
+		return body, nil
+	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
+		resp, err := client.CreateVehicle(ctx, body.(generated.CreateVehicleJSONRequestBody))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON201, nil
+	})
 }
 
 func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("PATCH", "/vehicles/"+args[0])
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	body := generated.UpdateVehicleJSONRequestBody{
-		Vehicle: struct {
-			BodyStyle         *string `json:"body_style,omitempty"`
-			Color             *string `json:"color,omitempty"`
-			Drivetrain        *string `json:"drivetrain,omitempty"`
-			Engine            *string `json:"engine,omitempty"`
-			LicensePlate      *string `json:"license_plate,omitempty"`
-			LicensePlateState *string `json:"license_plate_state,omitempty"`
-			Make              string  `json:"make"`
-			Model             *string `json:"model,omitempty"`
-			Notes             *string `json:"notes,omitempty"`
-			OdometerReading   *int    `json:"odometer_reading,omitempty"`
-			OdometerUnit      *string `json:"odometer_unit,omitempty"`
-			Submodel          *string `json:"submodel,omitempty"`
-			Transmission      *string `json:"transmission,omitempty"`
-			Vin               *string `json:"vin,omitempty"`
-			Year              *int    `json:"year,omitempty"`
-		}{
-			Make: vehicleUpdateMake,
-		},
-	}
-	applyVehicleUpdateFlags(&body)
-
-	resp, err := client.UpdateVehicle(context.Background(), id, body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runUpdate(cmd, args, "vehicles", "/vehicles/", "", func(id int) (any, error) {
+		body := generated.UpdateVehicleJSONRequestBody{
+			Vehicle: struct {
+				BodyStyle         *string `json:"body_style,omitempty"`
+				Color             *string `json:"color,omitempty"`
+				Drivetrain        *string `json:"drivetrain,omitempty"`
+				Engine            *string `json:"engine,omitempty"`
+				LicensePlate      *string `json:"license_plate,omitempty"`
+				LicensePlateState *string `json:"license_plate_state,omitempty"`
+				Make              string  `json:"make"`
+				Model             *string `json:"model,omitempty"`
+				Notes             *string `json:"notes,omitempty"`
+				OdometerReading   *int    `json:"odometer_reading,omitempty"`
+				OdometerUnit      *string `json:"odometer_unit,omitempty"`
+				Submodel          *string `json:"submodel,omitempty"`
+				Transmission      *string `json:"transmission,omitempty"`
+				Vin               *string `json:"vin,omitempty"`
+				Year              *int    `json:"year,omitempty"`
+			}{
+				Make: vehicleUpdateMake,
+			},
+		}
+		applyVehicleUpdateFlags(&body)
+		return body, nil
+	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
+		resp, err := client.UpdateVehicle(ctx, id, body.(generated.UpdateVehicleJSONRequestBody))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runVehiclesDelete(cmd *cobra.Command, args []string) error {
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	if vehiclesDeleteDryRun {
-		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("vehicles", args[0])}
-		dryRunData := map[string]any{
-			"dry_run":      true,
-			"would_delete": fmt.Sprintf("vehicle:%d", id),
-		}
-		return output.Render(cmd.OutOrStdout(), dryRunData, fmt.Sprintf("Would delete vehicle %d (dry run).", id), nil, opts)
-	}
-
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("DELETE", "/vehicles/"+args[0])
-
-	_, err = client.DeleteVehicle(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
-	return output.Render(cmd.OutOrStdout(), nil, fmt.Sprintf("Vehicle %d deleted.", id), nil, opts)
+	return runDelete(cmd, args, "Vehicle", "vehicles", "/vehicles/", vehiclesDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		return client.DeleteVehicle(ctx, id)
+	})
 }
 
 func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/vehicles/vin_decode")
-
-	resp, err := client.DecodeVin(context.Background(), args[0])
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "vehicles", "/vehicles/vin_decode", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.DecodeVin(ctx, args[0])
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/vehicles/check_duplicate")
-
-	vin := args[0]
-	resp, err := client.CheckVehicleDuplicate(context.Background(), generated.CheckVehicleDuplicateParams{Vin: &vin})
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("vehicles", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "vehicles", "/vehicles/check_duplicate", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		vin := args[0]
+		resp, err := client.CheckVehicleDuplicate(ctx, generated.CheckVehicleDuplicateParams{Vin: &vin})
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func applyVehicleFlags(body *generated.CreateVehicleJSONRequestBody) {
@@ -435,109 +351,59 @@ func applyVehicleUpdateFlags(body *generated.UpdateVehicleJSONRequestBody) {
 }
 
 func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("PATCH", "/vehicles/"+args[0]+"/transfer")
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-	body := generated.TransferVehicleJSONRequestBody{
-		CustomerId: vehicleTransferCustomerID,
-		Mode:       vehicleTransferMode,
-	}
-	resp, err := client.TransferVehicle(context.Background(), id, body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("vehicles", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "Vehicle transferred.", nil, opts)
+	return runAction(cmd, args, "vehicles", "PATCH", func(a []string) string { return "/vehicles/" + a[0] + "/transfer" }, "Vehicle transferred.", func(id int) (any, error) {
+		return generated.TransferVehicleJSONRequestBody{
+			CustomerId: vehicleTransferCustomerID,
+			Mode:       vehicleTransferMode,
+		}, nil
+	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
+		resp, err := client.TransferVehicle(ctx, id, body.(generated.TransferVehicleJSONRequestBody))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runVehiclesMerge(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("POST", "/vehicles/"+args[0]+"/merge")
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-	body := generated.MergeVehicleJSONRequestBody{SourceVehicleId: vehicleMergeSourceID}
-	resp, err := client.MergeVehicle(context.Background(), id, body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("vehicles", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "Vehicle merged.", nil, opts)
+	return runAction(cmd, args, "vehicles", "POST", func(a []string) string { return "/vehicles/" + a[0] + "/merge" }, "Vehicle merged.", func(id int) (any, error) {
+		return generated.MergeVehicleJSONRequestBody{SourceVehicleId: vehicleMergeSourceID}, nil
+	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
+		resp, err := client.MergeVehicle(ctx, id, body.(generated.MergeVehicleJSONRequestBody))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runVehiclesPrefill(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/vehicles/prefill")
-
-	params := generated.PrefillVehicleParams{Vin: strPtr(vehiclePrefillVIN)}
-	resp, err := client.PrefillVehicle(context.Background(), params)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "vehicles", "/vehicles/prefill", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		params := generated.PrefillVehicleParams{Vin: strPtr(vehiclePrefillVIN)}
+		resp, err := client.PrefillVehicle(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runVehiclesLookup(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/vehicles/lookup")
-
-	resp, err := client.LookupVehicle(context.Background(), args[0])
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "vehicles", "/vehicles/lookup", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.LookupVehicle(ctx, args[0])
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runVehiclesWorkOrders(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/vehicles/"+args[0]+"/work_orders")
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-	resp, err := client.ListVehicleWorkOrders(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("vehicles")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runShow(cmd, args, "vehicles", "GET", func(a []string) string { return "/vehicles/" + a[0] + "/work_orders" }, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ListVehicleWorkOrders(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }

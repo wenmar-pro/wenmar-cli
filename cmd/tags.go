@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
-	"github.com/spf13/cobra"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 var tagsCmd = &cobra.Command{
@@ -63,111 +64,96 @@ func init() {
 }
 
 func runTagsList(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/settings/tags")
-
-	resp, err := client.ListTags(context.Background())
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("tags")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "tags", "/settings/tags", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.ListTags(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runTagsCreate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
 	if tagsType == "vehicle" {
-		setRequest("POST", "/vehicle_tags")
-		resp, err := client.CreateVehicleTag(context.Background(), generated.CreateVehicleTagJSONRequestBody{Name: tagsName})
-		if err != nil {
-			return err
-		}
-		data := extractData(resp.JSON201)
-		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("tags")}
-		return output.Render(cmd.OutOrStdout(), data, "Vehicle tag created.", nil, opts)
+		return runCreate(cmd, "tags", "/vehicle_tags", "Vehicle tag created.", func() (any, error) {
+			return generated.CreateVehicleTagJSONRequestBody{Name: tagsName}, nil
+		}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
+			resp, err := client.CreateVehicleTag(ctx, body.(generated.CreateVehicleTagJSONRequestBody))
+			if err != nil {
+				return nil, err
+			}
+			return resp.JSON201, nil
+		})
 	}
 
-	setRequest("POST", "/customer_tags")
-	resp, err := client.CreateCustomerTag(context.Background(), generated.CreateCustomerTagJSONRequestBody{Name: tagsName})
-	if err != nil {
-		return err
-	}
-	data := extractData(resp.JSON201)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("tags")}
-	return output.Render(cmd.OutOrStdout(), data, "Customer tag created.", nil, opts)
+	return runCreate(cmd, "tags", "/customer_tags", "Customer tag created.", func() (any, error) {
+		return generated.CreateCustomerTagJSONRequestBody{Name: tagsName}, nil
+	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
+		resp, err := client.CreateCustomerTag(ctx, body.(generated.CreateCustomerTagJSONRequestBody))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON201, nil
+	})
 }
 
 func runTagsDelete(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("PATCH", "/settings/tags")
-
-	body := generated.UpdateTagsJSONRequestBody{}
-	destroy := "1"
-	if tagsType == "vehicle" {
-		body.VehicleTags = &[]struct {
-			UnderscoreDestroy string `json:"_destroy"`
-			Id                int    `json:"id"`
-		}{{UnderscoreDestroy: destroy, Id: tagsID}}
-	} else {
-		body.CustomerTags = []struct {
-			UnderscoreDestroy *string `json:"_destroy,omitempty"`
-			Id                int     `json:"id"`
-			Name              *string `json:"name,omitempty"`
-		}{{UnderscoreDestroy: &destroy, Id: tagsID}}
-	}
-	resp, err := client.UpdateTags(context.Background(), body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("tags")}
-	return output.Render(cmd.OutOrStdout(), data, "Tag deleted.", nil, opts)
+	return runTagsMutation(cmd, "Tag deleted.", func() generated.UpdateTagsJSONRequestBody {
+		body := generated.UpdateTagsJSONRequestBody{}
+		destroy := "1"
+		if tagsType == "vehicle" {
+			body.VehicleTags = &[]struct {
+				UnderscoreDestroy string `json:"_destroy"`
+				Id                int    `json:"id"`
+			}{{UnderscoreDestroy: destroy, Id: tagsID}}
+		} else {
+			body.CustomerTags = []struct {
+				UnderscoreDestroy *string `json:"_destroy,omitempty"`
+				Id                int     `json:"id"`
+				Name              *string `json:"name,omitempty"`
+			}{{UnderscoreDestroy: &destroy, Id: tagsID}}
+		}
+		return body
+	})
 }
 
 func runTagsRename(cmd *cobra.Command, args []string) error {
+	return runTagsMutation(cmd, fmt.Sprintf("Tag %d renamed to %s.", tagsID, tagsName), func() generated.UpdateTagsJSONRequestBody {
+		body := generated.UpdateTagsJSONRequestBody{}
+		name := tagsName
+		if tagsType == "vehicle" {
+			body.VehicleTags = &[]struct {
+				UnderscoreDestroy string `json:"_destroy"`
+				Id                int    `json:"id"`
+			}{{Id: tagsID}}
+		} else {
+			body.CustomerTags = []struct {
+				UnderscoreDestroy *string `json:"_destroy,omitempty"`
+				Id                int     `json:"id"`
+				Name              *string `json:"name,omitempty"`
+			}{{Id: tagsID, Name: &name}}
+		}
+		return body
+	})
+}
+
+// runTagsMutation is the shared skeleton for tags delete/rename, which both
+// PATCH /settings/tags and render the response.
+func runTagsMutation(cmd *cobra.Command, summary string, bodyBuilder func() generated.UpdateTagsJSONRequestBody) error {
 	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err
 	}
 	setRequest("PATCH", "/settings/tags")
 
-	body := generated.UpdateTagsJSONRequestBody{}
-	name := tagsName
-	if tagsType == "vehicle" {
-		body.VehicleTags = &[]struct {
-			UnderscoreDestroy string `json:"_destroy"`
-			Id                int    `json:"id"`
-		}{{Id: tagsID}}
-	} else {
-		body.CustomerTags = []struct {
-			UnderscoreDestroy *string `json:"_destroy,omitempty"`
-			Id                int     `json:"id"`
-			Name              *string `json:"name,omitempty"`
-		}{{Id: tagsID, Name: &name}}
-	}
+	body := bodyBuilder()
 	resp, err := client.UpdateTags(context.Background(), body)
 	if err != nil {
 		return err
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	mode := resolveMode()
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("tags")}
-	return output.Render(cmd.OutOrStdout(), data, fmt.Sprintf("Tag %d renamed to %s.", tagsID, tagsName), nil, opts)
+	return output.Render(cmd.OutOrStdout(), data, summary, nil, opts)
 }

@@ -3,11 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"strconv"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/output"
-	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 	"github.com/spf13/cobra"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 var driversCmd = &cobra.Command{
@@ -50,11 +48,11 @@ var driversDeleteCmd = &cobra.Command{
 }
 
 var (
-	driversCustomerID     int
-	driverCreateFullName  string
-	driverCreatePhone     string
-	driverUpdateFullName  string
-	driversDeleteDryRun   bool
+	driversCustomerID    int
+	driverCreateFullName string
+	driverCreatePhone    string
+	driverUpdateFullName string
+	driversDeleteDryRun  bool
 )
 
 func init() {
@@ -79,124 +77,56 @@ func init() {
 }
 
 func runDriversList(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", fmt.Sprintf("/customers/%d/drivers", driversCustomerID))
-
-	resp, err := client.ListDrivers(context.Background(), driversCustomerID)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("drivers")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "drivers", fmt.Sprintf("/customers/%d/drivers", driversCustomerID), func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.ListDrivers(ctx, driversCustomerID)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runDriversShow(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", fmt.Sprintf("/customers/%d/drivers/%s", driversCustomerID, args[0]))
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	resp, err := client.ShowDriver(context.Background(), driversCustomerID, id)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("drivers", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runShow(cmd, args, "drivers", "GET", idPath(fmt.Sprintf("/customers/%d/drivers/", driversCustomerID)), func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ShowDriver(ctx, driversCustomerID, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runDriversCreate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("POST", fmt.Sprintf("/customers/%d/drivers", driversCustomerID))
-
-	body := wenmar.CreateDriverRequest{
-		FullName: driverCreateFullName,
-		Phone:    driverCreatePhone,
-	}
-
-	resp, err := client.CreateDriver(context.Background(), driversCustomerID, body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON201)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: createBreadcrumbs("drivers", "0")}
-	return output.Render(cmd.OutOrStdout(), data, "Driver created.", nil, opts)
+	return runCreate(cmd, "drivers", fmt.Sprintf("/customers/%d/drivers", driversCustomerID), "Driver created.", func() (any, error) {
+		return wenmar.CreateDriverRequest{
+			FullName: driverCreateFullName,
+			Phone:    driverCreatePhone,
+		}, nil
+	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
+		resp, err := client.CreateDriver(ctx, driversCustomerID, body.(wenmar.CreateDriverRequest))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON201, nil
+	})
 }
 
 func runDriversUpdate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("PATCH", fmt.Sprintf("/customers/%d/drivers/%s", driversCustomerID, args[0]))
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	body := wenmar.UpdateDriverRequest{
-		FullName: driverUpdateFullName,
-	}
-
-	resp, err := client.UpdateDriver(context.Background(), driversCustomerID, id, body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("drivers", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "Driver updated.", nil, opts)
+	return runUpdate(cmd, args, "drivers", fmt.Sprintf("/customers/%d/drivers/", driversCustomerID), "Driver updated.", func(id int) (any, error) {
+		return wenmar.UpdateDriverRequest{
+			FullName: driverUpdateFullName,
+		}, nil
+	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
+		resp, err := client.UpdateDriver(ctx, driversCustomerID, id, body.(wenmar.UpdateDriverRequest))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runDriversDelete(cmd *cobra.Command, args []string) error {
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	if driversDeleteDryRun {
-		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("drivers", args[0])}
-		dryRunData := map[string]any{
-			"dry_run":      true,
-			"would_delete": fmt.Sprintf("driver:%d", id),
-		}
-		return output.Render(cmd.OutOrStdout(), dryRunData, fmt.Sprintf("Would delete driver %d (dry run).", id), nil, opts)
-	}
-
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("DELETE", fmt.Sprintf("/customers/%d/drivers/%s", driversCustomerID, args[0]))
-
-	_, err = client.DeleteDriver(context.Background(), driversCustomerID, id)
-	if err != nil {
-		return err
-	}
-
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("drivers")}
-	return output.Render(cmd.OutOrStdout(), nil, fmt.Sprintf("Driver %d deleted.", id), nil, opts)
+	return runDelete(cmd, args, "Driver", "drivers", fmt.Sprintf("/customers/%d/drivers/", driversCustomerID), driversDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		return client.DeleteDriver(ctx, driversCustomerID, id)
+	})
 }

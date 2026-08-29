@@ -3,8 +3,8 @@ package cmd
 import (
 	"context"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	"github.com/spf13/cobra"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 var accountCmd = &cobra.Command{
@@ -24,19 +24,11 @@ func init() {
 }
 
 func runAccountShow(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/account")
-
-	resp, err := client.ListAccount(context.Background())
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("account")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "account", "/account", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.ListAccount(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }

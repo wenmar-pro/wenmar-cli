@@ -3,14 +3,12 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"strconv"
 	"strings"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/errors"
-	"github.com/wenmar-pro/wenmar-cli/internal/output"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	"github.com/spf13/cobra"
+	"github.com/wenmar-pro/wenmar-cli/internal/errors"
+	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
+	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 var customersCmd = &cobra.Command{
@@ -172,266 +170,156 @@ func setRequest(method, path string) {
 }
 
 func runCustomersList(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/customers")
-
-	resp, paginator, err := client.ListCustomersWithPagination(context.Background())
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	summary := fmt.Sprintf("Page 1. More results: %v", paginator.HasNext())
-	meta := &output.Meta{HasNext: paginator.HasNext()}
-
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	if mode == output.ModeIDsOnly || mode == output.ModeCount {
-		output.PrintPaginationNotice(meta, 1)
-	}
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("customers")}
-	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
+	return runListPaginated(cmd, "customers", "/customers", func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
+		resp, paginator, err := client.ListCustomersWithPagination(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		return resp.JSON200, paginator, nil
+	})
 }
 
 func runCustomersShow(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/customers/"+args[0])
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	resp, err := client.ShowCustomer(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("customers", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runShow(cmd, args, "customers", "GET", idPath("/customers/"), func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ShowCustomer(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runCustomersCreate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("POST", "/customers")
-
-	firstName, lastName := splitName(customerCreateFullName)
-	body := generated.CreateCustomerJSONRequestBody{
-		Customer: struct {
-			AddressesAttributes *[]struct {
-				Address1   string `json:"address1"`
-				City       string `json:"city"`
-				Country    string `json:"country"`
-				IsBilling  bool   `json:"is_billing"`
-				PostalCode string `json:"postal_code"`
-				State      string `json:"state"`
-			} `json:"addresses_attributes,omitempty"`
-			BillingTerms     *string `json:"billing_terms,omitempty"`
-			CompanyName      *string `json:"company_name,omitempty"`
-			CreditLimitCents *string `json:"credit_limit_cents,omitempty"`
-			DiscountPercent  *string `json:"discount_percent,omitempty"`
-			EmailsAttributes *[]struct {
-				Email   string `json:"email"`
-				Label   string `json:"label"`
-				Primary bool   `json:"primary"`
-			} `json:"emails_attributes,omitempty"`
-			FirstName        string  `json:"first_name"`
-			FleetIdentifier  *string `json:"fleet_identifier,omitempty"`
-			LastName         string  `json:"last_name"`
-			MarketingOptIn   *bool   `json:"marketing_opt_in,omitempty"`
-			Notes            *string `json:"notes,omitempty"`
-			PhonesAttributes *[]struct {
-				Label   string `json:"label"`
-				Number  string `json:"number"`
-				Primary bool   `json:"primary"`
-			} `json:"phones_attributes,omitempty"`
-			PoRequired      *bool          `json:"po_required,omitempty"`
-			TagIds          *[]interface{} `json:"tag_ids,omitempty"`
-			TaxExempt       *bool          `json:"tax_exempt,omitempty"`
-			TaxExemptNumber *string        `json:"tax_exempt_number,omitempty"`
-		}{
-			FirstName: firstName,
-			LastName:  lastName,
-		},
-	}
-	applyCustomerFlags(&body)
-
-	resp, err := client.CreateCustomer(context.Background(), body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON201)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: createBreadcrumbs("customers", "3")}
-	return output.Render(cmd.OutOrStdout(), data, "Customer created.", nil, opts)
+	return runCreate(cmd, "customers", "/customers", "Customer created.", func() (any, error) {
+		firstName, lastName := splitName(customerCreateFullName)
+		body := generated.CreateCustomerJSONRequestBody{
+			Customer: struct {
+				AddressesAttributes *[]struct {
+					Address1   string `json:"address1"`
+					City       string `json:"city"`
+					Country    string `json:"country"`
+					IsBilling  bool   `json:"is_billing"`
+					PostalCode string `json:"postal_code"`
+					State      string `json:"state"`
+				} `json:"addresses_attributes,omitempty"`
+				BillingTerms     *string `json:"billing_terms,omitempty"`
+				CompanyName      *string `json:"company_name,omitempty"`
+				CreditLimitCents *string `json:"credit_limit_cents,omitempty"`
+				DiscountPercent  *string `json:"discount_percent,omitempty"`
+				EmailsAttributes *[]struct {
+					Email   string `json:"email"`
+					Label   string `json:"label"`
+					Primary bool   `json:"primary"`
+				} `json:"emails_attributes,omitempty"`
+				FirstName        string  `json:"first_name"`
+				FleetIdentifier  *string `json:"fleet_identifier,omitempty"`
+				LastName         string  `json:"last_name"`
+				MarketingOptIn   *bool   `json:"marketing_opt_in,omitempty"`
+				Notes            *string `json:"notes,omitempty"`
+				PhonesAttributes *[]struct {
+					Label   string `json:"label"`
+					Number  string `json:"number"`
+					Primary bool   `json:"primary"`
+				} `json:"phones_attributes,omitempty"`
+				PoRequired      *bool          `json:"po_required,omitempty"`
+				TagIds          *[]interface{} `json:"tag_ids,omitempty"`
+				TaxExempt       *bool          `json:"tax_exempt,omitempty"`
+				TaxExemptNumber *string        `json:"tax_exempt_number,omitempty"`
+			}{
+				FirstName: firstName,
+				LastName:  lastName,
+			},
+		}
+		applyCustomerFlags(&body)
+		return body, nil
+	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
+		resp, err := client.CreateCustomer(ctx, body.(generated.CreateCustomerJSONRequestBody))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON201, nil
+	})
 }
 
 func runCustomersUpdate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("PATCH", "/customers/"+args[0])
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	body := generated.UpdateCustomerJSONRequestBody{}
-	applyCustomerUpdateFlags(&body)
-
-	resp, err := client.UpdateCustomer(context.Background(), id, body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("customers", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "Customer updated.", nil, opts)
+	return runUpdate(cmd, args, "customers", "/customers/", "Customer updated.", func(id int) (any, error) {
+		body := generated.UpdateCustomerJSONRequestBody{}
+		applyCustomerUpdateFlags(&body)
+		return body, nil
+	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
+		resp, err := client.UpdateCustomer(ctx, id, body.(generated.UpdateCustomerJSONRequestBody))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runCustomersMerge(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("POST", "/customers/"+args[0]+"/merge")
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	body := generated.MergeCustomerJSONRequestBody{SourceCustomerId: customerMergeSourceID}
-	resp, err := client.MergeCustomer(context.Background(), id, body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("customers", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "Customer merged.", nil, opts)
+	return runAction(cmd, args, "customers", "POST", func(a []string) string { return "/customers/" + a[0] + "/merge" }, "Customer merged.", func(id int) (any, error) {
+		return generated.MergeCustomerJSONRequestBody{SourceCustomerId: customerMergeSourceID}, nil
+	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
+		resp, err := client.MergeCustomer(ctx, id, body.(generated.MergeCustomerJSONRequestBody))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runCustomersLookup(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/customers/lookup")
-
-	resp, err := client.LookupCustomer(context.Background(), args[0])
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("customers")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "customers", "/customers/lookup", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.LookupCustomer(ctx, args[0])
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runCustomersDuplicates(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/customers/check_duplicate")
-
-	params := generated.CheckCustomerDuplicateParams{
-		FirstName: strPtr(customerDuplicateFirstName),
-		LastName:  strPtr(customerDuplicateLastName),
-		Email:     strPtr(customerDuplicateEmail),
-	}
-	resp, err := client.CheckCustomerDuplicate(context.Background(), params)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("customers")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runList(cmd, "customers", "/customers/check_duplicate", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		params := generated.CheckCustomerDuplicateParams{
+			FirstName: strPtr(customerDuplicateFirstName),
+			LastName:  strPtr(customerDuplicateLastName),
+			Email:     strPtr(customerDuplicateEmail),
+		}
+		resp, err := client.CheckCustomerDuplicate(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runCustomersVehicles(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/customers/"+args[0]+"/vehicles")
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-	resp, err := client.ListCustomerVehicles(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("customers")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runShow(cmd, args, "customers", "GET", func(a []string) string { return "/customers/" + a[0] + "/vehicles" }, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ListCustomerVehicles(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runCustomersWorkOrders(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/customers/"+args[0]+"/work_orders")
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-	resp, err := client.ListCustomerWorkOrders(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("customers")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runShow(cmd, args, "customers", "GET", func(a []string) string { return "/customers/" + a[0] + "/work_orders" }, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ListCustomerWorkOrders(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runCustomersStatements(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/customers/"+args[0]+"/statements")
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-	resp, err := client.ListCustomerStatements(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("customers")}
-	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+	return runShow(cmd, args, "customers", "GET", func(a []string) string { return "/customers/" + a[0] + "/statements" }, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ListCustomerStatements(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func splitName(full string) (string, string) {
@@ -450,6 +338,16 @@ func strPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func boolPtr(b bool) *bool { return &b }
+
+func parseLabelValue(s string) (string, string) {
+	parts := strings.SplitN(s, "|", 2)
+	if len(parts) == 2 {
+		return parts[0], parts[1]
+	}
+	return "", parts[0]
 }
 
 func applyCustomerFlags(body *generated.CreateCustomerJSONRequestBody) {
@@ -632,16 +530,6 @@ func applyCustomerUpdateFlags(body *generated.UpdateCustomerJSONRequestBody) {
 	}
 }
 
-func parseLabelValue(s string) (string, string) {
-	parts := strings.SplitN(s, "|", 2)
-	if len(parts) == 2 {
-		return parts[0], parts[1]
-	}
-	return "", parts[0]
-}
-
-func boolPtr(b bool) *bool { return &b }
-
 // extractData converts the generated response's JSON200 field to a
 // generic map/slice for the output renderer. The generated types have
 // pointer fields and nested structs — we marshal to JSON and back to
@@ -650,22 +538,16 @@ func extractData(json200 any) any {
 	if json200 == nil {
 		return nil
 	}
-	// Use JSON round-trip to convert typed structs to generic maps
-	b, err := jsonMarshal(json200)
+	b, err := json.Marshal(json200)
 	if err != nil {
 		return json200
 	}
 	var result any
-	if jsonUnmarshal(b, &result) != nil {
+	if json.Unmarshal(b, &result) != nil {
 		return json200
 	}
 	if m, ok := result.(map[string]any); ok {
 		return m
 	}
 	return result
-}
-
-func jsonMarshal(v any) ([]byte, error) { return json.Marshal(v) }
-func jsonUnmarshal(b []byte, v any) error {
-	return json.Unmarshal(b, v)
 }

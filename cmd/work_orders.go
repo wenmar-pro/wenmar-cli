@@ -3,11 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"strconv"
 
+	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
-	"github.com/spf13/cobra"
 )
 
 var workOrdersCmd = &cobra.Command{
@@ -109,27 +108,13 @@ func init() {
 }
 
 func runWorkOrdersList(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("GET", "/work_orders")
-
-	resp, paginator, err := client.ListWorkOrdersWithPagination(context.Background())
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	summary := fmt.Sprintf("Page 1. More results: %v", paginator.HasNext())
-	meta := &output.Meta{HasNext: paginator.HasNext()}
-
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	if mode == output.ModeIDsOnly || mode == output.ModeCount {
-		output.PrintPaginationNotice(meta, 1)
-	}
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("work_orders")}
-	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
+	return runListPaginated(cmd, "work_orders", "/work_orders", func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
+		resp, paginator, err := client.ListWorkOrdersWithPagination(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		return resp.JSON200, paginator, nil
+	})
 }
 
 func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
@@ -139,9 +124,9 @@ func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
 	}
 	setRequest("GET", "/work_orders/"+args[0])
 
-	id, err := strconv.Atoi(args[0])
+	id, err := parseInt(args[0])
 	if err != nil {
-		return fmt.Errorf("id must be an integer")
+		return err
 	}
 
 	resp, err := client.ShowWorkOrder(context.Background(), id)
@@ -155,144 +140,93 @@ func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+	mode := resolveMode()
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("work_orders", args[0]), Notice: notice}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
 
 func runWorkOrdersCreate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("POST", "/work_orders")
-
-	body := wenmar.CreateWorkOrderRequest{
-		CustomerID: workOrderCreateCustomer,
-		VehicleID:  workOrderCreateVehicle,
-	}
-
-	resp, err := client.CreateWorkOrder(context.Background(), body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON201)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: createBreadcrumbs("work_orders", "10")}
-	return output.Render(cmd.OutOrStdout(), data, "Work order created.", nil, opts)
+	return runCreate(cmd, "work_orders", "/work_orders", "Work order created.", func() (any, error) {
+		return wenmar.CreateWorkOrderRequest{
+			CustomerID: workOrderCreateCustomer,
+			VehicleID:  workOrderCreateVehicle,
+		}, nil
+	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
+		resp, err := client.CreateWorkOrder(ctx, body.(wenmar.CreateWorkOrderRequest))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON201, nil
+	})
 }
 
 func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("PATCH", "/work_orders/"+args[0])
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	body := wenmar.UpdateWorkOrderRequest{
-		IntakeMethod: workOrderUpdateIntakeMethod,
-	}
-
-	resp, err := client.UpdateWorkOrder(context.Background(), id, body)
-	if err != nil {
-		return err
-	}
-
-	data := extractData(resp.JSON200)
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("work_orders", args[0])}
-	return output.Render(cmd.OutOrStdout(), data, "Work order updated.", nil, opts)
+	return runUpdate(cmd, args, "work_orders", "/work_orders/", "Work order updated.", func(id int) (any, error) {
+		return wenmar.UpdateWorkOrderRequest{
+			IntakeMethod: workOrderUpdateIntakeMethod,
+		}, nil
+	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
+		resp, err := client.UpdateWorkOrder(ctx, id, body.(wenmar.UpdateWorkOrderRequest))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
 }
 
 func runWorkOrdersDelete(cmd *cobra.Command, args []string) error {
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("id must be an integer")
-	}
-
-	if workOrdersDeleteDryRun {
-		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("work_orders", args[0])}
-		dryRunData := map[string]any{
-			"dry_run":      true,
-			"would_delete": fmt.Sprintf("work_order:%d", id),
-		}
-		return output.Render(cmd.OutOrStdout(), dryRunData, fmt.Sprintf("Would delete work order %d (dry run).", id), nil, opts)
-	}
-
-	client, err := newScopedClient(context.Background())
-	if err != nil {
-		return err
-	}
-	setRequest("DELETE", "/work_orders/"+args[0])
-
-	_, err = client.DeleteWorkOrder(context.Background(), id)
-	if err != nil {
-		return err
-	}
-
-	mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("work_orders")}
-	return output.Render(cmd.OutOrStdout(), nil, fmt.Sprintf("Work order %d deleted.", id), nil, opts)
+	return runDelete(cmd, args, "Work order", "work_orders", "/work_orders/", workOrdersDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		return client.DeleteWorkOrder(ctx, id)
+	})
 }
 
 // runWorkOrdersTab returns a RunE that fetches a work order sub-collection
 // (estimate/wip/inspection/parts/payments) and renders it generically.
 func runWorkOrdersTab(tab string) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		client, err := newScopedClient(context.Background())
+		return runShow(cmd, args, "work_orders", "GET", func(a []string) string { return fmt.Sprintf("/work_orders/%s/%s", a[0], tab) }, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+			resp, err := fetchWorkOrderTab(ctx, client, id, tab)
+			if err != nil {
+				return nil, err
+			}
+			return resp, nil
+		})
+	}
+}
+
+func fetchWorkOrderTab(ctx context.Context, client *wenmar.Client, id int, tab string) (any, error) {
+	switch tab {
+	case "estimate":
+		resp, err := client.ShowWorkOrderEstimate(ctx, id)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		setRequest("GET", fmt.Sprintf("/work_orders/%s/%s", args[0], tab))
-
-		id, err := strconv.Atoi(args[0])
+		return resp.JSON200, nil
+	case "wip":
+		resp, err := client.ShowWorkOrderWip(ctx, id)
 		if err != nil {
-			return fmt.Errorf("id must be an integer")
+			return nil, err
 		}
-
-		var data any
-		switch tab {
-		case "estimate":
-			resp, err := client.ShowWorkOrderEstimate(context.Background(), id)
-			if err != nil {
-				return err
-			}
-			data = extractData(resp.JSON200)
-		case "wip":
-			resp, err := client.ShowWorkOrderWip(context.Background(), id)
-			if err != nil {
-				return err
-			}
-			data = extractData(resp.JSON200)
-		case "inspection":
-			resp, err := client.ShowWorkOrderInspection(context.Background(), id)
-			if err != nil {
-				return err
-			}
-			data = extractData(resp.JSON200)
-		case "parts":
-			resp, err := client.ShowWorkOrderParts(context.Background(), id)
-			if err != nil {
-				return err
-			}
-			data = extractData(resp.JSON200)
-		case "payments":
-			resp, err := client.ShowWorkOrderPayments(context.Background(), id)
-			if err != nil {
-				return err
-			}
-			data = extractData(resp.JSON200)
+		return resp.JSON200, nil
+	case "inspection":
+		resp, err := client.ShowWorkOrderInspection(ctx, id)
+		if err != nil {
+			return nil, err
 		}
-
-		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
-		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("work_orders", args[0])}
-		return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
+		return resp.JSON200, nil
+	case "parts":
+		resp, err := client.ShowWorkOrderParts(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	case "payments":
+		resp, err := client.ShowWorkOrderPayments(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	default:
+		return nil, fmt.Errorf("unknown tab: %s", tab)
 	}
 }
