@@ -34,6 +34,9 @@ type AppModel struct {
 	accountName    string
 	accountFetched bool
 
+	width  int
+	height int
+
 	online      bool
 	lastRefresh time.Time
 	showHelp    bool
@@ -57,6 +60,8 @@ func NewApp(client *wenmar.Client, locationID string, interval time.Duration) Ap
 			NewVehicleList(client, locationID),
 		},
 		layout: NewLayout(),
+		width:  80,
+		height: 24,
 	}
 }
 
@@ -107,6 +112,10 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
 	case tea.KeyMsg:
 		return m.updateKey(msg)
 	case tickMsg:
@@ -217,12 +226,12 @@ func (m AppModel) updateKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m AppModel) View() string {
-	m.layout.SetContent(m.tabs[m.active].View(0))
+	m.layout.SetContent(m.tabs[m.active].View(m.width))
 	m.layout.SetFooter(m.renderFooter())
 	if m.showHelp {
-		m.layout.SetContent(m.tabs[m.active].View(0) + "\n" + m.renderHelp())
+		m.layout.SetContent(m.tabs[m.active].View(m.width) + "\n" + m.renderHelp())
 	}
-	return m.layout.View(80, 24)
+	return m.layout.View(m.width, m.height)
 }
 
 func (m AppModel) renderFooter() string {

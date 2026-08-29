@@ -133,3 +133,15 @@ func TestAppModel_FooterContainsSidebarHint(t *testing.T) {
 		t.Error("expected footer to contain '/' hint for search")
 	}
 }
+
+func TestAppModel_WindowSizeSetsDimensions(t *testing.T) {
+	m := NewApp(nil, "", 0)
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updated.(AppModel)
+	if m.width != 120 {
+		t.Fatalf("expected width 120, got %d", m.width)
+	}
+	if m.height != 40 {
+		t.Fatalf("expected height 40, got %d", m.height)
+	}
+}
