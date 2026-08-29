@@ -61,4 +61,41 @@ var (
 
 	TabBarStyle = lipgloss.NewStyle().
 		MarginBottom(1)
+
+	TopBarStyle = lipgloss.NewStyle().
+		Background(lipgloss.Color("235")).
+		Foreground(lipgloss.Color("15")).
+		Padding(0, 1)
+
+	SearchBarStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("245"))
+
+	SearchBarFocusStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("15")).
+		Background(lipgloss.Color("24"))
+
+	SidebarStyle = lipgloss.NewStyle().
+		Background(lipgloss.Color("236")).
+		Foreground(lipgloss.Color("15")).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		Padding(0, 1)
+
+	SidebarActiveItemStyle = lipgloss.NewStyle().
+		Bold(true).
+		Background(lipgloss.Color("36")).
+		Foreground(lipgloss.Color("15"))
+
+	SidebarInactiveItemStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("245"))
+
+	BadgeStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("245"))
+
+	QuickActionStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("36"))
+
+	UserStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("15"))
 )

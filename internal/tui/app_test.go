@@ -6,6 +6,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+func TestKeys_HasSidebarAndSearchBindings(t *testing.T) {
+	if len(Keys.SidebarToggle.Keys()) == 0 {
+		t.Error("SidebarToggle binding has no keys")
+	}
+	if len(Keys.FocusSearch.Keys()) == 0 {
+		t.Error("FocusSearch binding has no keys")
+	}
+}
+
 func TestAppModel_TabSwitch(t *testing.T) {
 	m := NewApp(nil, "", 0)
 	if m.active != 0 {

@@ -19,6 +19,9 @@ type KeyMap struct {
 	Tab1       key.Binding
 	Tab2       key.Binding
 	Tab3       key.Binding
+
+	SidebarToggle key.Binding
+	FocusSearch   key.Binding
 }
 
 var Keys = KeyMap{
@@ -85,5 +88,13 @@ var Keys = KeyMap{
 	Tab3: key.NewBinding(
 		key.WithKeys("3"),
 		key.WithHelp("3", "vehicles"),
+	),
+	SidebarToggle: key.NewBinding(
+		key.WithKeys("`"),
+		key.WithHelp("`", "toggle sidebar"),
+	),
+	FocusSearch: key.NewBinding(
+		key.WithKeys("/"),
+		key.WithHelp("/", "search"),
 	),
 }
