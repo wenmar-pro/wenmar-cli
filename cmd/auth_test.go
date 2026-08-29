@@ -12,6 +12,28 @@ import (
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 )
 
+func TestRunAuthLogin_StaticTokenStillWorks(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config")
+
+	tokenFlag = "static-token-123"
+	defer func() { tokenFlag = "" }()
+
+	if err := runAuthLogin(&bytes.Buffer{}, configPath); err != nil {
+		t.Fatalf("runAuthLogin with static token failed: %v", err)
+	}
+
+	// Verify the config recorded the static auth method. The token itself
+	// goes to the real keyring (not testable in CI); config is the contract.
+	cfg, err := config.LoadFrom(configPath)
+	if err != nil {
+		t.Fatalf("LoadFrom failed: %v", err)
+	}
+	if cfg.AuthMethod != "static" {
+		t.Errorf("AuthMethod = %q, want static", cfg.AuthMethod)
+	}
+}
+
 func TestAuthLogin_StoresToken(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
@@ -21,7 +43,7 @@ func TestAuthLogin_StoresToken(t *testing.T) {
 	defer func() { tokenFlag = oldToken }()
 
 	var output bytes.Buffer
-	if err := runAuthLogin(strings.NewReader(""), &output, configPath); err != nil {
+	if err := runAuthLogin(&output, configPath); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 

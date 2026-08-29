@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	oauthflow "github.com/wenmar-pro/wenmar-cli/internal/auth/oauth"
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
@@ -22,13 +22,13 @@ var authCmd = &cobra.Command{
 
 var authLoginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Store your API token (OAuth browser flow coming in a future release)",
+	Short: "Log in via OAuth browser flow (or --token for static token)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configPath, err := config.ConfigPath()
 		if err != nil {
 			return err
 		}
-		return runAuthLogin(cmd.InOrStdin(), cmd.OutOrStdout(), configPath)
+		return runAuthLogin(cmd.OutOrStdout(), configPath)
 	},
 }
 
@@ -85,27 +85,48 @@ func init() {
 	rootCmd.AddCommand(authCmd)
 }
 
-func runAuthLogin(in io.Reader, out io.Writer, configPath string) error {
-	token := tokenFlag
-	if token == "" {
-		fmt.Fprintln(out, "  OAuth browser flow will be added in a future release. For now, enter your API token.")
-		fmt.Fprint(out, "  Enter your API token: ")
-		var line string
-		if _, err := fmt.Fscanln(in, &line); err != nil {
-			return fmt.Errorf("could not read token: %w", err)
-		}
-		token = strings.TrimSpace(line)
-	}
-	if token == "" {
-		return fmt.Errorf("token is required")
+func runAuthLogin(out io.Writer, configPath string) error {
+	// Static token path: --token flag provided (backward compat for CI/agents)
+	if tokenFlag != "" {
+		return storeStaticToken(tokenFlag, configPath, out)
 	}
 
+	// OAuth flow: no --token flag
+	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
+	fmt.Fprintf(out, "  Opening browser to log in to %s...\n", baseURL)
+
+	token, err := oauthflow.Login(context.Background(), baseURL)
+	if err != nil {
+		return fmt.Errorf("OAuth login failed: %w", err)
+	}
+
+	// Store token (keyring with file fallback)
+	store := authpkg.NewCredentialStore()
+	if err := store.SaveToken(context.Background(), token); err != nil {
+		return fmt.Errorf("failed to store token: %w", err)
+	}
+
+	// Save config
+	cfg, err := config.LoadFrom(configPath)
+	if err != nil {
+		cfg = &config.Config{}
+	}
+	cfg.BaseURL = baseURL
+	cfg.AuthMethod = "oauth"
+	if err := config.SaveTo(configPath, cfg); err != nil {
+		return fmt.Errorf("failed to save config: %w", err)
+	}
+
+	fmt.Fprintln(out, "  Logged in successfully.")
+	return nil
+}
+
+func storeStaticToken(token, configPath string, out io.Writer) error {
 	store := authpkg.NewCredentialStore()
 	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
 		return fmt.Errorf("failed to store token: %w", err)
 	}
 
-	// Save base_url to config if not already present.
 	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
 	cfg, err := config.LoadFrom(configPath)
 	if err != nil {
