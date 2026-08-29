@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
@@ -15,7 +14,7 @@ type VehicleDetail struct {
 	locationID string
 	id         int
 
-	vehicle *generated.Vehicle
+	vehicle *wenmar.Vehicle
 	loading bool
 	err     error
 }
@@ -144,14 +143,14 @@ func (m *VehicleDetail) View() string {
 }
 
 type vehicleDetailResultMsg struct {
-	vehicle *generated.Vehicle
+	vehicle *wenmar.Vehicle
 	err     error
 }
 
 func fetchVehicleDetail(client *wenmar.Client, locationID string, id int) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *generated.ShowVehicleResponse
+		var resp *wenmar.ShowVehicleResponse
 		var err error
 		if locationID != "" {
 			lc, lerr := client.ForLocation(ctx, locationID)

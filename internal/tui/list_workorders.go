@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
@@ -13,7 +12,7 @@ import (
 // provides work-order-specific fetching, column rendering, and detail
 // navigation.
 type WorkOrderList struct {
-	ListModel[generated.WorkOrder]
+	ListModel[wenmar.WorkOrder]
 	detail   *DetailModel
 	inDetail bool
 }
@@ -104,7 +103,7 @@ var workOrderHeaders = []string{
 	fmt.Sprintf("%-8s %-20s %-20s %-12s %-15s", "WO#", "Customer", "Vehicle", "Status", "Updated"),
 }
 
-func (m *WorkOrderList) workOrderRow(wo generated.WorkOrder) []string {
+func (m *WorkOrderList) workOrderRow(wo wenmar.WorkOrder) []string {
 	return []string{fmt.Sprintf("%-8d %-20s %-20s %-12s %-15s",
 		wo.WorkOrderNumber,
 		truncate(wo.Customer.FullName, 20),
@@ -115,7 +114,7 @@ func (m *WorkOrderList) workOrderRow(wo generated.WorkOrder) []string {
 }
 
 type workOrderListResultMsg struct {
-	items []generated.WorkOrder
+	items []wenmar.WorkOrder
 	err   error
 }
 
@@ -124,7 +123,7 @@ type workOrderListResultMsg struct {
 func fetchWorkOrders(client *wenmar.Client, locationID string) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *generated.ListWorkOrdersResponse
+		var resp *wenmar.ListWorkOrdersResponse
 		var err error
 		if locationID != "" {
 			lc, lerr := client.ForLocation(ctx, locationID)

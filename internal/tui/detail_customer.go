@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
@@ -15,7 +14,7 @@ type CustomerDetail struct {
 	locationID string
 	id         int
 
-	customer *generated.Customer
+	customer *wenmar.Customer
 	loading  bool
 	err      error
 }
@@ -110,14 +109,14 @@ func (m *CustomerDetail) View() string {
 }
 
 type customerDetailResultMsg struct {
-	customer *generated.Customer
+	customer *wenmar.Customer
 	err      error
 }
 
 func fetchCustomerDetail(client *wenmar.Client, locationID string, id int) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *generated.ShowCustomerResponse
+		var resp *wenmar.ShowCustomerResponse
 		var err error
 		if locationID != "" {
 			lc, lerr := client.ForLocation(ctx, locationID)

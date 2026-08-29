@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
@@ -76,9 +75,9 @@ func runTagsList(cmd *cobra.Command, args []string) error {
 func runTagsCreate(cmd *cobra.Command, args []string) error {
 	if tagsType == "vehicle" {
 		return runCreate(cmd, "tags", "/vehicle_tags", "Vehicle tag created.", func() (any, error) {
-			return generated.CreateVehicleTagJSONRequestBody{Name: tagsName}, nil
+			return wenmar.CreateVehicleTagRequest{Name: tagsName}, nil
 		}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
-			resp, err := client.CreateVehicleTag(ctx, body.(generated.CreateVehicleTagJSONRequestBody))
+			resp, err := client.CreateVehicleTag(ctx, body.(wenmar.CreateVehicleTagRequest))
 			if err != nil {
 				return nil, err
 			}
@@ -87,9 +86,9 @@ func runTagsCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	return runCreate(cmd, "tags", "/customer_tags", "Customer tag created.", func() (any, error) {
-		return generated.CreateCustomerTagJSONRequestBody{Name: tagsName}, nil
+		return wenmar.CreateCustomerTagRequest{Name: tagsName}, nil
 	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
-		resp, err := client.CreateCustomerTag(ctx, body.(generated.CreateCustomerTagJSONRequestBody))
+		resp, err := client.CreateCustomerTag(ctx, body.(wenmar.CreateCustomerTagRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -98,48 +97,36 @@ func runTagsCreate(cmd *cobra.Command, args []string) error {
 }
 
 func runTagsDelete(cmd *cobra.Command, args []string) error {
-	return runTagsMutation(cmd, "Tag deleted.", func() generated.UpdateTagsJSONRequestBody {
-		body := generated.UpdateTagsJSONRequestBody{}
+	return runTagsMutation(cmd, "Tag deleted.", func() wenmar.UpdateTagsRequest {
+		req := wenmar.UpdateTagsRequest{}
 		destroy := "1"
 		if tagsType == "vehicle" {
-			body.VehicleTags = &[]struct {
-				UnderscoreDestroy string `json:"_destroy"`
-				Id                int    `json:"id"`
-			}{{UnderscoreDestroy: destroy, Id: tagsID}}
+			vt := []wenmar.VehicleTagUpdate{{UnderscoreDestroy: destroy, Id: tagsID}}
+			req.VehicleTags = &vt
 		} else {
-			body.CustomerTags = []struct {
-				UnderscoreDestroy *string `json:"_destroy,omitempty"`
-				Id                int     `json:"id"`
-				Name              *string `json:"name,omitempty"`
-			}{{UnderscoreDestroy: &destroy, Id: tagsID}}
+			req.CustomerTags = []wenmar.CustomerTagUpdate{{UnderscoreDestroy: &destroy, Id: tagsID}}
 		}
-		return body
+		return req
 	})
 }
 
 func runTagsRename(cmd *cobra.Command, args []string) error {
-	return runTagsMutation(cmd, fmt.Sprintf("Tag %d renamed to %s.", tagsID, tagsName), func() generated.UpdateTagsJSONRequestBody {
-		body := generated.UpdateTagsJSONRequestBody{}
+	return runTagsMutation(cmd, fmt.Sprintf("Tag %d renamed to %s.", tagsID, tagsName), func() wenmar.UpdateTagsRequest {
+		req := wenmar.UpdateTagsRequest{}
 		name := tagsName
 		if tagsType == "vehicle" {
-			body.VehicleTags = &[]struct {
-				UnderscoreDestroy string `json:"_destroy"`
-				Id                int    `json:"id"`
-			}{{Id: tagsID}}
+			vt := []wenmar.VehicleTagUpdate{{Id: tagsID}}
+			req.VehicleTags = &vt
 		} else {
-			body.CustomerTags = []struct {
-				UnderscoreDestroy *string `json:"_destroy,omitempty"`
-				Id                int     `json:"id"`
-				Name              *string `json:"name,omitempty"`
-			}{{Id: tagsID, Name: &name}}
+			req.CustomerTags = []wenmar.CustomerTagUpdate{{Id: tagsID, Name: &name}}
 		}
-		return body
+		return req
 	})
 }
 
 // runTagsMutation is the shared skeleton for tags delete/rename, which both
 // PATCH /settings/tags and render the response.
-func runTagsMutation(cmd *cobra.Command, summary string, bodyBuilder func() generated.UpdateTagsJSONRequestBody) error {
+func runTagsMutation(cmd *cobra.Command, summary string, bodyBuilder func() wenmar.UpdateTagsRequest) error {
 	client, err := newScopedClient(context.Background())
 	if err != nil {
 		return err

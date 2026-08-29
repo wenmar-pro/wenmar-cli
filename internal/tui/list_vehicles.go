@@ -5,13 +5,12 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 // VehicleList is the vehicles tab.
 type VehicleList struct {
-	ListModel[generated.Vehicle]
+	ListModel[wenmar.Vehicle]
 	detail   *VehicleDetail
 	inDetail bool
 }
@@ -95,7 +94,7 @@ var vehicleHeaders = []string{
 	fmt.Sprintf("%-6s %-12s %-12s %-18s %-20s %-10s", "Year", "Make", "Model", "VIN", "Customer", "Open WOs"),
 }
 
-func (m *VehicleList) vehicleRow(v generated.Vehicle) []string {
+func (m *VehicleList) vehicleRow(v wenmar.Vehicle) []string {
 	return []string{fmt.Sprintf("%-6d %-12s %-12s %-18s %-20s %-10d",
 		v.Year,
 		truncate(v.Make, 12),
@@ -107,14 +106,14 @@ func (m *VehicleList) vehicleRow(v generated.Vehicle) []string {
 }
 
 type vehicleListResultMsg struct {
-	items []generated.Vehicle
+	items []wenmar.Vehicle
 	err   error
 }
 
 func fetchVehicles(client *wenmar.Client, locationID string) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *generated.ListVehiclesResponse
+		var resp *wenmar.ListVehiclesResponse
 		var err error
 		if locationID != "" {
 			lc, lerr := client.ForLocation(ctx, locationID)

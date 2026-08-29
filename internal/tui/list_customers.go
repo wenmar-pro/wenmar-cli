@@ -5,13 +5,12 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
 // CustomerList is the customers tab.
 type CustomerList struct {
-	ListModel[generated.Customer]
+	ListModel[wenmar.Customer]
 	detail   *CustomerDetail
 	inDetail bool
 }
@@ -95,7 +94,7 @@ var customerHeaders = []string{
 	fmt.Sprintf("%-24s %-10s %-10s %-12s %-15s", "Name", "Type", "Vehicles", "Balance", "Updated"),
 }
 
-func (m *CustomerList) customerRow(c generated.Customer) []string {
+func (m *CustomerList) customerRow(c wenmar.Customer) []string {
 	return []string{fmt.Sprintf("%-24s %-10s %-10d %-12s %-15s",
 		truncate(c.FullName, 24),
 		truncate(c.Type, 10),
@@ -106,14 +105,14 @@ func (m *CustomerList) customerRow(c generated.Customer) []string {
 }
 
 type customerListResultMsg struct {
-	items []generated.Customer
+	items []wenmar.Customer
 	err   error
 }
 
 func fetchCustomers(client *wenmar.Client, locationID string) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *generated.ListCustomersResponse
+		var resp *wenmar.ListCustomersResponse
 		var err error
 		if locationID != "" {
 			lc, lerr := client.ForLocation(ctx, locationID)

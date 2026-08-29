@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
@@ -91,25 +90,25 @@ var customerDuplicateEmail string
 var customerDuplicatePhone string
 
 var (
-	customerCreateFullName        string
-	customerUpdateFullName        string
-	customerCompanyName           string
-	customerFleetIdentifier       string
-	customerBillingTerms          string
-	customerCreditLimit           string
-	customerTaxExempt             bool
-	customerTaxExemptNumber       string
-	customerNotes                 string
-	customerMarketingOptIn        bool
-	customerDiscountPercent       string
-	customerPoRequired            bool
-	customerEmails                []string
-	customerPhones                []string
-	customerAddresses             []string
-	customerTagIDs                []int
-	customerRemoveEmailIDs        []int
-	customerRemovePhoneIDs        []int
-	customerRemoveAddressIDs      []int
+	customerCreateFullName   string
+	customerUpdateFullName    string
+	customerCompanyName       string
+	customerFleetIdentifier   string
+	customerBillingTerms      string
+	customerCreditLimit       string
+	customerTaxExempt         bool
+	customerTaxExemptNumber   string
+	customerNotes             string
+	customerMarketingOptIn    bool
+	customerDiscountPercent   string
+	customerPoRequired        bool
+	customerEmails            []string
+	customerPhones            []string
+	customerAddresses         []string
+	customerTagIDs            []int
+	customerRemoveEmailIDs    []int
+	customerRemovePhoneIDs    []int
+	customerRemoveAddressIDs  []int
 )
 
 func init() {
@@ -192,48 +191,14 @@ func runCustomersShow(cmd *cobra.Command, args []string) error {
 func runCustomersCreate(cmd *cobra.Command, args []string) error {
 	return runCreate(cmd, "customers", "/customers", "Customer created.", func() (any, error) {
 		firstName, lastName := splitName(customerCreateFullName)
-		body := generated.CreateCustomerJSONRequestBody{
-			Customer: struct {
-				AddressesAttributes *[]struct {
-					Address1   string `json:"address1"`
-					City       string `json:"city"`
-					Country    string `json:"country"`
-					IsBilling  bool   `json:"is_billing"`
-					PostalCode string `json:"postal_code"`
-					State      string `json:"state"`
-				} `json:"addresses_attributes,omitempty"`
-				BillingTerms     *string `json:"billing_terms,omitempty"`
-				CompanyName      *string `json:"company_name,omitempty"`
-				CreditLimitCents *string `json:"credit_limit_cents,omitempty"`
-				DiscountPercent  *string `json:"discount_percent,omitempty"`
-				EmailsAttributes *[]struct {
-					Email   string `json:"email"`
-					Label   string `json:"label"`
-					Primary bool   `json:"primary"`
-				} `json:"emails_attributes,omitempty"`
-				FirstName        string  `json:"first_name"`
-				FleetIdentifier  *string `json:"fleet_identifier,omitempty"`
-				LastName         string  `json:"last_name"`
-				MarketingOptIn   *bool   `json:"marketing_opt_in,omitempty"`
-				Notes            *string `json:"notes,omitempty"`
-				PhonesAttributes *[]struct {
-					Label   string `json:"label"`
-					Number  string `json:"number"`
-					Primary bool   `json:"primary"`
-				} `json:"phones_attributes,omitempty"`
-				PoRequired      *bool          `json:"po_required,omitempty"`
-				TagIds          *[]interface{} `json:"tag_ids,omitempty"`
-				TaxExempt       *bool          `json:"tax_exempt,omitempty"`
-				TaxExemptNumber *string        `json:"tax_exempt_number,omitempty"`
-			}{
-				FirstName: firstName,
-				LastName:  lastName,
-			},
+		req := wenmar.CreateCustomerRequest{
+			FirstName: firstName,
+			LastName:  lastName,
 		}
-		applyCustomerFlags(&body)
-		return body, nil
+		applyCustomerFlags(&req)
+		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
-		resp, err := client.CreateCustomer(ctx, body.(generated.CreateCustomerJSONRequestBody))
+		resp, err := client.CreateCustomer(ctx, body.(wenmar.CreateCustomerRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -243,11 +208,11 @@ func runCustomersCreate(cmd *cobra.Command, args []string) error {
 
 func runCustomersUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "customers", "/customers/", "Customer updated.", func(id int) (any, error) {
-		body := generated.UpdateCustomerJSONRequestBody{}
-		applyCustomerUpdateFlags(&body)
-		return body, nil
+		req := wenmar.UpdateCustomerRequest{}
+		applyCustomerUpdateFlags(&req)
+		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.UpdateCustomer(ctx, id, body.(generated.UpdateCustomerJSONRequestBody))
+		resp, err := client.UpdateCustomer(ctx, id, body.(wenmar.UpdateCustomerRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -257,9 +222,9 @@ func runCustomersUpdate(cmd *cobra.Command, args []string) error {
 
 func runCustomersMerge(cmd *cobra.Command, args []string) error {
 	return runAction(cmd, args, "customers", "POST", func(a []string) string { return "/customers/" + a[0] + "/merge" }, "Customer merged.", func(id int) (any, error) {
-		return generated.MergeCustomerJSONRequestBody{SourceCustomerId: customerMergeSourceID}, nil
+		return wenmar.MergeCustomerRequest{SourceCustomerID: customerMergeSourceID}, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.MergeCustomer(ctx, id, body.(generated.MergeCustomerJSONRequestBody))
+		resp, err := client.MergeCustomer(ctx, id, body.(wenmar.MergeCustomerRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -279,7 +244,7 @@ func runCustomersLookup(cmd *cobra.Command, args []string) error {
 
 func runCustomersDuplicates(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "customers", "/customers/check_duplicate", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		params := generated.CheckCustomerDuplicateParams{
+		params := wenmar.CheckCustomerDuplicateParams{
 			FirstName: strPtr(customerDuplicateFirstName),
 			LastName:  strPtr(customerDuplicateLastName),
 			Email:     strPtr(customerDuplicateEmail),
@@ -350,72 +315,41 @@ func parseLabelValue(s string) (string, string) {
 	return "", parts[0]
 }
 
-func applyCustomerFlags(body *generated.CreateCustomerJSONRequestBody) {
-	b := &body.Customer
-	b.CompanyName = strPtr(customerCompanyName)
-	b.FleetIdentifier = strPtr(customerFleetIdentifier)
-	b.BillingTerms = strPtr(customerBillingTerms)
-	b.CreditLimitCents = strPtr(customerCreditLimit)
-	b.TaxExempt = boolPtr(customerTaxExempt)
-	b.TaxExemptNumber = strPtr(customerTaxExemptNumber)
-	b.Notes = strPtr(customerNotes)
-	b.MarketingOptIn = boolPtr(customerMarketingOptIn)
-	b.DiscountPercent = strPtr(customerDiscountPercent)
-	b.PoRequired = boolPtr(customerPoRequired)
+func applyCustomerFlags(req *wenmar.CreateCustomerRequest) {
+	req.CompanyName = strPtr(customerCompanyName)
+	req.FleetIdentifier = strPtr(customerFleetIdentifier)
+	req.BillingTerms = strPtr(customerBillingTerms)
+	req.CreditLimitCents = strPtr(customerCreditLimit)
+	req.TaxExempt = boolPtr(customerTaxExempt)
+	req.TaxExemptNumber = strPtr(customerTaxExemptNumber)
+	req.Notes = strPtr(customerNotes)
+	req.MarketingOptIn = boolPtr(customerMarketingOptIn)
+	req.DiscountPercent = strPtr(customerDiscountPercent)
+	req.PoRequired = boolPtr(customerPoRequired)
 
 	if len(customerEmails) > 0 {
-		emails := make([]struct {
-			Email   string `json:"email"`
-			Label   string `json:"label"`
-			Primary bool   `json:"primary"`
-		}, len(customerEmails))
+		emails := make([]wenmar.EmailAttribute, len(customerEmails))
 		for i, e := range customerEmails {
 			label, addr := parseLabelValue(e)
-			emails[i] = struct {
-				Email   string `json:"email"`
-				Label   string `json:"label"`
-				Primary bool   `json:"primary"`
-			}{Email: addr, Label: label, Primary: i == 0}
+			emails[i] = wenmar.EmailAttribute{Email: addr, Label: label, Primary: i == 0}
 		}
-		b.EmailsAttributes = &emails
+		req.Emails = &emails
 	}
 
 	if len(customerPhones) > 0 {
-		phones := make([]struct {
-			Label   string `json:"label"`
-			Number  string `json:"number"`
-			Primary bool   `json:"primary"`
-		}, len(customerPhones))
+		phones := make([]wenmar.PhoneAttribute, len(customerPhones))
 		for i, p := range customerPhones {
 			label, num := parseLabelValue(p)
-			phones[i] = struct {
-				Label   string `json:"label"`
-				Number  string `json:"number"`
-				Primary bool   `json:"primary"`
-			}{Label: label, Number: num, Primary: i == 0}
+			phones[i] = wenmar.PhoneAttribute{Label: label, Number: num, Primary: i == 0}
 		}
-		b.PhonesAttributes = &phones
+		req.Phones = &phones
 	}
 
 	if len(customerAddresses) > 0 {
-		addresses := make([]struct {
-			Address1   string `json:"address1"`
-			City       string `json:"city"`
-			Country    string `json:"country"`
-			IsBilling  bool   `json:"is_billing"`
-			PostalCode string `json:"postal_code"`
-			State      string `json:"state"`
-		}, len(customerAddresses))
+		addresses := make([]wenmar.AddressAttribute, len(customerAddresses))
 		for i, a := range customerAddresses {
 			parts := strings.Split(a, "|")
-			addr := struct {
-				Address1   string `json:"address1"`
-				City       string `json:"city"`
-				Country    string `json:"country"`
-				IsBilling  bool   `json:"is_billing"`
-				PostalCode string `json:"postal_code"`
-				State      string `json:"state"`
-			}{}
+			addr := wenmar.AddressAttribute{}
 			if len(parts) > 0 {
 				addr.Address1 = parts[0]
 			}
@@ -434,98 +368,51 @@ func applyCustomerFlags(body *generated.CreateCustomerJSONRequestBody) {
 			addr.IsBilling = i == 0
 			addresses[i] = addr
 		}
-		b.AddressesAttributes = &addresses
+		req.Addresses = &addresses
 	}
 }
 
-func applyCustomerUpdateFlags(body *generated.UpdateCustomerJSONRequestBody) {
-	b := &body.Customer
-	b.CompanyName = strPtr(customerCompanyName)
-	b.FleetIdentifier = strPtr(customerFleetIdentifier)
-	b.BillingTerms = strPtr(customerBillingTerms)
-	b.CreditLimitCents = strPtr(customerCreditLimit)
-	b.TaxExempt = boolPtr(customerTaxExempt)
-	b.Notes = strPtr(customerNotes)
-	b.MarketingOptIn = boolPtr(customerMarketingOptIn)
-	b.DiscountPercent = strPtr(customerDiscountPercent)
-	b.PoRequired = boolPtr(customerPoRequired)
+func applyCustomerUpdateFlags(req *wenmar.UpdateCustomerRequest) {
+	req.CompanyName = strPtr(customerCompanyName)
+	req.FleetIdentifier = strPtr(customerFleetIdentifier)
+	req.BillingTerms = strPtr(customerBillingTerms)
+	req.CreditLimitCents = strPtr(customerCreditLimit)
+	req.TaxExempt = boolPtr(customerTaxExempt)
+	req.Notes = strPtr(customerNotes)
+	req.MarketingOptIn = boolPtr(customerMarketingOptIn)
+	req.DiscountPercent = strPtr(customerDiscountPercent)
+	req.PoRequired = boolPtr(customerPoRequired)
 
 	if len(customerEmails) > 0 {
-		emails := make([]struct {
-			Email string  `json:"email"`
-			Id    *int    `json:"id,omitempty"`
-			Label *string `json:"label,omitempty"`
-		}, len(customerEmails))
+		emails := make([]wenmar.EmailUpdateAttribute, len(customerEmails))
 		for i, e := range customerEmails {
 			label, addr := parseLabelValue(e)
-			emails[i] = struct {
-				Email string  `json:"email"`
-				Id    *int    `json:"id,omitempty"`
-				Label *string `json:"label,omitempty"`
-			}{Email: addr, Label: &label}
-			_ = i
+			emails[i] = wenmar.EmailUpdateAttribute{Email: addr, Label: &label}
 		}
-		b.EmailsAttributes = &emails
-	}
-
-	if len(customerRemoveEmailIDs) > 0 {
-		removes := make([]struct {
-			Email string  `json:"email"`
-			Id    *int    `json:"id,omitempty"`
-			Label *string `json:"label,omitempty"`
-		}, 0)
-		_ = removes // email _destroy not supported by the generated update schema
+		req.Emails = &emails
 	}
 
 	if len(customerPhones) > 0 {
-		phones := make([]struct {
-			UnderscoreDestroy *bool   `json:"_destroy,omitempty"`
-			Id                *int    `json:"id,omitempty"`
-			Label             *string `json:"label,omitempty"`
-			Number            *string `json:"number,omitempty"`
-			Primary           *bool   `json:"primary,omitempty"`
-		}, len(customerPhones))
+		phones := make([]wenmar.PhoneUpdateAttribute, len(customerPhones))
 		for i, p := range customerPhones {
 			label, num := parseLabelValue(p)
 			prim := i == 0
-			phones[i] = struct {
-				UnderscoreDestroy *bool   `json:"_destroy,omitempty"`
-				Id                *int    `json:"id,omitempty"`
-				Label             *string `json:"label,omitempty"`
-				Number            *string `json:"number,omitempty"`
-				Primary           *bool   `json:"primary,omitempty"`
-			}{Label: &label, Number: &num, Primary: &prim}
+			phones[i] = wenmar.PhoneUpdateAttribute{Label: &label, Number: &num, Primary: &prim}
 		}
-		if b.PhonesAttributes != nil {
-			*b.PhonesAttributes = append(*b.PhonesAttributes, phones...)
-		} else {
-			b.PhonesAttributes = &phones
-		}
+		req.Phones = &phones
 	}
 
 	if len(customerRemovePhoneIDs) > 0 {
 		dest := true
-		removes := make([]struct {
-			UnderscoreDestroy *bool   `json:"_destroy,omitempty"`
-			Id                *int    `json:"id,omitempty"`
-			Label             *string `json:"label,omitempty"`
-			Number            *string `json:"number,omitempty"`
-			Primary           *bool   `json:"primary,omitempty"`
-		}, len(customerRemovePhoneIDs))
+		removes := make([]wenmar.PhoneUpdateAttribute, len(customerRemovePhoneIDs))
 		for i, id := range customerRemovePhoneIDs {
 			idv := id
-			removes[i] = struct {
-				UnderscoreDestroy *bool   `json:"_destroy,omitempty"`
-				Id                *int    `json:"id,omitempty"`
-				Label             *string `json:"label,omitempty"`
-				Number            *string `json:"number,omitempty"`
-				Primary           *bool   `json:"primary,omitempty"`
-			}{UnderscoreDestroy: &dest, Id: &idv}
+			removes[i] = wenmar.PhoneUpdateAttribute{UnderscoreDestroy: &dest, Id: &idv}
 		}
-		if b.PhonesAttributes != nil {
-			*b.PhonesAttributes = append(*b.PhonesAttributes, removes...)
+		if req.Phones != nil {
+			*req.Phones = append(*req.Phones, removes...)
 		} else {
-			b.PhonesAttributes = &removes
+			req.Phones = &removes
 		}
 	}
 }

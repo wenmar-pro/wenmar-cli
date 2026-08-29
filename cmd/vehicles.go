@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
@@ -98,7 +97,7 @@ var vehiclesWorkOrdersCmd = &cobra.Command{
 var (
 	vehicleCreateMake         string
 	vehicleCreateModel        string
-	vehicleCreateYear         int
+	vehicleCreateYear        int
 	vehicleCreateCustomer     int
 	vehiclesDeleteDryRun      bool
 	vehicleUpdateMake         string
@@ -203,39 +202,16 @@ func runVehiclesList(cmd *cobra.Command, args []string) error {
 
 func runVehiclesCreate(cmd *cobra.Command, args []string) error {
 	return runCreate(cmd, "vehicles", "/vehicles", "Vehicle created.", func() (any, error) {
-		body := generated.CreateVehicleJSONRequestBody{
-			Vehicle: struct {
-				BodyStyle         *string        `json:"body_style,omitempty"`
-				Color             *string        `json:"color,omitempty"`
-				CustomerId        int            `json:"customer_id"`
-				Drivetrain        *string        `json:"drivetrain,omitempty"`
-				Engine            *string        `json:"engine,omitempty"`
-				FleetIdentifier   *string        `json:"fleet_identifier,omitempty"`
-				LicensePlate      *string        `json:"license_plate,omitempty"`
-				LicensePlateState *string        `json:"license_plate_state,omitempty"`
-				Make              string         `json:"make"`
-				Model             string         `json:"model"`
-				Notes             *string        `json:"notes,omitempty"`
-				OdometerReading   *int           `json:"odometer_reading,omitempty"`
-				OdometerUnit      *string        `json:"odometer_unit,omitempty"`
-				ProductionDate    *string        `json:"production_date,omitempty"`
-				Submodel          *string        `json:"submodel,omitempty"`
-				Transmission      *string        `json:"transmission,omitempty"`
-				UnitNumber        *string        `json:"unit_number,omitempty"`
-				VehicleTagIds     *[]interface{} `json:"vehicle_tag_ids,omitempty"`
-				Vin               *string        `json:"vin,omitempty"`
-				Year              int            `json:"year"`
-			}{
-				CustomerId: vehicleCreateCustomer,
-				Make:       vehicleCreateMake,
-				Model:      vehicleCreateModel,
-				Year:       vehicleCreateYear,
-			},
+		req := wenmar.CreateVehicleRequest{
+			CustomerID: vehicleCreateCustomer,
+			Make:       vehicleCreateMake,
+			Model:      vehicleCreateModel,
+			Year:       vehicleCreateYear,
 		}
-		applyVehicleFlags(&body)
-		return body, nil
+		applyVehicleFlags(&req)
+		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
-		resp, err := client.CreateVehicle(ctx, body.(generated.CreateVehicleJSONRequestBody))
+		resp, err := client.CreateVehicle(ctx, body.(wenmar.CreateVehicleRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -245,31 +221,11 @@ func runVehiclesCreate(cmd *cobra.Command, args []string) error {
 
 func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "vehicles", "/vehicles/", "", func(id int) (any, error) {
-		body := generated.UpdateVehicleJSONRequestBody{
-			Vehicle: struct {
-				BodyStyle         *string `json:"body_style,omitempty"`
-				Color             *string `json:"color,omitempty"`
-				Drivetrain        *string `json:"drivetrain,omitempty"`
-				Engine            *string `json:"engine,omitempty"`
-				LicensePlate      *string `json:"license_plate,omitempty"`
-				LicensePlateState *string `json:"license_plate_state,omitempty"`
-				Make              string  `json:"make"`
-				Model             *string `json:"model,omitempty"`
-				Notes             *string `json:"notes,omitempty"`
-				OdometerReading   *int    `json:"odometer_reading,omitempty"`
-				OdometerUnit      *string `json:"odometer_unit,omitempty"`
-				Submodel          *string `json:"submodel,omitempty"`
-				Transmission      *string `json:"transmission,omitempty"`
-				Vin               *string `json:"vin,omitempty"`
-				Year              *int    `json:"year,omitempty"`
-			}{
-				Make: vehicleUpdateMake,
-			},
-		}
-		applyVehicleUpdateFlags(&body)
-		return body, nil
+		req := wenmar.UpdateVehicleRequest{Make: vehicleUpdateMake}
+		applyVehicleUpdateFlags(&req)
+		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.UpdateVehicle(ctx, id, body.(generated.UpdateVehicleJSONRequestBody))
+		resp, err := client.UpdateVehicle(ctx, id, body.(wenmar.UpdateVehicleRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -296,7 +252,7 @@ func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
 func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "vehicles", "/vehicles/check_duplicate", func(ctx context.Context, client *wenmar.Client) (any, error) {
 		vin := args[0]
-		resp, err := client.CheckVehicleDuplicate(ctx, generated.CheckVehicleDuplicateParams{Vin: &vin})
+		resp, err := client.CheckVehicleDuplicate(ctx, wenmar.CheckVehicleDuplicateParams{Vin: &vin})
 		if err != nil {
 			return nil, err
 		}
@@ -304,60 +260,58 @@ func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
 	})
 }
 
-func applyVehicleFlags(body *generated.CreateVehicleJSONRequestBody) {
-	b := &body.Vehicle
-	b.Vin = strPtr(vehicleVin)
-	b.Submodel = strPtr(vehicleSubmodel)
-	b.BodyStyle = strPtr(vehicleBodyStyle)
-	b.Engine = strPtr(vehicleEngine)
-	b.Transmission = strPtr(vehicleTransmission)
-	b.Drivetrain = strPtr(vehicleDrivetrain)
-	b.Color = strPtr(vehicleColor)
-	b.LicensePlate = strPtr(vehiclePlate)
-	b.LicensePlateState = strPtr(vehiclePlateState)
-	b.UnitNumber = strPtr(vehicleUnitNumber)
-	b.FleetIdentifier = strPtr(vehicleFleetIdentifier)
-	b.ProductionDate = strPtr(vehicleProductionDate)
-	b.Notes = strPtr(vehicleNotes)
+func applyVehicleFlags(req *wenmar.CreateVehicleRequest) {
+	req.Vin = strPtr(vehicleVin)
+	req.Submodel = strPtr(vehicleSubmodel)
+	req.BodyStyle = strPtr(vehicleBodyStyle)
+	req.Engine = strPtr(vehicleEngine)
+	req.Transmission = strPtr(vehicleTransmission)
+	req.Drivetrain = strPtr(vehicleDrivetrain)
+	req.Color = strPtr(vehicleColor)
+	req.LicensePlate = strPtr(vehiclePlate)
+	req.LicensePlateState = strPtr(vehiclePlateState)
+	req.UnitNumber = strPtr(vehicleUnitNumber)
+	req.FleetIdentifier = strPtr(vehicleFleetIdentifier)
+	req.ProductionDate = strPtr(vehicleProductionDate)
+	req.Notes = strPtr(vehicleNotes)
 	if vehicleOdometer != 0 {
-		b.OdometerReading = &vehicleOdometer
+		req.OdometerReading = &vehicleOdometer
 	}
-	b.OdometerUnit = strPtr(vehicleOdometerUnit)
+	req.OdometerUnit = strPtr(vehicleOdometerUnit)
 	if len(vehicleTagIDs) > 0 {
 		tags := make([]interface{}, len(vehicleTagIDs))
 		for i, id := range vehicleTagIDs {
 			tags[i] = id
 		}
-		b.VehicleTagIds = &tags
+		req.VehicleTagIDs = &tags
 	}
 }
 
-func applyVehicleUpdateFlags(body *generated.UpdateVehicleJSONRequestBody) {
-	b := &body.Vehicle
-	b.Vin = strPtr(vehicleVin)
-	b.Submodel = strPtr(vehicleSubmodel)
-	b.BodyStyle = strPtr(vehicleBodyStyle)
-	b.Engine = strPtr(vehicleEngine)
-	b.Transmission = strPtr(vehicleTransmission)
-	b.Drivetrain = strPtr(vehicleDrivetrain)
-	b.Color = strPtr(vehicleColor)
-	b.LicensePlate = strPtr(vehiclePlate)
-	b.LicensePlateState = strPtr(vehiclePlateState)
-	b.Notes = strPtr(vehicleNotes)
+func applyVehicleUpdateFlags(req *wenmar.UpdateVehicleRequest) {
+	req.Vin = strPtr(vehicleVin)
+	req.Submodel = strPtr(vehicleSubmodel)
+	req.BodyStyle = strPtr(vehicleBodyStyle)
+	req.Engine = strPtr(vehicleEngine)
+	req.Transmission = strPtr(vehicleTransmission)
+	req.Drivetrain = strPtr(vehicleDrivetrain)
+	req.Color = strPtr(vehicleColor)
+	req.LicensePlate = strPtr(vehiclePlate)
+	req.LicensePlateState = strPtr(vehiclePlateState)
+	req.Notes = strPtr(vehicleNotes)
 	if vehicleOdometer != 0 {
-		b.OdometerReading = &vehicleOdometer
+		req.OdometerReading = &vehicleOdometer
 	}
-	b.OdometerUnit = strPtr(vehicleOdometerUnit)
+	req.OdometerUnit = strPtr(vehicleOdometerUnit)
 }
 
 func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
 	return runAction(cmd, args, "vehicles", "PATCH", func(a []string) string { return "/vehicles/" + a[0] + "/transfer" }, "Vehicle transferred.", func(id int) (any, error) {
-		return generated.TransferVehicleJSONRequestBody{
-			CustomerId: vehicleTransferCustomerID,
+		return wenmar.TransferVehicleRequest{
+			CustomerID: vehicleTransferCustomerID,
 			Mode:       vehicleTransferMode,
 		}, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.TransferVehicle(ctx, id, body.(generated.TransferVehicleJSONRequestBody))
+		resp, err := client.TransferVehicle(ctx, id, body.(wenmar.TransferVehicleRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -367,9 +321,9 @@ func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
 
 func runVehiclesMerge(cmd *cobra.Command, args []string) error {
 	return runAction(cmd, args, "vehicles", "POST", func(a []string) string { return "/vehicles/" + a[0] + "/merge" }, "Vehicle merged.", func(id int) (any, error) {
-		return generated.MergeVehicleJSONRequestBody{SourceVehicleId: vehicleMergeSourceID}, nil
+		return wenmar.MergeVehicleRequest{SourceVehicleID: vehicleMergeSourceID}, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.MergeVehicle(ctx, id, body.(generated.MergeVehicleJSONRequestBody))
+		resp, err := client.MergeVehicle(ctx, id, body.(wenmar.MergeVehicleRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -379,7 +333,7 @@ func runVehiclesMerge(cmd *cobra.Command, args []string) error {
 
 func runVehiclesPrefill(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "vehicles", "/vehicles/prefill", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		params := generated.PrefillVehicleParams{Vin: strPtr(vehiclePrefillVIN)}
+		params := wenmar.PrefillVehicleParams{Vin: strPtr(vehiclePrefillVIN)}
 		resp, err := client.PrefillVehicle(ctx, params)
 		if err != nil {
 			return nil, err

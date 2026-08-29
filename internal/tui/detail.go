@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wenmar-pro/wenmar-sdk/go/pkg/generated"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
@@ -16,7 +15,7 @@ type DetailModel struct {
 	locationID string
 	id         int
 
-	wo      *generated.WorkOrder
+	wo      *wenmar.WorkOrder
 	loading bool
 	err     error
 }
@@ -98,14 +97,14 @@ func (m *DetailModel) View() string {
 }
 
 type detailResultMsg struct {
-	wo  *generated.WorkOrder
+	wo  *wenmar.WorkOrder
 	err error
 }
 
 func fetchWorkOrderDetail(client *wenmar.Client, locationID string, id int) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *generated.ShowWorkOrderResponse
+		var resp *wenmar.ShowWorkOrderResponse
 		var err error
 		if locationID != "" {
 			lc, lerr := client.ForLocation(ctx, locationID)
