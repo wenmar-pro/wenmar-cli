@@ -13,6 +13,7 @@ type CustomerList struct {
 	ListModel[wenmar.Customer]
 	detail   *CustomerDetail
 	inDetail bool
+	params   wenmar.ListCustomersParams
 }
 
 func NewCustomerList(client *wenmar.Client, locationID string) *CustomerList {
@@ -28,7 +29,7 @@ func (m *CustomerList) Title() string {
 }
 
 func (m *CustomerList) Init() tea.Cmd {
-	return fetchCustomers(m.client, m.locationID)
+	return fetchCustomersWithParams(m.client, m.locationID, m.params)
 }
 
 func (m *CustomerList) Update(msg tea.Msg) (tab, tea.Cmd) {
@@ -61,7 +62,7 @@ func (m *CustomerList) updateList(msg tea.Msg) (tab, tea.Cmd) {
 			}
 		case keyMatches(msg, Keys.Refresh) || keyMatches(msg, Keys.RefreshAlt):
 			m.startLoading()
-			return m, fetchCustomers(m.client, m.locationID)
+			return m, fetchCustomersWithParams(m.client, m.locationID, m.params)
 		}
 	}
 	return m, nil
@@ -109,7 +110,14 @@ type customerListResultMsg struct {
 	err   error
 }
 
+// fetchCustomers fetches all customers (no filter).
 func fetchCustomers(client *wenmar.Client, locationID string) tea.Cmd {
+	return fetchCustomersWithParams(client, locationID, wenmar.ListCustomersParams{})
+}
+
+// fetchCustomersWithParams fetches customers filtered by the given params
+// via server-side query parameters.
+func fetchCustomersWithParams(client *wenmar.Client, locationID string, params wenmar.ListCustomersParams) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 		var resp *wenmar.ListCustomersResponse
@@ -119,9 +127,9 @@ func fetchCustomers(client *wenmar.Client, locationID string) tea.Cmd {
 			if lerr != nil {
 				return customerListResultMsg{err: lerr}
 			}
-			resp, err = lc.ListCustomers(ctx)
+			resp, err = lc.ListCustomersWithParams(ctx, params)
 		} else {
-			resp, err = client.ListCustomers(ctx)
+			resp, err = client.ListCustomersWithParams(ctx, params)
 		}
 		if err != nil {
 			return customerListResultMsg{err: err}
@@ -131,4 +139,21 @@ func fetchCustomers(client *wenmar.Client, locationID string) tea.Cmd {
 		}
 		return customerListResultMsg{items: *resp.JSON200}
 	}
+}
+
+// SetSearchQuery updates the params.Query field and triggers a refetch.
+func (m *CustomerList) SetSearchQuery(query string) {
+	if query == "" {
+		m.params.Query = nil
+	} else {
+		m.params.Query = &query
+	}
+}
+
+// SearchQuery returns the current search query.
+func (m CustomerList) SearchQuery() string {
+	if m.params.Query == nil {
+		return ""
+	}
+	return *m.params.Query
 }
