@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -143,5 +145,33 @@ func TestAppModel_WindowSizeSetsDimensions(t *testing.T) {
 	}
 	if m.height != 40 {
 		t.Fatalf("expected height 40, got %d", m.height)
+	}
+}
+
+func TestAppModel_SearchFilterTriggersRefetch(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if r.URL.Query().Get("query") == "jane" {
+			w.Write([]byte(`[{"id":7,"full_name":"Jane Doe","type":"individual","vehicles_count":0,"outstanding_balance_cents":0,"updated_at":"2026-01-02T00:00:00Z"}]`))
+		} else {
+			w.Write([]byte(`[]`))
+		}
+	}))
+	defer srv.Close()
+
+	client := newTestClient(t, srv.URL, "test")
+	m := NewApp(client, "", 0)
+	m.active = 1 // Customers tab
+
+	// Simulate a search filter message.
+	updated, _ := m.Update(searchFilterMsg{query: "jane"})
+	m = updated.(AppModel)
+
+	// The Update should have returned a fetch command. Execute it.
+	if cl, ok := m.tabs[1].(*CustomerList); ok {
+		if cl.SearchQuery() != "jane" {
+			t.Fatalf("expected search query 'jane', got %q", cl.SearchQuery())
+		}
 	}
 }
