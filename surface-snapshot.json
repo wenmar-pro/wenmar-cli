@@ -1,0 +1,1094 @@
+{
+  "path": "wenmar",
+  "use": "wenmar",
+  "short": "Wenmar Pro API CLI",
+  "flags": [
+    {
+      "name": "agent",
+      "default": "false"
+    },
+    {
+      "name": "allow-partial",
+      "default": "false"
+    },
+    {
+      "name": "base-url"
+    },
+    {
+      "name": "config-path"
+    },
+    {
+      "name": "count",
+      "default": "false"
+    },
+    {
+      "name": "debug",
+      "default": "false"
+    },
+    {
+      "name": "html",
+      "default": "false"
+    },
+    {
+      "name": "ids-only",
+      "default": "false"
+    },
+    {
+      "name": "jq"
+    },
+    {
+      "name": "json",
+      "default": "false"
+    },
+    {
+      "name": "location"
+    },
+    {
+      "name": "markdown",
+      "default": "false"
+    },
+    {
+      "name": "md",
+      "default": "false"
+    },
+    {
+      "name": "quiet",
+      "default": "false"
+    },
+    {
+      "name": "styled",
+      "default": "false"
+    },
+    {
+      "name": "token"
+    }
+  ],
+  "children": [
+    {
+      "path": "wenmar account",
+      "use": "account",
+      "short": "Show the current account",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar account show",
+          "use": "show",
+          "short": "Show account details",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar auth",
+      "use": "auth",
+      "short": "Manage authentication",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar auth login",
+          "use": "login",
+          "short": "Store your API token (OAuth browser flow coming in a future release)",
+          "flags": null
+        },
+        {
+          "path": "wenmar auth logout",
+          "use": "logout",
+          "short": "Delete your saved API token",
+          "flags": null
+        },
+        {
+          "path": "wenmar auth refresh",
+          "use": "refresh",
+          "short": "Refresh the stored token (OAuth only)",
+          "flags": null
+        },
+        {
+          "path": "wenmar auth status",
+          "use": "status",
+          "short": "Show current authentication status",
+          "flags": null
+        },
+        {
+          "path": "wenmar auth token",
+          "use": "token",
+          "short": "Print the bearer token to stdout (for scripts)",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar commands",
+      "use": "commands",
+      "short": "List all commands as JSON (for agent discovery)",
+      "flags": null
+    },
+    {
+      "path": "wenmar completion [shell]",
+      "use": "completion [shell]",
+      "short": "Generate shell completion script",
+      "flags": null
+    },
+    {
+      "path": "wenmar config",
+      "use": "config",
+      "short": "Manage CLI configuration",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar config get \u003ckey\u003e",
+          "use": "get \u003ckey\u003e",
+          "short": "Get a config value",
+          "flags": null
+        },
+        {
+          "path": "wenmar config list",
+          "use": "list",
+          "short": "List all config values",
+          "flags": null
+        },
+        {
+          "path": "wenmar config path",
+          "use": "path",
+          "short": "Print the config file path",
+          "flags": null
+        },
+        {
+          "path": "wenmar config set \u003ckey\u003e \u003cvalue\u003e",
+          "use": "set \u003ckey\u003e \u003cvalue\u003e",
+          "short": "Set a config value",
+          "flags": null
+        },
+        {
+          "path": "wenmar config show",
+          "use": "show",
+          "short": "Show resolved config values with their source",
+          "flags": null
+        },
+        {
+          "path": "wenmar config trust",
+          "use": "trust",
+          "short": "Mark the current directory's .wenmar.yml as trusted",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar customers",
+      "use": "customers",
+      "short": "Manage customers",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar customers create",
+          "use": "create",
+          "short": "Create a new customer",
+          "flags": [
+            {
+              "name": "address",
+              "default": "[]"
+            },
+            {
+              "name": "billing-terms"
+            },
+            {
+              "name": "company-name"
+            },
+            {
+              "name": "credit-limit"
+            },
+            {
+              "name": "discount-percent"
+            },
+            {
+              "name": "email",
+              "default": "[]"
+            },
+            {
+              "name": "fleet-identifier"
+            },
+            {
+              "name": "full-name"
+            },
+            {
+              "name": "marketing-opt-in",
+              "default": "false"
+            },
+            {
+              "name": "notes"
+            },
+            {
+              "name": "phone",
+              "default": "[]"
+            },
+            {
+              "name": "po-required",
+              "default": "false"
+            },
+            {
+              "name": "tag-id",
+              "default": "[]"
+            },
+            {
+              "name": "tax-exempt",
+              "default": "false"
+            },
+            {
+              "name": "tax-exempt-number"
+            }
+          ]
+        },
+        {
+          "path": "wenmar customers duplicates",
+          "use": "duplicates",
+          "short": "Check for duplicate customers",
+          "flags": [
+            {
+              "name": "email"
+            },
+            {
+              "name": "first-name"
+            },
+            {
+              "name": "last-name"
+            },
+            {
+              "name": "phone"
+            }
+          ]
+        },
+        {
+          "path": "wenmar customers list",
+          "use": "list",
+          "short": "List all customers, paginated via the Link header",
+          "flags": [
+            {
+              "name": "page",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar customers lookup \u003cquery\u003e",
+          "use": "lookup \u003cquery\u003e",
+          "short": "Search customers by name/email/phone",
+          "flags": null
+        },
+        {
+          "path": "wenmar customers merge \u003cid\u003e",
+          "use": "merge \u003cid\u003e",
+          "short": "Merge a source customer into this keeper",
+          "flags": [
+            {
+              "name": "source-id",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar customers show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "Show a single customer by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar customers statements \u003cid\u003e",
+          "use": "statements \u003cid\u003e",
+          "short": "List a customer's statements",
+          "flags": null
+        },
+        {
+          "path": "wenmar customers update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "Update a customer by ID",
+          "flags": [
+            {
+              "name": "address",
+              "default": "[]"
+            },
+            {
+              "name": "billing-terms"
+            },
+            {
+              "name": "company-name"
+            },
+            {
+              "name": "credit-limit"
+            },
+            {
+              "name": "discount-percent"
+            },
+            {
+              "name": "email",
+              "default": "[]"
+            },
+            {
+              "name": "fleet-identifier"
+            },
+            {
+              "name": "full-name"
+            },
+            {
+              "name": "marketing-opt-in",
+              "default": "false"
+            },
+            {
+              "name": "notes"
+            },
+            {
+              "name": "phone",
+              "default": "[]"
+            },
+            {
+              "name": "po-required",
+              "default": "false"
+            },
+            {
+              "name": "remove-address",
+              "default": "[]"
+            },
+            {
+              "name": "remove-email",
+              "default": "[]"
+            },
+            {
+              "name": "remove-phone",
+              "default": "[]"
+            },
+            {
+              "name": "tag-id",
+              "default": "[]"
+            },
+            {
+              "name": "tax-exempt",
+              "default": "false"
+            },
+            {
+              "name": "tax-exempt-number"
+            }
+          ]
+        },
+        {
+          "path": "wenmar customers vehicles \u003cid\u003e",
+          "use": "vehicles \u003cid\u003e",
+          "short": "List a customer's vehicles",
+          "flags": null
+        },
+        {
+          "path": "wenmar customers work-orders \u003cid\u003e",
+          "use": "work-orders \u003cid\u003e",
+          "short": "List a customer's work orders",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar doctor",
+      "use": "doctor",
+      "short": "Run diagnostics: auth, connectivity, config, completion, skill",
+      "flags": null
+    },
+    {
+      "path": "wenmar drivers",
+      "use": "drivers",
+      "short": "Manage drivers",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar drivers create",
+          "use": "create",
+          "short": "Create a new driver for a customer",
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            },
+            {
+              "name": "full-name"
+            },
+            {
+              "name": "phone"
+            }
+          ]
+        },
+        {
+          "path": "wenmar drivers delete \u003cid\u003e",
+          "use": "delete \u003cid\u003e",
+          "short": "Delete a driver by ID",
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            },
+            {
+              "name": "dry-run",
+              "default": "false"
+            }
+          ]
+        },
+        {
+          "path": "wenmar drivers list",
+          "use": "list",
+          "short": "List drivers for a customer, paginated via the Link header",
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar drivers show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "Show a single driver by ID",
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar drivers update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "Update a driver by ID",
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            },
+            {
+              "name": "full-name"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wenmar locations",
+      "use": "locations",
+      "short": "Show location details",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar locations show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "Show a location by ID",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar setup [claude|codex]",
+      "use": "setup [claude|codex]",
+      "short": "Configure the Wenmar CLI with your API token",
+      "flags": [
+        {
+          "name": "silent-success",
+          "default": "false"
+        },
+        {
+          "name": "skip-agents",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "path": "wenmar skill",
+      "use": "skill",
+      "short": "Manage the wenmar agent skill",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar skill install",
+          "use": "install",
+          "short": "Install the wenmar skill for AI agents",
+          "flags": [
+            {
+              "name": "force",
+              "default": "false"
+            }
+          ]
+        },
+        {
+          "path": "wenmar skill uninstall",
+          "use": "uninstall",
+          "short": "Remove the wenmar skill (only if managed by wenmar-cli)",
+          "flags": null
+        },
+        {
+          "path": "wenmar skill update",
+          "use": "update",
+          "short": "Re-copy the wenmar skill (only if managed by wenmar-cli)",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar statements",
+      "use": "statements",
+      "short": "Manage statements",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar statements list",
+          "use": "list",
+          "short": "List statements for a customer, paginated via the Link header",
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar statements show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "Show a single statement by ID",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar surface-snapshot",
+      "use": "surface-snapshot",
+      "short": "Dump the command tree as JSON (for CI diffing)",
+      "flags": [
+        {
+          "name": "agent",
+          "default": "false"
+        },
+        {
+          "name": "allow-partial",
+          "default": "false"
+        },
+        {
+          "name": "base-url"
+        },
+        {
+          "name": "config-path"
+        },
+        {
+          "name": "count",
+          "default": "false"
+        },
+        {
+          "name": "debug",
+          "default": "false"
+        },
+        {
+          "name": "help",
+          "default": "false"
+        },
+        {
+          "name": "html",
+          "default": "false"
+        },
+        {
+          "name": "ids-only",
+          "default": "false"
+        },
+        {
+          "name": "jq"
+        },
+        {
+          "name": "json",
+          "default": "false"
+        },
+        {
+          "name": "location"
+        },
+        {
+          "name": "markdown",
+          "default": "false"
+        },
+        {
+          "name": "md",
+          "default": "false"
+        },
+        {
+          "name": "quiet",
+          "default": "false"
+        },
+        {
+          "name": "styled",
+          "default": "false"
+        },
+        {
+          "name": "token"
+        }
+      ]
+    },
+    {
+      "path": "wenmar tags",
+      "use": "tags",
+      "short": "Manage customer and vehicle tags",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar tags create",
+          "use": "create",
+          "short": "Create a customer or vehicle tag",
+          "flags": [
+            {
+              "name": "name"
+            },
+            {
+              "name": "type",
+              "default": "customer"
+            }
+          ]
+        },
+        {
+          "path": "wenmar tags delete",
+          "use": "delete",
+          "short": "Delete a customer or vehicle tag",
+          "flags": [
+            {
+              "name": "id",
+              "default": "0"
+            },
+            {
+              "name": "type",
+              "default": "customer"
+            }
+          ]
+        },
+        {
+          "path": "wenmar tags list",
+          "use": "list",
+          "short": "List all customer and vehicle tags",
+          "flags": null
+        },
+        {
+          "path": "wenmar tags rename",
+          "use": "rename",
+          "short": "Rename a customer or vehicle tag",
+          "flags": [
+            {
+              "name": "id",
+              "default": "0"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "type",
+              "default": "customer"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "wenmar tui",
+      "use": "tui",
+      "short": "Launch the TUI dispatch board",
+      "flags": [
+        {
+          "name": "interval",
+          "default": "10s"
+        },
+        {
+          "name": "location"
+        },
+        {
+          "name": "remote",
+          "default": "false"
+        },
+        {
+          "name": "work-order",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "path": "wenmar upgrade [version]",
+      "use": "upgrade [version]",
+      "short": "Upgrade wenmar to the latest (or a pinned) version",
+      "flags": [
+        {
+          "name": "check",
+          "default": "false"
+        },
+        {
+          "name": "force",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "path": "wenmar url",
+      "use": "url",
+      "short": "URL utilities",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar url parse \u003curl\u003e",
+          "use": "parse \u003curl\u003e",
+          "short": "Parse a Wenmar URL into its components",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar vehicles",
+      "use": "vehicles",
+      "short": "Manage vehicles",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar vehicles create",
+          "use": "create",
+          "short": "Create a new vehicle",
+          "flags": [
+            {
+              "name": "body-style"
+            },
+            {
+              "name": "color"
+            },
+            {
+              "name": "customer-id",
+              "default": "0"
+            },
+            {
+              "name": "drivetrain"
+            },
+            {
+              "name": "engine"
+            },
+            {
+              "name": "fleet-identifier"
+            },
+            {
+              "name": "make"
+            },
+            {
+              "name": "model"
+            },
+            {
+              "name": "notes"
+            },
+            {
+              "name": "odometer",
+              "default": "0"
+            },
+            {
+              "name": "odometer-unit"
+            },
+            {
+              "name": "plate"
+            },
+            {
+              "name": "plate-state"
+            },
+            {
+              "name": "production-date"
+            },
+            {
+              "name": "submodel"
+            },
+            {
+              "name": "tag-id",
+              "default": "[]"
+            },
+            {
+              "name": "transmission"
+            },
+            {
+              "name": "unit-number"
+            },
+            {
+              "name": "vin"
+            },
+            {
+              "name": "year",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar vehicles decode-vin \u003cvin\u003e",
+          "use": "decode-vin \u003cvin\u003e",
+          "short": "Decode a VIN into make/model",
+          "flags": null
+        },
+        {
+          "path": "wenmar vehicles delete \u003cid\u003e",
+          "use": "delete \u003cid\u003e",
+          "short": "Delete a vehicle by ID",
+          "flags": [
+            {
+              "name": "dry-run",
+              "default": "false"
+            }
+          ]
+        },
+        {
+          "path": "wenmar vehicles duplicates \u003cvin\u003e",
+          "use": "duplicates \u003cvin\u003e",
+          "short": "Check for duplicate vehicles matching a VIN",
+          "flags": null
+        },
+        {
+          "path": "wenmar vehicles list",
+          "use": "list",
+          "short": "List all vehicles",
+          "flags": null
+        },
+        {
+          "path": "wenmar vehicles lookup \u003cquery\u003e",
+          "use": "lookup \u003cquery\u003e",
+          "short": "Search vehicles by make/model/plate/vin",
+          "flags": null
+        },
+        {
+          "path": "wenmar vehicles merge \u003cid\u003e",
+          "use": "merge \u003cid\u003e",
+          "short": "Merge a source vehicle into this keeper",
+          "flags": [
+            {
+              "name": "source-id",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar vehicles prefill",
+          "use": "prefill",
+          "short": "Prefill vehicle data from a VIN",
+          "flags": [
+            {
+              "name": "vin"
+            }
+          ]
+        },
+        {
+          "path": "wenmar vehicles show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "Show a single vehicle by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar vehicles transfer \u003cid\u003e",
+          "use": "transfer \u003cid\u003e",
+          "short": "Transfer a vehicle to a new customer",
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            },
+            {
+              "name": "mode",
+              "default": "vehicle_only"
+            }
+          ]
+        },
+        {
+          "path": "wenmar vehicles update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "Update a vehicle by ID",
+          "flags": [
+            {
+              "name": "body-style"
+            },
+            {
+              "name": "color"
+            },
+            {
+              "name": "drivetrain"
+            },
+            {
+              "name": "engine"
+            },
+            {
+              "name": "fleet-identifier"
+            },
+            {
+              "name": "make"
+            },
+            {
+              "name": "notes"
+            },
+            {
+              "name": "odometer",
+              "default": "0"
+            },
+            {
+              "name": "odometer-unit"
+            },
+            {
+              "name": "plate"
+            },
+            {
+              "name": "plate-state"
+            },
+            {
+              "name": "production-date"
+            },
+            {
+              "name": "submodel"
+            },
+            {
+              "name": "transmission"
+            },
+            {
+              "name": "unit-number"
+            },
+            {
+              "name": "vin"
+            }
+          ]
+        },
+        {
+          "path": "wenmar vehicles work-orders \u003cid\u003e",
+          "use": "work-orders \u003cid\u003e",
+          "short": "List a vehicle's work orders",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar vendors",
+      "use": "vendors",
+      "short": "Manage vendors",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar vendors list",
+          "use": "list",
+          "short": "List all vendors, paginated via the Link header",
+          "flags": null
+        },
+        {
+          "path": "wenmar vendors show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "Show a single vendor by ID",
+          "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar watch",
+      "use": "watch",
+      "short": "Watch for changes on a list endpoint (polling-based)",
+      "flags": [
+        {
+          "name": "events"
+        },
+        {
+          "name": "exit-on-first",
+          "default": "false"
+        },
+        {
+          "name": "interval",
+          "default": "5s"
+        },
+        {
+          "name": "location"
+        },
+        {
+          "name": "resource",
+          "default": "work_orders"
+        },
+        {
+          "name": "run-async"
+        },
+        {
+          "name": "run-sync"
+        }
+      ]
+    },
+    {
+      "path": "wenmar work_orders",
+      "use": "work_orders",
+      "short": "Manage work orders",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar work_orders create",
+          "use": "create",
+          "short": "Create a new work order",
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            },
+            {
+              "name": "vehicle-id",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar work_orders delete \u003cid\u003e",
+          "use": "delete \u003cid\u003e",
+          "short": "Delete a work order by ID",
+          "flags": [
+            {
+              "name": "dry-run",
+              "default": "false"
+            }
+          ]
+        },
+        {
+          "path": "wenmar work_orders estimate \u003cid\u003e",
+          "use": "estimate \u003cid\u003e",
+          "short": "Show the estimate tab (services) for a work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar work_orders inspection \u003cid\u003e",
+          "use": "inspection \u003cid\u003e",
+          "short": "Show the inspection tab (inspection reports) for a work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar work_orders list",
+          "use": "list",
+          "short": "List all work orders, paginated via the Link header",
+          "flags": [
+            {
+              "name": "page",
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar work_orders parts \u003cid\u003e",
+          "use": "parts \u003cid\u003e",
+          "short": "Show the parts tab (services) for a work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar work_orders payments \u003cid\u003e",
+          "use": "payments \u003cid\u003e",
+          "short": "Show the payments tab (payments) for a work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar work_orders show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "Show a single work order by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar work_orders update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "Update a work order by ID",
+          "flags": [
+            {
+              "name": "intake-method"
+            }
+          ]
+        },
+        {
+          "path": "wenmar work_orders wip \u003cid\u003e",
+          "use": "wip \u003cid\u003e",
+          "short": "Show the work-in-progress tab (services) for a work order",
+          "flags": null
+        }
+      ]
+    }
+  ]
+}

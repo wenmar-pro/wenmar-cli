@@ -1,4 +1,4 @@
-.PHONY: build test check check-published clean generate test-generated
+.PHONY: build test check check-published clean generate test-generated surface-snapshot surface-diff
 
 build:
 	go build -o ./wenmar ./cmd/wenmar
@@ -31,3 +31,18 @@ test-generated: generate
 
 clean:
 	rm -f wenmar
+
+# Dump the command surface as JSON for CI diffing.
+surface-snapshot:
+	go run ./cmd/wenmar surface-snapshot > surface-snapshot.json
+	@echo "Snapshot written to surface-snapshot.json"
+
+# Diff the current surface against the stored snapshot.
+# Fails if the command tree changed (catches breaking changes in CI).
+surface-diff:
+	go run ./cmd/wenmar surface-snapshot > /tmp/surface-current.json
+	@if [ -f surface-snapshot.json ]; then \
+		diff -u surface-snapshot.json /tmp/surface-current.json && echo "No surface changes." || (echo "Surface changed! Update with: make surface-snapshot" && exit 1); \
+	else \
+		echo "No stored snapshot. Run: make surface-snapshot"; \
+	fi

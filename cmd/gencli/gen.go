@@ -16,22 +16,26 @@ type CommandGroup struct {
 
 // GenCommand represents one cobra command to emit.
 type GenCommand struct {
-	OperationID     string
-	Resource        string
-	Command         string
-	Summary         string
-	Method          string
-	Path            string
-	PathParams      []Parameter
-	QueryParams     []Parameter
-	RequestBody     *RequestBody
-	IsPaginated     bool
-	ExtraPathParams  []Parameter
-	HasIDParam      bool
-	IDType          string
-	SDKMethod       string
-	RequestStruct   string // SDK request struct name
-	BodyFields      []BodyField
+	OperationID       string
+	Resource          string
+	Command           string
+	Summary           string
+	Method            string
+	Path              string
+	PathParams        []Parameter
+	QueryParams       []Parameter
+	RequestBody       *RequestBody
+	IsPaginated       bool
+	ExtraPathParams   []Parameter
+	HasIDParam        bool
+	IDType            string
+	SDKMethod         string
+	RequestStruct     string
+	BodyFields        []BodyField
+	PositionalArg     string
+	QueryParamStruct  string
+	QueryFields       []BodyField
+	Tab               string // work order tab name
 }
 
 // BodyField represents a scalar field from the request body schema
@@ -134,6 +138,19 @@ func buildCommand(op Operation, method, path string, overrides *Overrides) *GenC
 			cmd.RequestStruct = ov.RequestStruct
 			cmd.BodyFields = parseBodyFields(op, ov.RequestStruct)
 		}
+		if ov.PositionalArg != "" {
+			cmd.PositionalArg = ov.PositionalArg
+		}
+		if ov.QueryParamStruct != "" {
+			cmd.QueryParamStruct = ov.QueryParamStruct
+			cmd.QueryFields = extractQueryFields(op, ov.QueryParamStruct)
+		}
+		if ov.Paginated != nil {
+			cmd.IsPaginated = *ov.Paginated
+		}
+		if ov.Tab != "" {
+			cmd.Tab = ov.Tab
+		}
 		return cmd
 	}
 
@@ -188,6 +205,11 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides) (string, er
 		}
 		// Body field flags.
 		for _, bf := range cmd.BodyFields {
+			vn := bodyFieldVarName(cmd.Resource, bf.GoName)
+			flagVarsSeen[vn] = goType(bf.Type)
+		}
+		// Query param flags.
+		for _, bf := range cmd.QueryFields {
 			vn := bodyFieldVarName(cmd.Resource, bf.GoName)
 			flagVarsSeen[vn] = goType(bf.Type)
 		}
@@ -248,7 +270,7 @@ func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) {
 
 func needsExactArgs(cmdType string) bool {
 	switch cmdType {
-	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate":
+	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate", "tab":
 		return true
 	default:
 		return false
@@ -256,6 +278,16 @@ func needsExactArgs(cmdType string) bool {
 }
 
 func classifyCommand(cmd GenCommand) string {
+	// Explicit overrides take precedence.
+	if cmd.PositionalArg != "" {
+		return "positionalArg"
+	}
+	if cmd.Tab != "" {
+		return "tab"
+	}
+	if cmd.QueryParamStruct != "" {
+		return "queryParam"
+	}
 	switch cmd.Method {
 	case "get":
 		if cmd.HasIDParam {
@@ -294,7 +326,7 @@ func classifyCommand(cmd GenCommand) string {
 
 func useArgsSuffix(cmdType string, cmd GenCommand) string {
 	switch cmdType {
-	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate":
+	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate", "tab":
 		return " <id>"
 	default:
 		return ""
@@ -371,6 +403,16 @@ func emitFlagRegistration(g *jen.Group, cmd GenCommand) {
 		}
 	}
 
+	// Query param flags.
+	for _, bf := range cmd.QueryFields {
+		varName := bodyFieldVarName(cmd.Resource, bf.GoName)
+		args := []jen.Code{jen.Op("&").Id(varName), jen.Lit(bf.FlagName), DefaultForType(bf.Type), jen.Lit(bf.HelpText)}
+		g.Id(cmdVar).Dot("Flags").Call().Dot(flagBindMethod(bf.Type)).Call(args...)
+		if bf.Required {
+			g.Id(cmdVar).Dot("MarkFlagRequired").Call(jen.Lit(bf.FlagName))
+		}
+	}
+
 	// Delete gets --dry-run.
 	if classifyCommand(cmd) == "delete" {
 		dryRunVar := flagVarName(cmd.Resource, "delete_dry_run")
@@ -433,6 +475,12 @@ func emitHandler(f *jen.File, cmd GenCommand, cmdType string, overrides *Overrid
 			emitActionCreateHandler(g, cmd)
 		case "actionUpdate":
 			emitActionUpdateHandler(g, cmd)
+		case "positionalArg":
+			emitPositionalArgHandler(g, cmd)
+		case "queryParam":
+			emitQueryParamHandler(g, cmd)
+		case "tab":
+			emitTabHandler(g, cmd)
 		default:
 			emitActionHandler(g, cmd)
 		}
@@ -583,6 +631,33 @@ func contains(s []string, v string) bool {
 		}
 	}
 	return false
+}
+
+// extractQueryFields extracts BodyFields from query parameters.
+func extractQueryFields(op Operation, queryParamStruct string) []BodyField {
+	var fields []BodyField
+	for _, p := range op.Parameters {
+		if p.In != "query" {
+			continue
+		}
+		f := BodyField{
+			JSONName:  p.Name,
+			GoName:    snakeToPascal(p.Name),
+			FlagName:  kebabCase(p.Name),
+			Type:      p.Schema.Type,
+			Required:  p.Required,
+			IsPointer: !p.Required,
+			HelpText:   prettifyParamName(p.Name),
+		}
+		if f.Required {
+			f.HelpText += " (required)"
+		}
+		fields = append(fields, f)
+	}
+	sort.Slice(fields, func(i, j int) bool {
+		return fields[i].FlagName < fields[j].FlagName
+	})
+	return fields
 }
 
 // pathFnForRunner wraps the path prefix in a func(args []string) string
@@ -927,6 +1002,87 @@ func emitActionUpdateHandler(g *jen.Group, cmd GenCommand) {
 	emitActionCreateHandler(g, cmd)
 }
 
+func emitTabHandler(g *jen.Group, cmd GenCommand) {
+	resource := cmd.Resource
+	sdkMethod := sdkMethodNameFor(cmd)
+	tab := cmd.Tab
+	g.Return(jen.Id("runShow").Call(
+		jen.Id("cmd"), jen.Id("args"),
+		jen.Lit(resource), jen.Lit("GET"),
+		jen.Func().Params(jen.Id("a").Index().Id("string")).Id("string").Block(
+			jen.Return(jen.Qual("fmt", "Sprintf").Call(jen.Lit("/"+resource+"/%s/"+tab), jen.Id("a").Index(jen.Lit(0)))),
+		),
+		jen.Func().Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+			jen.Id("id").Id("int"),
+		).Params(jen.Any(), jen.Error()).Block(
+			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(jen.Id("ctx"), jen.Id("id")),
+			jen.If(jen.Id("err").Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Id("err")),
+			),
+			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+		),
+	))
+}
+
+func emitPositionalArgHandler(g *jen.Group, cmd GenCommand) {
+	resource := cmd.Resource
+	sdkMethod := sdkMethodNameFor(cmd)
+	g.Return(jen.Id("runList").Call(
+		jen.Id("cmd"),
+		jen.Lit(resource),
+		jen.Lit(cmd.Path),
+		jen.Func().Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+		).Params(jen.Any(), jen.Error()).Block(
+			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(jen.Id("ctx"), jen.Id("args").Index(jen.Lit(0))),
+			jen.If(jen.Id("err").Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Id("err")),
+			),
+			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+		),
+	))
+}
+
+func emitQueryParamHandler(g *jen.Group, cmd GenCommand) {
+	resource := cmd.Resource
+	sdkMethod := sdkMethodNameFor(cmd)
+	g.Return(jen.Id("runList").Call(
+		jen.Id("cmd"),
+		jen.Lit(resource),
+		jen.Lit(cmd.Path),
+		jen.Func().Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+		).Params(jen.Any(), jen.Error()).Block(
+			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(
+				jen.Id("ctx"),
+				jen.Qual(wenmarPkg, cmd.QueryParamStruct).Values(queryParamDict(cmd)),
+			),
+			jen.If(jen.Id("err").Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Id("err")),
+			),
+			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+		),
+	))
+}
+
+// queryParamDict builds the jen.Dict for a query param struct literal.
+func queryParamDict(cmd GenCommand) jen.Dict {
+	dict := jen.Dict{}
+	for _, bf := range cmd.QueryFields {
+		varName := bodyFieldVarName(cmd.Resource, bf.GoName)
+		if bf.IsPointer {
+			dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
+		} else {
+			dict[jen.Id(bf.GoName)] = jen.Id(varName)
+		}
+	}
+	return dict
+}
+
 func emitActionHandler(g *jen.Group, cmd GenCommand) {
 	// Actions without body (merge, transfer) — treat as list for now.
 	g.Comment("TODO: implement action handler for " + cmd.OperationID)
@@ -1037,6 +1193,10 @@ func toCamelCase(s string) string {
 }
 
 func singularize(s string) string {
+	// Special cases for compound words
+	if strings.HasSuffix(s, "work_orders") {
+		return "work order"
+	}
 	if strings.HasSuffix(s, "ies") {
 		return s[:len(s)-3] + "y"
 	}

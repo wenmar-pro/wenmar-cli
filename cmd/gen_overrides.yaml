@@ -13,23 +13,8 @@ exclude:
   - update_tags
   - create_customer_tag
   - create_vehicle_tag
-  # Query-param operations need special handling (params -> SDK args)
-  - check_customer_duplicate
-  - check_vehicle_duplicate
-  - lookup_customer
-  - lookup_vehicle
-  - prefill_vehicle
-  - decode_vin
-  # Paginated lists need WithPagination SDK methods (keep hand-written)
-  - list_customers
-  - list_vehicles
-  - list_work_orders
-  # Work order tabs use custom runner pattern
-  - show_work_order_estimate
-  - show_work_order_wip
-  - show_work_order_inspection
-  - show_work_order_parts
-  - show_work_order_payments
+  # create_customer uses --full-name flag (semantic override, not in spec)
+  - create_customer
 
 # Map operationId -> CLI resource (cobra parent command name) and
 # subcommand name. If an operationId is not listed here, the generator
@@ -141,11 +126,13 @@ commands:
     command: lookup
     summary: Search customers by name/email/phone
     method: LookupCustomer
+    positional_arg: string
   check_customer_duplicate:
     resource: customers
     command: duplicates
     summary: Check for duplicate customers
     method: CheckCustomerDuplicate
+    query_param_struct: CheckCustomerDuplicateParams
   list_customers_vehicles:
     resource: customers
     command: vehicles
@@ -163,6 +150,7 @@ commands:
     command: list
     summary: List all vehicles
     method: ListVehicles
+    paginated: false
   show_vehicle:
     resource: vehicles
     command: show
@@ -189,11 +177,13 @@ commands:
     command: decode-vin
     summary: Decode a VIN into make/model
     method: DecodeVin
+    positional_arg: string
   check_vehicle_duplicate:
     resource: vehicles
     command: duplicates
     summary: Check for duplicate vehicles matching a VIN
     method: CheckVehicleDuplicate
+    query_param_struct: CheckVehicleDuplicateParams
   transfer_vehicle:
     resource: vehicles
     command: transfer
@@ -211,11 +201,13 @@ commands:
     command: prefill
     summary: Prefill vehicle data from a VIN
     method: PrefillVehicle
+    query_param_struct: PrefillVehicleParams
   lookup_vehicle:
     resource: vehicles
     command: lookup
     summary: Search vehicles by make/model/plate/vin
     method: LookupVehicle
+    positional_arg: string
   list_vehicles_work_orders:
     resource: vehicles
     command: work-orders
@@ -255,26 +247,31 @@ commands:
     command: estimate
     summary: Show the estimate tab (services) for a work order
     method: ShowWorkOrderEstimate
+    tab: estimate
   show_work_order_wip:
     resource: work_orders
     command: wip
     summary: Show the work-in-progress tab (services) for a work order
     method: ShowWorkOrderWip
+    tab: wip
   show_work_order_inspection:
     resource: work_orders
     command: inspection
     summary: Show the inspection tab (inspection reports) for a work order
     method: ShowWorkOrderInspection
+    tab: inspection
   show_work_order_parts:
     resource: work_orders
     command: parts
     summary: Show the parts tab (services) for a work order
     method: ShowWorkOrderParts
+    tab: parts
   show_work_order_payments:
     resource: work_orders
     command: payments
     summary: Show the payments tab (payments) for a work order
     method: ShowWorkOrderPayments
+    tab: payments
   create_work_order_payment:
     resource: work_orders
     command: create-payment

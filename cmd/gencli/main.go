@@ -127,11 +127,15 @@ type Overrides struct {
 }
 
 type CommandOverride struct {
-	Resource      string `yaml:"resource"`
-	Command       string `yaml:"command"`
-	Summary       string `yaml:"summary"`
-	Method        string `yaml:"method"`        // override SDK method name
-	RequestStruct string `yaml:"request_struct"` // SDK request struct name (e.g. "CreateDriverRequest")
+	Resource         string `yaml:"resource"`
+	Command          string `yaml:"command"`
+	Summary          string `yaml:"summary"`
+	Method           string `yaml:"method"`
+	RequestStruct    string `yaml:"request_struct"`
+	PositionalArg    string `yaml:"positional_arg"`
+	QueryParamStruct string `yaml:"query_param_struct"`
+	Paginated        *bool  `yaml:"paginated"`
+	Tab              string `yaml:"tab"`
 }
 
 type FlagOverride struct {
