@@ -134,6 +134,56 @@ func runListPaginated(cmd *cobra.Command, resource, path string,
 	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
 }
 
+// runListPaginatedWithAll is the shared skeleton for list commands that
+// support --all auto-pagination. When allFlag is true and more pages exist,
+// it follows the Paginator's next links until exhausted and merges every
+// page's items into one result set. Otherwise it behaves like
+// runListPaginated (page 1 + hasNext hint).
+func runListPaginatedWithAll(cmd *cobra.Command, resource, path string, allFlag bool,
+	lister func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error)) error {
+	client, err := newScopedClient(context.Background())
+	if err != nil {
+		return err
+	}
+	setRequest("GET", path)
+
+	respData, paginator, err := lister(context.Background(), client)
+	if err != nil {
+		return err
+	}
+
+	data := extractData(respData)
+	summary := fmt.Sprintf("Page 1. More results: %v", paginator.HasNext())
+	meta := &output.Meta{HasNext: paginator.HasNext()}
+	pages := 1
+
+	if allFlag && paginator.HasNext() {
+		items, ok := data.([]any)
+		if ok {
+			for paginator.HasNext() {
+				next, err := paginator.NextPage(context.Background())
+				if err != nil {
+					return err
+				}
+				pages++
+				if nextPageItems, ok := next.([]any); ok {
+					items = append(items, nextPageItems...)
+				}
+			}
+			data = items
+		}
+		summary = fmt.Sprintf("Fetched all %d pages. More results: %v", pages, paginator.HasNext())
+		meta = &output.Meta{HasNext: false}
+	}
+
+	mode := resolveMode()
+	if mode == output.ModeIDsOnly || mode == output.ModeCount {
+		output.PrintPaginationNotice(meta, pages)
+	}
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resource)}
+	return output.Render(cmd.OutOrStdout(), data, summary, meta, opts)
+}
+
 // runCreate is the shared skeleton for "create" commands.
 func runCreate(cmd *cobra.Command, resource, path, summary string,
 	bodyBuilder func() (any, error),

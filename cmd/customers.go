@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -89,6 +90,18 @@ var customerDuplicateEmail string
 var customerDuplicatePhone string
 
 var (
+	customersListQuery           string
+	customersListType            string
+	customersListHasVehicle      bool
+	customersListHasBalance      bool
+	customersListLastVisitMonths int
+	customersListTagIDs          []int
+	customersListPerPage         int
+	customersListPage            int
+	customersListAll             bool
+)
+
+var (
 	customerCreateFullName   string
 	customerUpdateFullName    string
 	customerCompanyName       string
@@ -111,7 +124,15 @@ var (
 )
 
 func init() {
-	customersListCmd.Flags().Int("page", 0, "Page number")
+	customersListCmd.Flags().StringVar(&customersListQuery, "query", "", "Full-text search (name, email, phone, company, fleet ID, tag names)")
+	customersListCmd.Flags().StringVar(&customersListType, "type", "", "Customer type (fleet or individual)")
+	customersListCmd.Flags().BoolVar(&customersListHasVehicle, "has-vehicle", false, "Only customers with at least one vehicle")
+	customersListCmd.Flags().BoolVar(&customersListHasBalance, "has-balance", false, "Only customers with an outstanding balance")
+	customersListCmd.Flags().IntVar(&customersListLastVisitMonths, "last-visit-months", 0, "Inactive filter: last visit over N months ago")
+	customersListCmd.Flags().IntSliceVar(&customersListTagIDs, "tag-ids", nil, "Filter by customer tag IDs (comma-separated)")
+	customersListCmd.Flags().IntVar(&customersListPerPage, "per-page", 0, "Results per page (max 200)")
+	customersListCmd.Flags().IntVar(&customersListPage, "page", 0, "Page number")
+	customersListCmd.Flags().BoolVar(&customersListAll, "all", false, "Fetch all pages by following pagination links")
 	customersCreateCmd.Flags().StringVar(&customerCreateFullName, "full-name", "", "Customer full name")
 	customersCreateCmd.Flags().StringVar(&customerCompanyName, "company-name", "", "Company name")
 	customersCreateCmd.Flags().StringVar(&customerFleetIdentifier, "fleet-identifier", "", "Fleet identifier")
@@ -161,13 +182,68 @@ func init() {
 // error handler can show which request failed.
 
 func runCustomersList(cmd *cobra.Command, args []string) error {
-	return runListPaginated(cmd, "customers", "/customers", func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
+	if customersListHasFilters() {
+		params := customersListBuildParams()
+		return runListPaginatedWithAll(cmd, "customers", "/customers", customersListAll, func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
+			resp, paginator, err := client.ListCustomersWithParamsWithPagination(ctx, params)
+			if err != nil {
+				return nil, nil, err
+			}
+			return resp.JSON200, paginator, nil
+		})
+	}
+
+	return runListPaginatedWithAll(cmd, "customers", "/customers", customersListAll, func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
 		resp, paginator, err := client.ListCustomersWithPagination(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
 		return resp.JSON200, paginator, nil
 	})
+}
+
+func customersListHasFilters() bool {
+	return customersListQuery != "" ||
+		customersListType != "" ||
+		customersListHasVehicle ||
+		customersListHasBalance ||
+		customersListLastVisitMonths > 0 ||
+		len(customersListTagIDs) > 0 ||
+		customersListPerPage > 0 ||
+		customersListPage > 0
+}
+
+func customersListBuildParams() wenmar.ListCustomersParams {
+	params := wenmar.ListCustomersParams{}
+	if customersListQuery != "" {
+		params.Query = &customersListQuery
+	}
+	if customersListType != "" {
+		params.Type = &customersListType
+	}
+	if customersListHasVehicle {
+		params.HasVehicle = &customersListHasVehicle
+	}
+	if customersListHasBalance {
+		params.HasBalance = &customersListHasBalance
+	}
+	if customersListLastVisitMonths > 0 {
+		params.LastVisitMonths = &customersListLastVisitMonths
+	}
+	if len(customersListTagIDs) > 0 {
+		ids := make([]string, len(customersListTagIDs))
+		for i, id := range customersListTagIDs {
+			ids[i] = strconv.Itoa(id)
+		}
+		params.TagIds = &ids
+	}
+	if customersListPerPage > 0 {
+		params.PerPage = &customersListPerPage
+	}
+	if customersListPage > 0 {
+		params.Page = &customersListPage
+	}
+	return params
 }
 
 func runCustomersShow(cmd *cobra.Command, args []string) error {
