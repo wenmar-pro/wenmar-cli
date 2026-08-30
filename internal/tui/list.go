@@ -131,7 +131,7 @@ func (m *ListModel[T]) renderList(title string, headers []string, row func(T) []
 	if len(m.items) == 0 {
 		return "  No " + title + " found.\n"
 	}
-	s := HeaderStyle.Render("  " + strings.Join(headers, " ")) + "\n"
+	s := HeaderStyle.Render("  "+strings.Join(headers, " ")) + "\n"
 	for i, item := range m.items {
 		line := "  " + strings.Join(row(item), " ")
 		if i == m.cursor {

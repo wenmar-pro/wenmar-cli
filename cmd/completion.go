@@ -17,8 +17,8 @@ Install:
   zsh:   wenmar completion zsh > "${fpath[1]}/_wenmar"
   fish:  wenmar completion fish > ~/.config/fish/completions/wenmar.fish
 `,
-	Args:       cobra.ExactValidArgs(1),
-	ValidArgs:  []string{"bash", "zsh", "fish", "powershell"},
+	Args:      cobra.ExactValidArgs(1),
+	ValidArgs: []string{"bash", "zsh", "fish", "powershell"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		switch args[0] {
 		case "bash":

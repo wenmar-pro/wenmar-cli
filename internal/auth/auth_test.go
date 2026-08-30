@@ -88,7 +88,7 @@ func TestResolveBaseURL_Default(t *testing.T) {
 }
 
 func TestResolveToken_ReadsConfigFile(t *testing.T) {
-		dir := t.TempDir()
+	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
 	config.SaveTo(configPath, &config.Config{Token: "from-config"})
 
@@ -133,7 +133,7 @@ func TestResolveToken_EnvOverridesConfig(t *testing.T) {
 }
 
 func TestResolveToken_NoTokenReturnsError(t *testing.T) {
-		_, err := ResolveTokenWithSourceFrom("", "/nonexistent/config", emptyStore{})
+	_, err := ResolveTokenWithSourceFrom("", "/nonexistent/config", emptyStore{})
 	if err == nil {
 		t.Error("expected error when no token is configured")
 	}
@@ -190,7 +190,7 @@ func TestResolveAuthManager_EnvPrecedence(t *testing.T) {
 }
 
 func TestResolveAuthManager_ConfigFallback(t *testing.T) {
-		os.Unsetenv("WENMAR_TOKEN")
+	os.Unsetenv("WENMAR_TOKEN")
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
 	config.SaveTo(configPath, &config.Config{Token: "from-config"})
@@ -209,7 +209,7 @@ func TestResolveAuthManager_ConfigFallback(t *testing.T) {
 }
 
 func TestResolveAuthManager_NoToken(t *testing.T) {
-		os.Unsetenv("WENMAR_TOKEN")
+	os.Unsetenv("WENMAR_TOKEN")
 	_, err := ResolveAuthManagerWithStore("", "/nonexistent/config", emptyStore{})
 	if err == nil {
 		t.Error("expected error when no token configured")

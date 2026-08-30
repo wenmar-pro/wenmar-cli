@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
 type CommandInfo struct {
 	Path             string     `json:"path"`
 	Description      string     `json:"description"`

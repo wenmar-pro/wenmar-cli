@@ -1,4 +1,5 @@
 //go:build !generated
+
 package cmd
 
 import (
@@ -98,7 +99,7 @@ var vehiclesWorkOrdersCmd = &cobra.Command{
 var (
 	vehicleCreateMake         string
 	vehicleCreateModel        string
-	vehicleCreateYear        int
+	vehicleCreateYear         int
 	vehicleCreateCustomer     int
 	vehiclesDeleteDryRun      bool
 	vehicleUpdateMake         string

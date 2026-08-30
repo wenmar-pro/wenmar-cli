@@ -1,4 +1,5 @@
 //go:build !generated
+
 package cmd
 
 import (
@@ -103,24 +104,24 @@ var (
 
 var (
 	customerCreateFullName   string
-	customerUpdateFullName    string
-	customerCompanyName       string
-	customerFleetIdentifier   string
-	customerBillingTerms      string
-	customerCreditLimit       string
-	customerTaxExempt         bool
-	customerTaxExemptNumber   string
-	customerNotes             string
-	customerMarketingOptIn    bool
-	customerDiscountPercent   string
-	customerPoRequired        bool
-	customerEmails            []string
-	customerPhones            []string
-	customerAddresses         []string
-	customerTagIDs            []int
-	customerRemoveEmailIDs    []int
-	customerRemovePhoneIDs    []int
-	customerRemoveAddressIDs  []int
+	customerUpdateFullName   string
+	customerCompanyName      string
+	customerFleetIdentifier  string
+	customerBillingTerms     string
+	customerCreditLimit      string
+	customerTaxExempt        bool
+	customerTaxExemptNumber  string
+	customerNotes            string
+	customerMarketingOptIn   bool
+	customerDiscountPercent  string
+	customerPoRequired       bool
+	customerEmails           []string
+	customerPhones           []string
+	customerAddresses        []string
+	customerTagIDs           []int
+	customerRemoveEmailIDs   []int
+	customerRemovePhoneIDs   []int
+	customerRemoveAddressIDs []int
 )
 
 func init() {
@@ -475,4 +476,3 @@ func applyCustomerUpdateFlags(req *wenmar.UpdateCustomerRequest) {
 		}
 	}
 }
-

@@ -42,11 +42,11 @@ func TestPrintError_APIError_IncludesDebugContext(t *testing.T) {
 
 func TestPrintError_ValidationDetails(t *testing.T) {
 	apiErr := &wenmar.APIError{
-		Code:       "validation_failed",
-		Message:    "Full name can't be blank",
-		StatusCode: 422,
-		Method:     "POST",
-		Path:       "/customers",
+		Code:           "validation_failed",
+		Message:        "Full name can't be blank",
+		StatusCode:     422,
+		Method:         "POST",
+		Path:           "/customers",
 		FieldErrorsMap: map[string]any{"full_name": []any{"can't be blank"}},
 	}
 	info := &DebugInfo{TokenSource: "--token flag", TokenMasked: "abcd...wxyz", BaseURL: "http://localhost:3000"}

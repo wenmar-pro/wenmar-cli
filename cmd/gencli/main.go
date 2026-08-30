@@ -63,19 +63,19 @@ func fatal(format string, args ...any) {
 
 // Spec is a minimal OpenAPI spec representation for parsing.
 type Spec struct {
-	Paths  map[string]PathItem `yaml:"paths"`
+	Paths map[string]PathItem `yaml:"paths"`
 }
 
 type PathItem map[string]Operation // keyed by HTTP method (get, post, patch, delete, put)
 
 type Operation struct {
-	OperationID  string              `yaml:"operationId"`
-	Summary      string              `yaml:"summary"`
-	Tags         []string            `yaml:"tags"`
-	Parameters   []Parameter         `yaml:"parameters"`
-	RequestBody  *RequestBody        `yaml:"requestBody"`
-	Responses    map[string]Response `yaml:"responses"`
-	XPaginated   bool                `yaml:"x-paginated"`
+	OperationID string              `yaml:"operationId"`
+	Summary     string              `yaml:"summary"`
+	Tags        []string            `yaml:"tags"`
+	Parameters  []Parameter         `yaml:"parameters"`
+	RequestBody *RequestBody        `yaml:"requestBody"`
+	Responses   map[string]Response `yaml:"responses"`
+	XPaginated  bool                `yaml:"x-paginated"`
 }
 
 type Parameter struct {
@@ -86,15 +86,15 @@ type Parameter struct {
 }
 
 type Schema struct {
-	Type       string             `yaml:"type"`
-	Ref        string             `yaml:"$ref"`
-	Items      *Schema            `yaml:"items"`
-	Properties map[string]Schema  `yaml:"properties"`
-	Required   *[]string          `yaml:"required"`
+	Type       string            `yaml:"type"`
+	Ref        string            `yaml:"$ref"`
+	Items      *Schema           `yaml:"items"`
+	Properties map[string]Schema `yaml:"properties"`
+	Required   *[]string         `yaml:"required"`
 }
 
 type RequestBody struct {
-	Required bool            `yaml:"required"`
+	Required bool             `yaml:"required"`
 	Content  map[string]Media `yaml:"content"`
 }
 
@@ -103,7 +103,7 @@ type Media struct {
 }
 
 type Response struct {
-	Description string            `yaml:"description"`
+	Description string           `yaml:"description"`
 	Content     map[string]Media `yaml:"content"`
 }
 
@@ -121,9 +121,9 @@ func loadSpec(path string) (*Spec, error) {
 
 // Overrides is the gen_overrides.yaml structure.
 type Overrides struct {
-	Commands      map[string]CommandOverride `yaml:"commands"`
+	Commands      map[string]CommandOverride         `yaml:"commands"`
 	FlagOverrides map[string]map[string]FlagOverride `yaml:"flag_overrides"`
-	Exclude       []string                   `yaml:"exclude"`
+	Exclude       []string                           `yaml:"exclude"`
 }
 
 type CommandOverride struct {

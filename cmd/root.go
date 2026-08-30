@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/wenmar-pro/wenmar-cli/internal/agent"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 var (

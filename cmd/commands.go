@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/agent"
 	"github.com/spf13/cobra"
+	"github.com/wenmar-pro/wenmar-cli/internal/agent"
 )
 
 var commandsCmd = &cobra.Command{

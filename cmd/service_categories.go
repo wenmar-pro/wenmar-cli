@@ -1,4 +1,5 @@
 //go:build !generated
+
 package cmd
 
 import (
@@ -80,9 +81,9 @@ var serviceCategoriesSeedDefaultsCmd = &cobra.Command{
 var (
 	serviceCategoryCreateName        string
 	serviceCategoryCreateServiceType string
-	serviceCategoryCreateIcon         string
-	serviceCategoryUpdateName         string
-	serviceCategoryDeleteDryRun       bool
+	serviceCategoryCreateIcon        string
+	serviceCategoryUpdateName        string
+	serviceCategoryDeleteDryRun      bool
 )
 
 func init() {

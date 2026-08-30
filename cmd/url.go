@@ -5,8 +5,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	"github.com/spf13/cobra"
+	"github.com/wenmar-pro/wenmar-cli/internal/output"
 )
 
 // ParseResult is the decomposed form of a Wenmar URL.

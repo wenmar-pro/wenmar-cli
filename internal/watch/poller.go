@@ -23,10 +23,10 @@ type Event struct {
 // the previous state, and emits events for new, changed, and removed items.
 // It fetches through the SDK client so it inherits auth, retry, and caching.
 type Poller struct {
-	Client     *wenmar.Client
-	Resource   string // "work_orders", "customers", "vehicles"
-	LocationID string
-	Interval   time.Duration
+	Client      *wenmar.Client
+	Resource    string // "work_orders", "customers", "vehicles"
+	LocationID  string
+	Interval    time.Duration
 	ExitOnFirst bool
 
 	// Filters

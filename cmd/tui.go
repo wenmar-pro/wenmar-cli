@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	tuiLocation string
-	tuiInterval time.Duration
+	tuiLocation  string
+	tuiInterval  time.Duration
 	tuiWorkOrder int
-	tuiRemote   bool
+	tuiRemote    bool
 )
 
 var tuiCmd = &cobra.Command{

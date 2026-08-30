@@ -16,26 +16,26 @@ type CommandGroup struct {
 
 // GenCommand represents one cobra command to emit.
 type GenCommand struct {
-	OperationID       string
-	Resource          string
-	Command           string
-	Summary           string
-	Method            string
-	Path              string
-	PathParams        []Parameter
-	QueryParams       []Parameter
-	RequestBody       *RequestBody
-	IsPaginated       bool
-	ExtraPathParams   []Parameter
-	HasIDParam        bool
-	IDType            string
-	SDKMethod         string
-	RequestStruct     string
-	BodyFields        []BodyField
-	PositionalArg     string
-	QueryParamStruct  string
-	QueryFields       []BodyField
-	Tab               string // work order tab name
+	OperationID      string
+	Resource         string
+	Command          string
+	Summary          string
+	Method           string
+	Path             string
+	PathParams       []Parameter
+	QueryParams      []Parameter
+	RequestBody      *RequestBody
+	IsPaginated      bool
+	ExtraPathParams  []Parameter
+	HasIDParam       bool
+	IDType           string
+	SDKMethod        string
+	RequestStruct    string
+	BodyFields       []BodyField
+	PositionalArg    string
+	QueryParamStruct string
+	QueryFields      []BodyField
+	Tab              string // work order tab name
 }
 
 // BodyField represents a scalar field from the request body schema
@@ -46,7 +46,7 @@ type BodyField struct {
 	FlagName  string // kebab-case (e.g. "full-name")
 	Type      string // "string", "integer", "boolean"
 	Required  bool
-	IsPointer bool   // true if the SDK struct field is a pointer type
+	IsPointer bool // true if the SDK struct field is a pointer type
 	HelpText  string
 }
 
@@ -586,7 +586,7 @@ func extractScalarFields(schema Schema, requestStruct string) []BodyField {
 			Type:      prop.Type,
 			Required:  contains(required, name),
 			IsPointer: !contains(required, name), // optional fields are pointers
-			HelpText:   prettifyParamName(name),
+			HelpText:  prettifyParamName(name),
 		}
 		if f.Required {
 			f.HelpText += " (required)"
@@ -647,7 +647,7 @@ func extractQueryFields(op Operation, queryParamStruct string) []BodyField {
 			Type:      p.Schema.Type,
 			Required:  p.Required,
 			IsPointer: !p.Required,
-			HelpText:   prettifyParamName(p.Name),
+			HelpText:  prettifyParamName(p.Name),
 		}
 		if f.Required {
 			f.HelpText += " (required)"
@@ -805,7 +805,7 @@ func emitListPaginatedHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Op("*").Qual(wenmarPkg, "Paginator"), jen.Error()).Block(
-			jen.List(jen.Id("resp"), jen.Id("paginator"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd) + "WithPagination").Call(sdkCallArgs(cmd, false)...),
+			jen.List(jen.Id("resp"), jen.Id("paginator"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)+"WithPagination").Call(sdkCallArgs(cmd, false)...),
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 			),

@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
-	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	oauthflow "github.com/wenmar-pro/wenmar-cli/internal/auth/oauth"
+	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )

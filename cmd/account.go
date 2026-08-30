@@ -1,4 +1,5 @@
 //go:build !generated
+
 package cmd
 
 import (

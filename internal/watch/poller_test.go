@@ -41,7 +41,7 @@ func TestPoller_EmitsNewItems(t *testing.T) {
 			// Second poll: two work orders (one new, one changed)
 			json.NewEncoder(w).Encode([]map[string]any{
 				{"id": float64(1), "status": "in_progress"}, // changed
-				{"id": float64(2), "status": "open"},         // new
+				{"id": float64(2), "status": "open"},        // new
 			})
 		}
 	}))
