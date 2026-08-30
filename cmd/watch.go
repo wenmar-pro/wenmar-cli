@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -102,17 +104,29 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	enc := json.NewEncoder(cmd.OutOrStdout())
 	enc.SetIndent("", "  ")
 
-	return poller.Run(ctx, func(e watch.Event) {
+	err = poller.Run(ctx, func(e watch.Event) {
 		if watchRunSync != "" {
-			runSyncScript(watchRunSync, e)
+			if err := runSyncScript(watchRunSync, e); err != nil {
+				fmt.Fprintf(os.Stderr, "watch: script %q failed: %v\n", watchRunSync, err)
+			}
 			return
 		}
 		if watchRunAsync != "" {
-			go runSyncScript(watchRunAsync, e)
+			go func(ev watch.Event) {
+				if err := runSyncScript(watchRunAsync, ev); err != nil {
+					fmt.Fprintf(os.Stderr, "watch: async script %q failed: %v\n", watchRunAsync, err)
+				}
+			}(e)
 			return
 		}
-		enc.Encode(e)
+		if err := enc.Encode(e); err != nil {
+			fmt.Fprintf(os.Stderr, "watch: encode event: %v\n", err)
+		}
 	})
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return nil // Ctrl-C is a clean stop, not an error
+	}
+	return err
 }
 
 func splitComma(s string) []string {
@@ -125,12 +139,14 @@ func splitComma(s string) []string {
 	return parts
 }
 
-func runSyncScript(script string, e watch.Event) {
-	// Pipe the event JSON to the script's stdin
-	data, _ := json.Marshal(e)
+func runSyncScript(script string, e watch.Event) (err error) {
+	data, err := json.Marshal(e)
+	if err != nil {
+		return fmt.Errorf("marshal event: %w", err)
+	}
 	cmd := exec.Command(script)
 	cmd.Stdin = strings.NewReader(string(data))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Run()
+	return cmd.Run()
 }

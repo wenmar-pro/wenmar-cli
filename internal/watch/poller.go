@@ -3,8 +3,8 @@ package watch
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
@@ -29,26 +29,62 @@ type Poller struct {
 	Interval    time.Duration
 	ExitOnFirst bool
 
+	// MaxConsecutiveFailures is how many consecutive transient errors are
+	// tolerated before giving up (0 = default 3).
+	MaxConsecutiveFailures int
+
 	// Filters
 	EventTypes map[string]bool // e.g. {"new": true, "changed": true}
 
-	mu       sync.Mutex
 	previous map[string]map[string]any // id → item
 }
 
 func (p *Poller) Run(ctx context.Context, emit func(Event)) error {
-	p.mu.Lock()
 	p.previous = nil
-	p.mu.Unlock()
+
+	scoped, err := p.scopedClient(ctx)
+	if err != nil {
+		return err
+	}
 
 	ticker := time.NewTicker(p.Interval)
 	defer ticker.Stop()
 
-	// Do an immediate first poll
-	if err := p.poll(ctx, emit); err != nil {
-		return err
+	failures := 0
+	maxFailures := p.MaxConsecutiveFailures
+	if maxFailures <= 0 {
+		maxFailures = 3
+	}
+	backoff := time.Second
+
+	poll := func() error {
+		if err := p.poll(ctx, emit, scoped); err != nil {
+			if isAuthError(err) {
+				return err // fatal
+			}
+			failures++
+			if failures >= maxFailures {
+				return fmt.Errorf("watch: %d consecutive failed polls, giving up: %w", failures, err)
+			}
+			// Brief backoff, reset on next success.
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(backoff):
+			}
+			if backoff < 60*time.Second {
+				backoff *= 2
+			}
+			return nil
+		}
+		failures = 0
+		backoff = time.Second
+		return nil
 	}
 
+	if err := poll(); err != nil {
+		return err
+	}
 	if p.ExitOnFirst {
 		return nil
 	}
@@ -58,23 +94,40 @@ func (p *Poller) Run(ctx context.Context, emit func(Event)) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := p.poll(ctx, emit); err != nil {
+			if err := poll(); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-func (p *Poller) poll(ctx context.Context, emit func(Event)) error {
-	resp, err := p.fetch(ctx)
+func (p *Poller) scopedClient(ctx context.Context) (*wenmar.Client, error) {
+	if p.LocationID == "" {
+		return p.Client, nil
+	}
+	lc, err := p.Client.ForLocation(ctx, p.LocationID)
+	if err != nil {
+		return nil, err
+	}
+	return lc.Client, nil
+}
+
+func isAuthError(err error) bool {
+	var apiErr *wenmar.APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == 401 || apiErr.StatusCode == 403
+	}
+	return false
+}
+
+func (p *Poller) poll(ctx context.Context, emit func(Event), client *wenmar.Client) error {
+	resp, err := p.fetch(ctx, client)
 	if err != nil {
 		return err
 	}
 
-	p.mu.Lock()
 	prev := p.previous
 	p.previous = resp
-	p.mu.Unlock()
 
 	if prev == nil {
 		// First poll — establish baseline, no events
@@ -116,58 +169,54 @@ func (p *Poller) maybeEmit(emit func(Event), e Event) {
 }
 
 // fetch retrieves the current list of items through the SDK client.
-func (p *Poller) fetch(ctx context.Context) (map[string]map[string]any, error) {
-	client := p.Client
-	if p.LocationID != "" {
-		lc, err := client.ForLocation(ctx, p.LocationID)
-		if err != nil {
-			return nil, err
-		}
-		client = lc.Client
-	}
-
+func (p *Poller) fetch(ctx context.Context, client *wenmar.Client) (map[string]map[string]any, error) {
 	var items []map[string]any
+	var err error
 	switch p.Resource {
 	case "customers":
-		resp, err := client.ListCustomers(ctx)
-		if err != nil {
-			return nil, err
+		resp, ferr := client.ListCustomers(ctx)
+		if ferr != nil {
+			return nil, ferr
 		}
-		items = decodeList(resp.JSON200)
+		items, err = decodeList(resp.JSON200)
 	case "vehicles":
-		resp, err := client.ListVehicles(ctx)
-		if err != nil {
-			return nil, err
+		resp, ferr := client.ListVehicles(ctx)
+		if ferr != nil {
+			return nil, ferr
 		}
-		items = decodeList(resp.JSON200)
+		items, err = decodeList(resp.JSON200)
 	default: // work_orders
-		resp, err := client.ListWorkOrders(ctx)
-		if err != nil {
-			return nil, err
+		resp, ferr := client.ListWorkOrders(ctx)
+		if ferr != nil {
+			return nil, ferr
 		}
-		items = decodeList(resp.JSON200)
+		items, err = decodeList(resp.JSON200)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return indexByID(items), nil
 }
 
 // decodeList converts a typed list response into generic maps for diffing.
-func decodeList[T any](list *[]T) []map[string]any {
+func decodeList[T any](list *[]T) ([]map[string]any, error) {
 	if list == nil {
-		return nil
+		return nil, nil
 	}
 	items := make([]map[string]any, 0, len(*list))
 	for _, item := range *list {
 		b, err := json.Marshal(item)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("decode item: %w", err)
 		}
 		var m map[string]any
-		if json.Unmarshal(b, &m) == nil {
-			items = append(items, m)
+		if err := json.Unmarshal(b, &m); err != nil {
+			return nil, fmt.Errorf("decode item: %w", err)
 		}
+		items = append(items, m)
 	}
-	return items
+	return items, nil
 }
 
 func indexByID(items []map[string]any) map[string]map[string]any {

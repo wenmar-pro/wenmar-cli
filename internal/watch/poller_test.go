@@ -107,6 +107,57 @@ func TestPoller_EmitsNewItems(t *testing.T) {
 	}
 }
 
+func TestPoller_TransientErrorRetries(t *testing.T) {
+	var polls int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := atomic.AddInt32(&polls, 1)
+		if n == 2 {
+			// One transient failure mid-stream.
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]map[string]any{{"id": float64(1)}})
+	}))
+	defer srv.Close()
+
+	client := newTestClient(t, srv.URL, "tok")
+	p := &Poller{
+		Client:      client,
+		Resource:    "customers",
+		Interval:    10 * time.Millisecond,
+		ExitOnFirst: false,
+	}
+	var events int32
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := p.Run(ctx, func(Event) { atomic.AddInt32(&events, 1) })
+	_ = err
+	if atomic.LoadInt32(&polls) < 3 {
+		t.Errorf("poller gave up after transient 500: only %d polls", polls)
+	}
+}
+
+func TestPoller_FatalAuthErrorStops(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"error": map[string]any{"code": "unauthorized", "message": "bad token", "details": map[string]any{}},
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer srv.Close()
+
+	client := newTestClient(t, srv.URL, "tok")
+	p := &Poller{Client: client, Resource: "customers", Interval: 10 * time.Millisecond}
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	err := p.Run(ctx, func(Event) {})
+	if err == nil {
+		t.Error("auth failure must be fatal, not retried")
+	}
+}
+
 func TestPoller_ExitOnFirst(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -122,7 +173,6 @@ func TestPoller_ExitOnFirst(t *testing.T) {
 		Interval:    100 * time.Millisecond,
 		ExitOnFirst: true,
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
