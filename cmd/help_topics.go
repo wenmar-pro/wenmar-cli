@@ -121,6 +121,24 @@ Flags:
   --run-sync <script> Run a script for each event (event JSON on stdin)
   --run-async <script> Run a script without blocking the poll loop`,
 	},
+	{
+		name:  "agent-help",
+		title: "Agent Help Mode",
+		content: `--agent --help emits structured JSON describing any command:
+
+  wenmar customers list --help --agent
+
+Fields:
+  path        Full command path (e.g. "wenmar customers list")
+  description One-line summary
+  aliases     Alternative names for this command
+  args        Positional arguments [{name, type, required}]
+  flags       Flags [{name, short, type, required, default, description}]
+              Global output flags are omitted from leaf help; see "wenmar help output".
+
+The same schema powers "wenmar commands" (the full catalog). One builder
+produces both, so they always agree.`,
+	},
 }
 
 var helpCmd = &cobra.Command{

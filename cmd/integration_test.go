@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 )
 
@@ -37,6 +38,10 @@ func execute(args ...string) (string, error) {
 	// Reset global output flags so prior tests don't leak state.
 	mdFlag, jsonFlag, agentFlag, jqFlag = false, false, false, ""
 	idsOnlyFlag, countFlag, htmlFlag, styledFlag, quietFlag = false, false, false, false, false
+	// Cobra lazily adds a --help flag whose "true" value and Changed bit
+	// persist across Execute calls once a test invokes --help; clear it on
+	// every command so a later --agent run isn't hijacked into printing help.
+	resetHelpFlag(rootCmd)
 	// Reset auth flag globals so env-based resolution (WENMAR_URL/TOKEN)
 	// isn't shadowed by a prior test's --base-url/--token.
 	baseURLFlag, tokenFlag = "", ""
@@ -51,6 +56,18 @@ func execute(args ...string) (string, error) {
 	rootCmd.SetErr(buf)
 	err := rootCmd.Execute()
 	return buf.String(), err
+}
+
+// resetHelpFlag clears the cobra-generated --help flag value and Changed bit
+// on a command and all of its descendants.
+func resetHelpFlag(c *cobra.Command) {
+	if hf := c.Flags().Lookup("help"); hf != nil {
+		_ = hf.Value.Set("false")
+		hf.Changed = false
+	}
+	for _, sub := range c.Commands() {
+		resetHelpFlag(sub)
+	}
 }
 
 // startFakeAPI returns an httptest server that mimics the wenmar-pro API

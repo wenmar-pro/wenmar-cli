@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/wenmar-pro/wenmar-cli/internal/agent"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
@@ -109,24 +108,12 @@ func init() {
 	defaultHelpFunc := rootCmd.HelpFunc()
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		if agentFlag {
-			info := agent.CommandInfo{
-				Path:        cmd.CommandPath(),
-				Description: cmd.Short,
-			}
-			cmd.Flags().VisitAll(func(f *pflag.Flag) {
-				if !f.Hidden {
-					info.Flags = append(info.Flags, agent.FlagInfo{
-						Name:        f.Name,
-						Short:       f.Shorthand,
-						Type:        f.Value.Type(),
-						Default:     f.DefValue,
-						Description: f.Usage,
-					})
-				}
-			})
-			enc := json.NewEncoder(os.Stdout)
+			enc := json.NewEncoder(cmd.OutOrStdout())
 			enc.SetIndent("", "  ")
-			enc.Encode(info)
+			if err := enc.Encode(agent.BuildCommandInfo(rootCmd, cmd)); err != nil {
+				fmt.Fprintln(os.Stderr, "wenmar: help:", err)
+				os.Exit(1)
+			}
 			return
 		}
 		defaultHelpFunc(cmd, args)

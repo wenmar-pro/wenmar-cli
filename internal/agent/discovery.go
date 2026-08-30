@@ -53,6 +53,42 @@ func BuildCatalog(root *cobra.Command) Catalog {
 	return Catalog{Commands: commands}
 }
 
+// BuildCommandInfo builds the agent-facing description of one command.
+// It is the same builder that produces the catalog, so --help --agent and
+// `wenmar commands` can never disagree.
+func BuildCommandInfo(root *cobra.Command, cmd *cobra.Command) CommandInfo {
+	info := CommandInfo{
+		Path:        cmd.CommandPath(),
+		Description: cmd.Short,
+		Aliases:     cmd.Aliases,
+		Args:        extractArgs(cmd),
+		Canonical:   true,
+		Type:        "command",
+	}
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if f.Hidden {
+			return
+		}
+		// cobra lazily adds --help at execution time; skip it so the help
+		// surface matches the catalog, which is built at construction time.
+		if f.Name == "help" {
+			return
+		}
+		if pf := root.PersistentFlags().Lookup(f.Name); pf != nil {
+			return // global flag — documented once at root, not per leaf
+		}
+		info.Flags = append(info.Flags, FlagInfo{
+			Name:        f.Name,
+			Short:       f.Shorthand,
+			Type:        f.Value.Type(),
+			Required:    f.Annotations != nil && f.Annotations["cobra_annotation_bash_completion_one_required_flag"] != nil,
+			Default:     f.DefValue,
+			Description: f.Usage,
+		})
+	})
+	return info
+}
+
 func buildCatalogRecursive(cmd *cobra.Command, parentPath string, commands *[]CommandInfo) {
 	for _, sub := range cmd.Commands() {
 		// Skip hidden commands and the help command
@@ -82,7 +118,7 @@ func buildCatalogRecursive(cmd *cobra.Command, parentPath string, commands *[]Co
 				Name:        f.Name,
 				Short:       f.Shorthand,
 				Type:        f.Value.Type(),
-				Required:    f.Annotations != nil,
+				Required:    f.Annotations != nil && f.Annotations["cobra_annotation_bash_completion_one_required_flag"] != nil,
 				Default:     f.DefValue,
 				Description: f.Usage,
 			})
