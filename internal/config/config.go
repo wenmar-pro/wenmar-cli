@@ -12,6 +12,11 @@ const (
 	defaultBaseURL = "https://app.wenmarpro.com"
 )
 
+// Notify receives migration notices. Defaults to stderr; replaced in tests.
+var Notify = func(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format, args...)
+}
+
 type Config struct {
 	Token      string `yaml:"token"`
 	BaseURL    string `yaml:"base_url"`
@@ -44,7 +49,7 @@ func ConfigPath() (string, error) {
 	}
 
 	if migrated {
-		fmt.Fprintf(os.Stderr, "  Migrated config from ~/.wenmar/ to ~/.config/wenmar/\n")
+		Notify("  Migrated config from ~/.wenmar/ to ~/.config/wenmar/\n")
 	}
 
 	return newPath, nil
@@ -86,7 +91,7 @@ func Save(cfg *Config) error {
 
 func SaveTo(path string, cfg *Config) error {
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("could not create config directory: %w", err)
 	}
 
@@ -95,10 +100,32 @@ func SaveTo(path string, cfg *Config) error {
 		return fmt.Errorf("could not marshal config: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0600); err != nil {
-		return fmt.Errorf("could not write config file: %w", err)
+	// Atomic write: temp file + fsync + rename, so a crash mid-write can
+	// never truncate or corrupt the config.
+	tmp, err := os.CreateTemp(dir, ".config-*.tmp")
+	if err != nil {
+		return fmt.Errorf("could not create temp file: %w", err)
 	}
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath) // no-op after successful rename
 
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return fmt.Errorf("could not write config: %w", err)
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return fmt.Errorf("could not sync config: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("could not close config: %w", err)
+	}
+	if err := os.Chmod(tmpPath, 0o600); err != nil {
+		return fmt.Errorf("could not set config permissions: %w", err)
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		return fmt.Errorf("could not replace config: %w", err)
+	}
 	return nil
 }
 

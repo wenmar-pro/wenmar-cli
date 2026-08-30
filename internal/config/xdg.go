@@ -52,23 +52,47 @@ func migrateOldConfig(oldPath string) (bool, error) {
 		return false, nil
 	}
 
-	// Read old, write to new
+	// Read old, write to new atomically (no empty-config window), then
+	// remove the old file.
 	data, err := os.ReadFile(oldPath)
 	if err != nil {
 		return false, fmt.Errorf("could not read old config: %w", err)
 	}
 
-	if err := SaveTo(newPath, &Config{}); err != nil {
+	dir := filepath.Dir(newPath)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return false, fmt.Errorf("could not create new config dir: %w", err)
 	}
 
-	// Write the actual content (SaveTo creates the dir; now write the data)
-	if err := os.WriteFile(newPath, data, 0600); err != nil {
+	tmp, err := os.CreateTemp(dir, ".migrate-*.tmp")
+	if err != nil {
+		return false, fmt.Errorf("could not create temp file: %w", err)
+	}
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
 		return false, fmt.Errorf("could not write migrated config: %w", err)
 	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return false, fmt.Errorf("could not sync migrated config: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return false, fmt.Errorf("could not close migrated config: %w", err)
+	}
+	if err := os.Chmod(tmpPath, 0o600); err != nil {
+		return false, fmt.Errorf("could not set permissions: %w", err)
+	}
+	if err := os.Rename(tmpPath, newPath); err != nil {
+		return false, fmt.Errorf("could not move migrated config into place: %w", err)
+	}
 
-	// Remove old file
-	os.Remove(oldPath)
+	// Only remove the old file once the new one is durably in place.
+	if err := os.Remove(oldPath); err != nil && !os.IsNotExist(err) {
+		return true, fmt.Errorf("migrated config but could not remove old file at %s: %w", oldPath, err)
+	}
 
 	return true, nil
 }

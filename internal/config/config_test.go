@@ -19,6 +19,47 @@ func TestConfigPathHonorsConfigHome(t *testing.T) {
 	}
 }
 
+func TestSaveToIsAtomic(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "wenmar", "config")
+	if err := SaveTo(path, &Config{Token: "t", BaseURL: "https://x"}); err != nil {
+		t.Fatalf("SaveTo: %v", err)
+	}
+	// No temp file left behind.
+	entries, _ := os.ReadDir(filepath.Dir(path))
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".tmp") {
+			t.Errorf("leftover temp file: %s", e.Name())
+		}
+	}
+	// Overwrite succeeds and old content is fully replaced.
+	if err := SaveTo(path, &Config{Token: "t2"}); err != nil {
+		t.Fatalf("SaveTo overwrite: %v", err)
+	}
+	cfg, err := LoadFrom(path)
+	if err != nil {
+		t.Fatalf("LoadFrom: %v", err)
+	}
+	if cfg.Token != "t2" {
+		t.Errorf("Token = %q, want t2", cfg.Token)
+	}
+}
+
+func TestSaveToDirPermissions(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "wenmar", "config")
+	if err := SaveTo(path, &Config{}); err != nil {
+		t.Fatalf("SaveTo: %v", err)
+	}
+	info, err := os.Stat(filepath.Dir(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o700 {
+		t.Errorf("config dir mode = %o, want 700", info.Mode().Perm())
+	}
+}
+
 func TestLoad_ReturnsConfigWhenFileExists(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".wenmar", "config")
