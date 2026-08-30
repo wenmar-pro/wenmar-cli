@@ -136,7 +136,7 @@ func buildCommand(op Operation, method, path string, overrides *Overrides) *GenC
 		}
 		if ov.RequestStruct != "" {
 			cmd.RequestStruct = ov.RequestStruct
-			cmd.BodyFields = parseBodyFields(op, ov.RequestStruct)
+			cmd.BodyFields = parseBodyFields(op, ov.RequestStruct, overrides.FlagOverrides[op.OperationID])
 		}
 		if ov.PositionalArg != "" {
 			cmd.PositionalArg = ov.PositionalArg
@@ -529,7 +529,7 @@ func requestPathExpr(cmd GenCommand) jen.Code {
 // parseBodyFields extracts scalar fields from the request body schema
 // and maps them to Go struct field names. Array and object fields are
 // skipped (they need hand-written flag logic).
-func parseBodyFields(op Operation, requestStruct string) []BodyField {
+func parseBodyFields(op Operation, requestStruct string, flagOverrides map[string]FlagOverride) []BodyField {
 	if op.RequestBody == nil {
 		return nil
 	}
@@ -549,8 +549,9 @@ func parseBodyFields(op Operation, requestStruct string) []BodyField {
 	if len(props) == 1 {
 		for propName, propSchema := range props {
 			if propSchema.Type == "object" {
-				// It's a wrapper — use the inner object's properties.
-				return extractScalarFields(propSchema, requestStruct)
+				// It's a wrapper — use the inner object's properties, keyed
+				// by their dotted path (e.g. "customer.first_name").
+				return extractScalarFields(propSchema, requestStruct, propName, flagOverrides)
 			}
 			// Not a wrapper — flat body.
 			_ = propName
@@ -558,12 +559,14 @@ func parseBodyFields(op Operation, requestStruct string) []BodyField {
 	}
 
 	// Flat body (e.g. merge_customer: { source_customer_id: int }).
-	return extractScalarFields(schema, requestStruct)
+	return extractScalarFields(schema, requestStruct, "", flagOverrides)
 }
 
 // extractScalarFields returns BodyFields for scalar properties of a schema.
-// Array and object fields are skipped.
-func extractScalarFields(schema Schema, requestStruct string) []BodyField {
+// Array and object fields are skipped. flagOverrides are keyed by the field's
+// dotted path (e.g. "customer.first_name") and override flag name, help text,
+// and required-marking.
+func extractScalarFields(schema Schema, requestStruct, wrapper string, flagOverrides map[string]FlagOverride) []BodyField {
 	props := schemaProps(schema)
 	if props == nil {
 		return nil
@@ -591,12 +594,40 @@ func extractScalarFields(schema Schema, requestStruct string) []BodyField {
 		if f.Required {
 			f.HelpText += " (required)"
 		}
+
+		// Apply the flag override for this field's dotted path if present.
+		if ov, ok := flagOverrides[dottedKey(wrapper, name)]; ok {
+			if ov.Flag != "" {
+				f.FlagName = ov.Flag
+			}
+			if ov.Help != "" {
+				f.HelpText = ov.Help
+			}
+			if ov.Required {
+				f.Required = true
+				f.IsPointer = false
+				if !strings.HasSuffix(f.HelpText, ")") {
+					f.HelpText += " (required)"
+				}
+			}
+		}
+
 		fields = append(fields, f)
 	}
 	sort.Slice(fields, func(i, j int) bool {
 		return fields[i].FlagName < fields[j].FlagName
 	})
 	return fields
+}
+
+// dottedKey joins a wrapper prefix and field name into the override key used
+// in gen_overrides.yaml (e.g. wrapper "customer" + name "first_name" ->
+// "customer.first_name").
+func dottedKey(wrapper, name string) string {
+	if wrapper == "" {
+		return name
+	}
+	return wrapper + "." + name
 }
 
 // schemaProps extracts the "properties" map from a Schema.
@@ -694,43 +725,6 @@ func pathWithIDExpr(cmd GenCommand) jen.Code {
 			fmtStr = strings.ReplaceAll(fmtStr, placeholder, "%d")
 			args = append(args, jen.Id(flagVarName(cmd.Resource, p.Name)))
 		}
-	}
-	allArgs := append([]jen.Code{jen.Lit(fmtStr)}, args...)
-	return jen.Qual("fmt", "Sprintf").Call(allArgs...)
-}
-
-// pathPrefixForRunner builds the path prefix expression for runShow/runDelete/runUpdate.
-// This is the path up to and including the position where args[0] ({id}) is
-// appended, with extra path params replaced by %d and their flag vars.
-// e.g. "/vendors/{id}" -> Lit("/vendors/")
-// e.g. "/customers/{customer_id}/drivers/{id}" -> Sprintf("/customers/%d/drivers/", driversCustomerID)
-func pathPrefixForRunner(cmd GenCommand) jen.Code {
-	path := cmd.Path
-
-	// If no {id} in path, return the full path.
-	if !cmd.HasIDParam {
-		return requestPathExpr(cmd)
-	}
-
-	// Find the position of {id} in the path.
-	idMarker := "{id}"
-	idPos := strings.Index(path, idMarker)
-	if idPos < 0 {
-		return requestPathExpr(cmd)
-	}
-
-	// Build the prefix up to {id}, replacing extra params with format verbs.
-	prefix := path[:idPos]
-	fmtStr := prefix
-	args := []jen.Code{}
-	for _, p := range cmd.ExtraPathParams {
-		placeholder := "{" + p.Name + "}"
-		fmtStr = strings.ReplaceAll(fmtStr, placeholder, "%d")
-		args = append(args, jen.Id(flagVarName(cmd.Resource, p.Name)))
-	}
-
-	if len(args) == 0 {
-		return jen.Lit(fmtStr)
 	}
 	allArgs := append([]jen.Code{jen.Lit(fmtStr)}, args...)
 	return jen.Qual("fmt", "Sprintf").Call(allArgs...)
@@ -920,16 +914,6 @@ func emitUpdateHandler(g *jen.Group, cmd GenCommand) {
 	))
 }
 
-// pathPrefixString returns the raw string prefix for runUpdate.
-func pathPrefixString(cmd GenCommand) string {
-	path := cmd.Path
-	idPos := strings.Index(path, "{id}")
-	if idPos < 0 {
-		return path + "/"
-	}
-	return path[:idPos]
-}
-
 func emitDeleteHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
 	label := titleCase(singularize(resource))
@@ -1095,7 +1079,7 @@ func sdkMethodNameFor(cmd GenCommand) string {
 	if cmd.SDKMethod != "" {
 		return cmd.SDKMethod
 	}
-	return sdkMethodNameFor(cmd)
+	return sdkMethodName(cmd.OperationID)
 }
 
 func sdkMethodName(operationID string) string {

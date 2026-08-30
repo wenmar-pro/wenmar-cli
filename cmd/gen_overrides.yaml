@@ -98,23 +98,12 @@ commands:
     command: show
     summary: Show a single customer by ID
     method: ShowCustomer
-  create_customer:
-    resource: customers
-    command: create
-    summary: Create a new customer
-    method: CreateCustomer
-    request_struct: CreateCustomerRequest
   update_customer:
     resource: customers
     command: update
     summary: Update a customer by ID
     method: UpdateCustomer
     request_struct: UpdateCustomerRequest
-  delete_customer:
-    resource: customers
-    command: delete
-    summary: Delete a customer by ID
-    method: DeleteCustomer
   merge_customer:
     resource: customers
     command: merge
@@ -284,21 +273,9 @@ commands:
     command: list
     summary: List all customer and vehicle tags
     method: ListTags
-  update_tags:
-    resource: tags
-    command: update
-    summary: Bulk update/destroy customer and vehicle tags
-    method: UpdateTags
-  create_customer_tag:
-    resource: tags
-    command: create
-    summary: Create a customer or vehicle tag
-    method: CreateCustomerTag
-  create_vehicle_tag:
-    resource: tags
-    command: create
-    summary: Create a customer or vehicle tag
-    method: CreateVehicleTag
+
+# NOTE: operations listed in `exclude:` must not also appear under
+# `commands:` — exclusion takes precedence and the entry would be dead.
 
 # Flag overrides: map request body fields to flag names with help text.
 # Fields not listed here auto-derive from the property name (snake_case -> kebab-case).
