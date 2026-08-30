@@ -57,6 +57,7 @@ Everything else gates on a green main. Do this first, alone, as one PR.
 1. **SDK repin.** Tag wenmar-sdk `go/v0.4.0` (contains `ListCustomersParams`/`ListCustomersWithParams`), bump `go.mod`, verify `GOWORK=off go build ./... && GOWORK=off go test ./...` passes.
 2. **CI auth fix.** `ci.yml:23` — `if: secrets.GITHUB_TOKEN != ''` (correct context), so the `git config` rewrite for the private SDK actually runs.
 3. **Formatting.** `gofmt -w` all ~45 dirty files; add `gofmt -l` + `go vet ./...` gates to CI in the same PR.
+4. **Lint and vulnerability scanning.** Add `golangci-lint` (config file: `errcheck`, `govet`, `staticcheck`, `gofmt` to start) and `govulncheck ./...` as CI jobs — same pass as the SDK review flagged as missing; cheap to add now that CI is being touched at all, rather than a third hardening pass later.
 
 **Exit criteria:** CI green on main with `GOWORK=off`; vet and fmt gates active.
 
@@ -124,7 +125,7 @@ Behavior-preserving bug fixes, each independently shippable. Order within the ph
 - `watch --run-sync`: surface script exit status (event field + stderr notice); `--run-async`: bounded concurrency, checked `Encode` errors.
 
 ### 1.11 Exit codes and errors
-- Status fallbacks in `internal/errors/exit.go`: 401→2 (auth), 404→3 (not found), 422→4 (validation) when the error `Code` is unrecognized; keep code-based mapping primary.
+- Complete status fallbacks in `internal/errors/exit.go` for every code in the 0–10 contract. Today only `5xx→6`, `403→8`, `409→7` exist (exit.go:60-68). Add: `401→2` (auth), `404→3` (not found), `422→4` (validation), `429→5` (rate limited). Code-based mapping stays primary; status fallbacks close the gap so no documented exit code can silently degrade to 1. Table-test all eleven codes against synthetic API errors with unrecognized `Code` values.
 - Offline detection: match `net.Error`, `*url.Error`, and `syscall.ECONNREFUSED`/`EHOSTUNREACH` via `errors.Is` → exit 10.
 - Add hints for conflict (7: "resource already exists (e.g. duplicate VIN)") and forbidden (8) to `printHints`.
 - `auth status` returns a typed error instead of `os.Exit(2)` mid-function (`cmd/auth.go:159`); stop double-printing (print-and-return).
@@ -191,6 +192,7 @@ Generator owns resource names; overrides declare canonical + aliases.
 
 - Flags stay kebab-case (`--full-name`, `--decode-vin`). No snake_case CLI tokens anywhere; env vars stay SCREAMING_SNAKE (`WENMAR_LOCATION_ID`).
 - `locations show <id>` and `account show` keep their shapes; parent `Short` strings become noun-y ("Manage work orders").
+- **Squash readabiity caveat:** `workorders` reads instantly as a compound; `servicecategories` is longer and harder to parse cold. Ship as-is (aliases make it reversible) but verify the squashed forms on the real help screen before release; if `servicecategories` reads poorly, don't generalize the squash rule to every future multi-word resource — 250+ operations means more compounds are coming and the rule needs eyes-on validation per case, not blanket application.
 - Update `surface-snapshot.json` (aliases included), README, SKILL.md together in the same commit.
 
 ### 2.6 CLI conventions skill
@@ -207,7 +209,7 @@ Create `.opencode/skill/cli-conventions/SKILL.md` capturing the naming rules for
 ### 3.1 `--output` (D3)
 - Modes: `table` (default human), `md`, `json` (envelope), `agent` (raw), `quiet` (raw, no discovery), `ids-only`, `count`, `html`, `styled` (forces table when piped).
 - `--output <mode>` registered as a persistent flag on root, shown at every help level.
-- Sugar aliases kept as thin persistent flags that only set the mode: `--json`, `--agent`, `--quiet`, `--jq <expr>` (implies `json` + filter). Conflicts (`--json --output md`) error with a clear message.
+- Sugar aliases kept as thin persistent flags that only set the mode: `--json`, `--agent`, `--quiet`, `--jq <expr>` (implies `json` + filter). Conflicts (`--json --output md`) error with a clear message. **Note:** this shortlist is a judgment call, not usage data — the CLI is prerelease with no telemetry. Revisit once real usage exists; the mode set and sugar list are designed to be cheap to re-balance.
 - Dropped standalone flags: `--md`, `-m`, `--markdown`, `--ids-only`, `--count`, `--html`, `--styled`. **Prerelease break, documented in README migration note.** `--allow-partial` remains a behavior flag.
 - `internal/output.ResolveModeStyled`'s 9-boolean signature becomes `ResolveMode(out string, jq string, sugar Sugar) Mode` — boolean-blindness removed.
 
