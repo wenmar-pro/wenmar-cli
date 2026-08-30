@@ -11,6 +11,7 @@ import (
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	oauthflow "github.com/wenmar-pro/wenmar-cli/internal/auth/oauth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	apperrors "github.com/wenmar-pro/wenmar-cli/internal/errors"
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
@@ -144,7 +145,9 @@ func storeStaticToken(token, configPath string, out io.Writer) error {
 
 func runAuthLogout(configPath string) error {
 	store := newCredentialStore()
-	_ = store.DeleteToken(context.Background())
+	if err := store.DeleteToken(context.Background()); err != nil {
+		fmt.Fprintf(os.Stderr, "  warning: could not delete stored token: %v\n", err)
+	}
 	if err := config.DeleteFrom(configPath); err != nil {
 		return fmt.Errorf("failed to delete config: %w", err)
 	}
@@ -156,7 +159,7 @@ func runAuthStatus(out io.Writer, configPath string) error {
 	rt, err := auth.ResolveTokenWithSource(tokenFlag, configPath)
 	if err != nil {
 		fmt.Fprintln(out, "  Not logged in. Run `wenmar auth login` to configure.")
-		os.Exit(2)
+		return fmt.Errorf("%w: %v", apperrors.ErrNotLoggedIn, err)
 	}
 
 	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
@@ -176,7 +179,7 @@ func runAuthStatus(out io.Writer, configPath string) error {
 	if err != nil {
 		fmt.Fprintln(out, " ✗")
 		fmt.Fprintf(out, "  Connection failed: %v\n", err)
-		return err
+		return fmt.Errorf("connection test failed")
 	}
 
 	fmt.Fprintln(out, " ✓")
@@ -200,7 +203,6 @@ func runAuthRefresh(out io.Writer, configPath string) error {
 		fmt.Fprintln(out, "  Not logged in. Run `wenmar auth login` to authenticate.")
 		return nil
 	}
-	_ = manager // ResolveAuthManager already wired the refresh function
 
 	tok, err := store.GetToken(context.Background())
 	if err != nil || tok == nil || tok.RefreshToken == "" {

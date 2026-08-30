@@ -168,7 +168,10 @@ func installAgentSkill(out io.Writer) error {
 }
 
 func runSetupClaude(out io.Writer) error {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("could not determine home directory: %w", err)
+	}
 	if _, err := os.Stat(filepath.Join(home, ".claude")); err != nil {
 		fmt.Fprintln(out, "  Claude Code not detected (~/.claude not found).")
 	}

@@ -22,6 +22,12 @@ type DebugInfo struct {
 // (token source, base URL, request method/path, and per-field validation
 // details) so users can quickly tell what went wrong.
 func PrintError(w io.Writer, err error, info *DebugInfo) {
+	// "Not logged in" is already handled by the caller's friendly line;
+	// print the message without the debug block and raw error noise.
+	if errors.Is(err, ErrNotLoggedIn) {
+		return
+	}
+
 	fmt.Fprintf(w, "ERROR: %s\n", err)
 
 	var apiErr *wenmar.APIError

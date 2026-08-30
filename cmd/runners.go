@@ -19,7 +19,7 @@ func resolveMode() output.Mode {
 func parseInt(s string) (int, error) {
 	id, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, fmt.Errorf("id must be an integer")
+		return 0, fmt.Errorf("id must be an integer, got %q", s)
 	}
 	return id, nil
 }
@@ -51,9 +51,9 @@ func runShow(cmd *cobra.Command, args []string, resource, method string, pathFn 
 	}
 	setRequest(method, pathFn(args))
 
-	id, err := strconv.Atoi(args[0])
+	id, err := parseInt(args[0])
 	if err != nil {
-		return fmt.Errorf("id must be an integer")
+		return err
 	}
 
 	respData, err := getter(context.Background(), client, id)
@@ -230,9 +230,9 @@ func runAction(cmd *cobra.Command, args []string, resource, method string, pathF
 	}
 	setRequest(method, pathFn(args))
 
-	id, err := strconv.Atoi(args[0])
+	id, err := parseInt(args[0])
 	if err != nil {
-		return fmt.Errorf("id must be an integer")
+		return err
 	}
 
 	body, err := bodyBuilder(id)
@@ -258,9 +258,9 @@ func runAction(cmd *cobra.Command, args []string, resource, method string, pathF
 func runDelete(cmd *cobra.Command, args []string, resourceLabel, resourceSlug string, pathFn func(args []string) string,
 	dryRun bool,
 	deleter func(ctx context.Context, client *wenmar.Client, id int) (any, error)) error {
-	id, err := strconv.Atoi(args[0])
+	id, err := parseInt(args[0])
 	if err != nil {
-		return fmt.Errorf("id must be an integer")
+		return err
 	}
 
 	if dryRun {

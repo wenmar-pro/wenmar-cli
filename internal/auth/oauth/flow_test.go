@@ -24,9 +24,15 @@ func TestLogin_FullFlow(t *testing.T) {
 	// the internal functions directly.
 
 	// 1. Generate PKCE
-	verifier := GenerateVerifier()
+	verifier, err := GenerateVerifier()
+	if err != nil {
+		t.Fatalf("GenerateVerifier: %v", err)
+	}
 	challenge := GenerateChallenge(verifier)
-	state := GenerateState()
+	state, err := GenerateState()
+	if err != nil {
+		t.Fatalf("GenerateState: %v", err)
+	}
 
 	if verifier == "" || challenge == "" || state == "" {
 		t.Fatal("PKCE generation returned empty values")

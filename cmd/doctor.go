@@ -105,7 +105,10 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check 6: Shell completion
-	home, _ := os.UserHomeDir()
+	home, homeErr := os.UserHomeDir()
+	if homeErr != nil {
+		return fmt.Errorf("could not determine home directory: %w", homeErr)
+	}
 	completionFound := false
 	completionPath := ""
 	for _, p := range []string{

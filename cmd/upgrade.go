@@ -109,7 +109,9 @@ func detectInstallMethod() (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	exe, _ = filepath.EvalSymlinks(exe)
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
+	}
 
 	// mise
 	if out, err := exec.Command("mise", "which", "wenmar").Output(); err == nil && strings.TrimSpace(string(out)) != "" {
@@ -127,7 +129,10 @@ func detectInstallMethod() (string, string, error) {
 	}
 
 	// Installer script: ~/.local/bin or ~/bin
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", "", fmt.Errorf("could not determine home directory: %w", err)
+	}
 	for _, dir := range []string{filepath.Join(home, ".local", "bin"), filepath.Join(home, "bin")} {
 		if strings.HasPrefix(exe, dir) {
 			return "installer", exe, nil
@@ -204,7 +209,9 @@ func runInstallerUpgrade(cmd *cobra.Command, target, binPath string) error {
 		_ = os.Rename(backup, binPath)
 		return fmt.Errorf("could not install new binary: %w", err)
 	}
-	os.Chmod(binPath, 0755)
+	if err := os.Chmod(binPath, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not set executable permissions on %s: %v\n", binPath, err)
+	}
 	_ = os.Remove(backup)
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Upgraded wenmar to v%s.\n", target)

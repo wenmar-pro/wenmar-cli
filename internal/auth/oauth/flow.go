@@ -36,9 +36,15 @@ func Login(ctx context.Context, baseURL string) (*authpkg.Token, error) {
 // LoginWithClientID is Login with an injectable client ID (for testing).
 func LoginWithClientID(ctx context.Context, baseURL, clientID string) (*authpkg.Token, error) {
 	// 1. Generate PKCE
-	verifier := GenerateVerifier()
+	verifier, err := GenerateVerifier()
+	if err != nil {
+		return nil, fmt.Errorf("generate verifier: %w", err)
+	}
 	challenge := GenerateChallenge(verifier)
-	state := GenerateState()
+	state, err := GenerateState()
+	if err != nil {
+		return nil, fmt.Errorf("generate state: %w", err)
+	}
 
 	// 2. Start callback server on a random port
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -70,9 +76,12 @@ func LoginWithClientID(ctx context.Context, baseURL, clientID string) (*authpkg.
 		return nil, fmt.Errorf("OAuth callback failed: %w", err)
 	}
 
-	// 6. Exchange code for token
+	// 6. Exchange code for token (bounded so a hung token endpoint can't
+	//    block the poller / CLI indefinitely).
 	tokenEndpoint := baseURL + "/oauth/token"
-	token, err := ExchangeCode(ctx, tokenEndpoint, code, redirectURI, clientID, verifier)
+	exchangeCtx, cancelExchange := context.WithTimeout(ctx, 30*time.Second)
+	defer cancelExchange()
+	token, err := ExchangeCode(exchangeCtx, tokenEndpoint, code, redirectURI, clientID, verifier)
 	if err != nil {
 		return nil, fmt.Errorf("token exchange failed: %w", err)
 	}

@@ -29,9 +29,16 @@ type PartialError struct {
 
 func (e *PartialError) Error() string { return e.Message }
 
+// ErrNotLoggedIn marks a "no token configured" failure (exit 2).
+var ErrNotLoggedIn = errors.New("not logged in")
+
 func ExitCode(err error) int {
 	if err == nil {
 		return ExitSuccess
+	}
+
+	if errors.Is(err, ErrNotLoggedIn) {
+		return ExitAuth
 	}
 
 	var partialErr *PartialError

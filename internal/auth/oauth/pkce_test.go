@@ -7,7 +7,10 @@ import (
 )
 
 func TestGenerateVerifier_Length(t *testing.T) {
-	v := GenerateVerifier()
+	v, err := GenerateVerifier()
+	if err != nil {
+		t.Fatalf("GenerateVerifier: %v", err)
+	}
 	// 32 bytes -> 43 chars in base64url without padding
 	if len(v) != 43 {
 		t.Errorf("verifier length = %d, want 43", len(v))
@@ -15,16 +18,22 @@ func TestGenerateVerifier_Length(t *testing.T) {
 }
 
 func TestGenerateVerifier_Unique(t *testing.T) {
-	v1 := GenerateVerifier()
-	v2 := GenerateVerifier()
+	v1, err := GenerateVerifier()
+	if err != nil {
+		t.Fatalf("GenerateVerifier: %v", err)
+	}
+	v2, _ := GenerateVerifier()
 	if v1 == v2 {
 		t.Error("two verifiers should not be equal")
 	}
 }
 
 func TestGenerateVerifier_ValidBase64URL(t *testing.T) {
-	v := GenerateVerifier()
-	_, err := base64.RawURLEncoding.DecodeString(v)
+	v, err := GenerateVerifier()
+	if err != nil {
+		t.Fatalf("GenerateVerifier: %v", err)
+	}
+	_, err = base64.RawURLEncoding.DecodeString(v)
 	if err != nil {
 		t.Errorf("verifier is not valid base64url: %v", err)
 	}
@@ -52,7 +61,10 @@ func TestGenerateChallenge_EmptyVerifier(t *testing.T) {
 }
 
 func TestGenerateState_Length(t *testing.T) {
-	s := GenerateState()
+	s, err := GenerateState()
+	if err != nil {
+		t.Fatalf("GenerateState: %v", err)
+	}
 	// 16 bytes -> 22 chars in base64url without padding
 	if len(s) != 22 {
 		t.Errorf("state length = %d, want 22", len(s))
@@ -60,8 +72,11 @@ func TestGenerateState_Length(t *testing.T) {
 }
 
 func TestGenerateState_Unique(t *testing.T) {
-	s1 := GenerateState()
-	s2 := GenerateState()
+	s1, err := GenerateState()
+	if err != nil {
+		t.Fatalf("GenerateState: %v", err)
+	}
+	s2, _ := GenerateState()
 	if s1 == s2 {
 		t.Error("two states should not be equal")
 	}

@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -44,7 +45,7 @@ func WaitForCallback(ctx context.Context, expectedState string, listener net.Lis
 			if state != expectedState {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintf(w, "State mismatch")
-				resultCh <- result{err: fmt.Errorf("state mismatch: expected %q, got %q", expectedState, state)}
+				resultCh <- result{err: errors.New("state mismatch: callback state did not match the login request (possible CSRF); retry the login")}
 				return
 			}
 
