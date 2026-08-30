@@ -87,12 +87,6 @@ func ResolveTokenWithSourceFrom(flagToken, configPath string, store authpkg.Cred
 	return ResolvedToken{}, fmt.Errorf("API token required. Run `wenmar setup` to configure, or set --token / WENMAR_TOKEN env var")
 }
 
-// keyringToken reads the token from the SDK credential store (keyring with
-// file fallback). Returns an error if no token is stored.
-func keyringToken() (string, error) {
-	return keyringTokenFrom(newDefaultStore())
-}
-
 func keyringTokenFrom(store authpkg.CredentialStore) (string, error) {
 	tok, err := store.GetToken(context.Background())
 	if err != nil {
@@ -114,25 +108,19 @@ func ResolveAuthManager(flagToken, configPath string) (*authpkg.AuthManager, err
 // ResolveAuthManagerWithStore is ResolveAuthManager with an injectable
 // credential store (for tests).
 func ResolveAuthManagerWithStore(flagToken, configPath string, store authpkg.CredentialStore) (*authpkg.AuthManager, error) {
-	// Highest precedence: --token flag.
-	if flagToken != "" {
-		return authpkg.NewAuthManager(store, authpkg.NewStaticTokenProvider(flagToken)), nil
+	rt, err := ResolveTokenWithSourceFrom(flagToken, configPath, store)
+	if err != nil {
+		return nil, err
 	}
-
-	// WENMAR_TOKEN env.
-	if envToken := os.Getenv("WENMAR_TOKEN"); envToken != "" {
-		return authpkg.NewAuthManager(store, authpkg.NewStaticTokenProvider(envToken)), nil
-	}
-
-	// Keyring / file credential store with auto-refresh.
-	if tok, err := store.GetToken(context.Background()); err == nil && tok != nil && tok.AccessToken != "" {
+	switch rt.Source {
+	case SourceFlag, SourceEnv, SourceConfig:
+		return authpkg.NewAuthManager(store, authpkg.NewStaticTokenProvider(rt.Token)), nil
+	case SourceKeyring:
+		// Keyring / file credential store with auto-refresh.
 		manager := authpkg.NewAuthManager(store, nil)
 		provider := &authpkg.CredentialStoreProvider{Store: store, Manager: manager}
 		manager.Provider = provider
-
-		// Wire OAuth refresh if the stored token has a refresh_token
-		// and the config indicates OAuth auth method.
-		if tok.RefreshToken != "" {
+		if tok, err := store.GetToken(context.Background()); err == nil && tok != nil && tok.RefreshToken != "" {
 			baseURL := ResolveBaseURLFrom("", configPath)
 			if cfg, err := config.LoadFrom(configPath); err == nil && cfg.AuthMethod == "oauth" {
 				manager.SetRefreshFn(func(ctx context.Context, refreshToken string) (*authpkg.Token, error) {
@@ -140,17 +128,8 @@ func ResolveAuthManagerWithStore(flagToken, configPath string, store authpkg.Cre
 				})
 			}
 		}
-
 		return manager, nil
 	}
-
-	// Config file token (legacy).
-	if configPath != "" {
-		if cfg, err := config.LoadFrom(configPath); err == nil && cfg.Token != "" {
-			return authpkg.NewAuthManager(store, authpkg.NewStaticTokenProvider(cfg.Token)), nil
-		}
-	}
-
 	return nil, fmt.Errorf("API token required. Run `wenmar setup` to configure, or set --token / WENMAR_TOKEN env var")
 }
 

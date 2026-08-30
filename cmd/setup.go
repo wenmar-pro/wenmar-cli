@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/agent"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
@@ -66,7 +67,7 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 	fmt.Fprintln(out, "")
 
 	if cfg, err := config.LoadFrom(configPath); err == nil && cfg.Token != "" {
-		fmt.Fprintf(out, "  Existing config found (token: %s)\n", maskToken(cfg.Token))
+		fmt.Fprintf(out, "  Existing config found (token: %s)\n", errors.MaskToken(cfg.Token))
 		fmt.Fprint(out, "  Overwrite? (y/N): ")
 		line, _ := reader.ReadString('\n')
 		if strings.TrimSpace(strings.ToLower(line)) != "y" {
@@ -141,13 +142,6 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 	fmt.Fprintln(out, "")
 
 	return nil
-}
-
-func maskToken(token string) string {
-	if len(token) <= 8 {
-		return strings.Repeat("*", len(token))
-	}
-	return token[:4] + "..." + token[len(token)-4:]
 }
 
 // installAgentSkill installs the wenmar skill for the given agent.

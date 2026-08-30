@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 )
 
 var configCmd = &cobra.Command{
@@ -121,7 +122,7 @@ func runConfigList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("could not read config: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "token: %s\n", maskToken(cfg.Token))
+	fmt.Fprintf(cmd.OutOrStdout(), "token: %s\n", errors.MaskToken(cfg.Token))
 	fmt.Fprintf(cmd.OutOrStdout(), "base_url: %s\n", cfg.BaseURL)
 	fmt.Fprintf(cmd.OutOrStdout(), "path: %s\n", path)
 	return nil
@@ -160,7 +161,7 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 
 	// Mask the token for display.
 	if v, ok := values["token"]; ok && v.Value != "" {
-		v.Value = maskToken(v.Value)
+		v.Value = errors.MaskToken(v.Value)
 		values["token"] = v
 	}
 

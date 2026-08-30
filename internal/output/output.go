@@ -89,26 +89,6 @@ func isTerminal(f *os.File) bool {
 	return isatty.IsTerminal(f.Fd())
 }
 
-// CaptureBreadcrumbs derives the leaf invocation from os.Args. Only emitted in
-// JSON envelope mode.
-func CaptureBreadcrumbs() []Breadcrumb {
-	if len(os.Args) < 2 {
-		return nil
-	}
-	return []Breadcrumb{{Action: "show", Cmd: joinArgs(os.Args)}}
-}
-
-func joinArgs(args []string) string {
-	out := ""
-	for i, a := range args {
-		if i > 0 {
-			out += " "
-		}
-		out += a
-	}
-	return out
-}
-
 func Render(w io.Writer, data any, summary string, meta *Meta, opts Options) error {
 	switch opts.Mode {
 	case ModeMD, ModeDefault:

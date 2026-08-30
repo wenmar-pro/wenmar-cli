@@ -163,7 +163,7 @@ func runAuthStatus(out io.Writer, configPath string) error {
 	}
 
 	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, configPath)
-	fmt.Fprintf(out, "  Token:      %s  (from: %s)\n", maskToken(rt.Token), rt.Source)
+	fmt.Fprintf(out, "  Token:      %s  (from: %s)\n", apperrors.MaskToken(rt.Token), rt.Source)
 	fmt.Fprintf(out, "  Base URL:   %s\n", baseURL)
 	fmt.Fprint(out, "  Testing connection...")
 
