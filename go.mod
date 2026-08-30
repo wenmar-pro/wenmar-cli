@@ -11,12 +11,17 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.9
-	github.com/wenmar-pro/wenmar-sdk/go v0.3.0
+	github.com/wenmar-pro/wenmar-sdk/go v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+// Temporary local resolution until go/v0.4.0 is pushed to the private repo.
+// Remove this once the tag is available over the network (see Task 1).
+replace github.com/wenmar-pro/wenmar-sdk/go => ../wenmar-sdk/go
+
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
