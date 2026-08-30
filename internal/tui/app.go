@@ -103,6 +103,11 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle search filter message — delegate to active tab if it's
 	// the customer list (the only tab with server-side filtering).
 	if f, ok := msg.(searchFilterMsg); ok {
+		// Ignore stale debounce ticks: only refetch if the field still
+		// holds the query this tick captured.
+		if m.layout.topBar.SearchValue() != f.query {
+			return m, nil
+		}
 		if cl, ok := m.tabs[m.active].(*CustomerList); ok {
 			cl.SetSearchQuery(f.query)
 			cl.startLoading()
@@ -119,27 +124,16 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.updateKey(msg)
 	case tickMsg:
-		// Refresh only the active tab to reduce API load.
-		return m, m.tabs[m.active].Init()
+		// Refresh only the active tab to reduce API load, and re-arm
+		// the next tick so periodic polling continues.
+		return m, tea.Batch(m.tabs[m.active].Init(), tick(m.interval))
 	case workOrderListResultMsg, customerListResultMsg, vehicleListResultMsg:
 		m.updateOnline(msg)
 	}
 
-	// If search is focused, route to top bar.
-	if m.layout.topBar.searchFocused {
-		var cmd tea.Cmd
-		m.layout.topBar, cmd = m.layout.topBar.Update(msg)
-		return m, cmd
-	}
-
-	// If sidebar is visible and not in search, route to sidebar.
-	if m.layout.sidebar.visible && !m.layout.topBar.searchFocused {
-		var cmd tea.Cmd
-		m.layout.sidebar, cmd = m.layout.sidebar.Update(msg)
-		return m, cmd
-	}
-
-	// Delegate non-key messages to the active tab.
+	// All non-key messages (fetch results, filter changes, tick payloads)
+	// reach the active tab. The previous search/sidebar early-returns
+	// swallowed result messages, leaving lists stuck on "Loading...".
 	updated, cmd := m.tabs[m.active].Update(msg)
 	m.tabs[m.active] = updated
 	return m, cmd
@@ -149,20 +143,18 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *AppModel) updateOnline(msg tea.Msg) {
 	switch msg := msg.(type) {
 	case workOrderListResultMsg:
-		m.online = msg.err == nil
-		if msg.err == nil {
-			m.lastRefresh = time.Now()
-		}
+		m.applyOnline(msg.err)
 	case customerListResultMsg:
-		m.online = msg.err == nil
-		if msg.err == nil {
-			m.lastRefresh = time.Now()
-		}
+		m.applyOnline(msg.err)
 	case vehicleListResultMsg:
-		m.online = msg.err == nil
-		if msg.err == nil {
-			m.lastRefresh = time.Now()
-		}
+		m.applyOnline(msg.err)
+	}
+}
+
+func (m *AppModel) applyOnline(err error) {
+	m.online = err == nil
+	if err == nil {
+		m.lastRefresh = time.Now()
 	}
 }
 

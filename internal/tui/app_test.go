@@ -1,13 +1,42 @@
 package tui
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+func TestTickReArmsAfterTickMsg(t *testing.T) {
+	m := NewApp(nil, "", 10*time.Second)
+	// Init arms the first tick.
+	cmd := m.Init()
+	if cmd == nil {
+		t.Fatal("Init returned nil cmd")
+	}
+	// Deliver a tickMsg — the returned command must include a new tick.
+	newM, newCmd := m.Update(tickMsg{})
+	if newCmd == nil {
+		t.Fatal("tickMsg did not schedule the next tick — periodic refresh dies after one poll")
+	}
+	_ = newM
+}
+
+func TestResultMsgReachesTabWhileSearchFocused(t *testing.T) {
+	// An error result arriving while search is focused must surface in the
+	// active tab, not be swallowed by the topbar early-return.
+	m2 := NewApp(nil, "", 10*time.Second)
+	m2.layout.topBar.FocusSearch()
+	m2.Update(workOrderListResultMsg{err: errors.New("boom")})
+	v := m2.tabs[0].View(80)
+	if !strings.Contains(v, "boom") && !strings.Contains(v, "Error") {
+		t.Errorf("error result swallowed while search focused; view:\n%s", v)
+	}
+}
 
 func TestKeys_HasSidebarAndSearchBindings(t *testing.T) {
 	if len(Keys.SidebarToggle.Keys()) == 0 {
@@ -164,8 +193,12 @@ func TestAppModel_SearchFilterTriggersRefetch(t *testing.T) {
 	m := NewApp(client, "", 0)
 	m.active = 1 // Customers tab
 
-	// Simulate a search filter message.
-	updated, _ := m.Update(searchFilterMsg{query: "jane"})
+	// Set the search field to the query (as if the user typed it) so the
+	// debounce's stale-check passes, then simulate the search filter message.
+	m.layout.topBar.FocusSearch()
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("jane")})
+	m = updated.(AppModel)
+	updated, _ = m.Update(searchFilterMsg{query: "jane"})
 	m = updated.(AppModel)
 
 	// The Update should have returned a fetch command. Execute it.

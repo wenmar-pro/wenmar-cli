@@ -51,11 +51,6 @@ func (m LayoutModel) View(width, height int) string {
 	var body string
 	if m.sidebar.visible {
 		sidebarView := m.sidebar.View(m.sidebar.Width())
-		contentWidth := width - m.sidebar.Width()
-		if contentWidth < 1 {
-			contentWidth = 1
-		}
-		_ = contentWidth
 		body = lipgloss.JoinHorizontal(lipgloss.Top, sidebarView, m.content)
 	} else {
 		body = m.content

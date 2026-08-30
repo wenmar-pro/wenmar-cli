@@ -8,6 +8,25 @@ type testItem struct {
 	name string
 }
 
+func TestTruncateMultibyteSafe(t *testing.T) {
+	cases := []struct {
+		in   string
+		max  int
+		want string
+	}{
+		{"José", 10, "José"},  // fits
+		{"Zoë", 2, "Z…"},      // cut on rune boundary
+		{"日本語テキスト", 3, "日本…"}, // CJK cut
+		{"abc", 3, "abc"},     // exact fit unchanged
+		{"ab", 0, ""},         // max<=0 must not panic
+	}
+	for _, tc := range cases {
+		if got := truncate(tc.in, tc.max); got != tc.want {
+			t.Errorf("truncate(%q,%d) = %q, want %q", tc.in, tc.max, got, tc.want)
+		}
+	}
+}
+
 func TestListModel_CursorNavigation(t *testing.T) {
 	m := &ListModel[testItem]{}
 	m.setItems([]testItem{{"a"}, {"b"}, {"c"}})

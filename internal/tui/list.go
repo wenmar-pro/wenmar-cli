@@ -42,11 +42,17 @@ func stringify(v interface{}) string {
 	return fmt.Sprintf("%v", v)
 }
 
+// truncate shortens s to at most max runes, appending an ellipsis when cut.
+// max <= 0 returns the empty string (never panics on negative slicing).
 func truncate(s string, max int) string {
-	if len(s) <= max {
+	if max <= 0 {
+		return ""
+	}
+	runes := []rune(s)
+	if len(runes) <= max {
 		return s
 	}
-	return s[:max-1] + "…"
+	return string(runes[:max-1]) + "…"
 }
 
 func statusColored(status string) string {

@@ -104,12 +104,17 @@ var workOrderHeaders = []string{
 }
 
 func (m *WorkOrderList) workOrderRow(wo wenmar.WorkOrder) []string {
+	status := fmt.Sprintf("%-12s", wo.Status)
+	updated := wo.UpdatedAt
+	if len(updated) >= 8 {
+		updated = updated[len(updated)-8:]
+	}
 	return []string{fmt.Sprintf("%-8d %-20s %-20s %-12s %-15s",
 		wo.WorkOrderNumber,
 		truncate(wo.Customer.FullName, 20),
 		truncate(fmt.Sprintf("%s %s", wo.Vehicle.Make, wo.Vehicle.Model), 20),
-		statusColored(wo.Status),
-		m.refreshed.Format("15:04:05"),
+		statusColored(status),
+		updated,
 	)}
 }
 
