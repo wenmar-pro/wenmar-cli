@@ -119,9 +119,7 @@ var (
 	customerPhones           []string
 	customerAddresses        []string
 	customerTagIDs           []int
-	customerRemoveEmailIDs   []int
 	customerRemovePhoneIDs   []int
-	customerRemoveAddressIDs []int
 )
 
 func init() {
@@ -162,11 +160,7 @@ func init() {
 	customersUpdateCmd.Flags().BoolVar(&customerPoRequired, "po-required", false, "PO required")
 	customersUpdateCmd.Flags().StringArrayVar(&customerEmails, "email", nil, "Email (label|address or address), repeatable")
 	customersUpdateCmd.Flags().StringArrayVar(&customerPhones, "phone", nil, "Phone (label|number or number), repeatable")
-	customersUpdateCmd.Flags().StringArrayVar(&customerAddresses, "address", nil, "Address (address1|city|state|postal_code|country), repeatable")
-	customersUpdateCmd.Flags().IntSliceVar(&customerTagIDs, "tag-id", nil, "Tag ID, repeatable")
-	customersUpdateCmd.Flags().IntSliceVar(&customerRemoveEmailIDs, "remove-email", nil, "Email ID to remove, repeatable")
 	customersUpdateCmd.Flags().IntSliceVar(&customerRemovePhoneIDs, "remove-phone", nil, "Phone ID to remove, repeatable")
-	customersUpdateCmd.Flags().IntSliceVar(&customerRemoveAddressIDs, "remove-address", nil, "Address ID to remove, repeatable")
 	customersMergeCmd.Flags().IntVar(&customerMergeSourceID, "source-id", 0, "Source customer ID to merge into keeper (required)")
 	customersMergeCmd.MarkFlagRequired("source-id")
 	customersDuplicatesCmd.Flags().StringVar(&customerDuplicateFirstName, "first-name", "", "First name")

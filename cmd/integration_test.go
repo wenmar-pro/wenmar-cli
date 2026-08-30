@@ -3,14 +3,21 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 )
+
+// lastPatchBody records the most recent PATCH body seen by the fake API,
+// keyed by path. Tests use this to assert request wiring.
+var lastPatchBody sync.Map // path -> []byte
+
 
 func TestMain(m *testing.M) {
 	// Ensure tests never inherit a real token or base URL.
@@ -24,7 +31,14 @@ func TestMain(m *testing.M) {
 func execute(args ...string) (string, error) {
 	// Reset global output flags so prior tests don't leak state.
 	mdFlag, jsonFlag, agentFlag, jqFlag = false, false, false, ""
-	idsOnlyFlag, countFlag = false, false
+	idsOnlyFlag, countFlag, htmlFlag, styledFlag, quietFlag = false, false, false, false, false
+	// Reset auth flag globals so env-based resolution (WENMAR_URL/TOKEN)
+	// isn't shadowed by a prior test's --base-url/--token.
+	baseURLFlag, tokenFlag = "", ""
+	// Reset repeatable customer flags so prior tests don't leak list state.
+	customerEmails, customerPhones = nil, nil
+	customerAddresses, customerTagIDs = nil, nil
+	customerRemovePhoneIDs = nil
 	currentDebugInfo = nil
 	rootCmd.SetArgs(args)
 	buf := &bytes.Buffer{}
@@ -91,6 +105,8 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		case http.MethodGet:
 			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "full_name": "Jane Doe"})
 		case http.MethodPatch:
+			body, _ := io.ReadAll(r.Body)
+			lastPatchBody.Store(r.URL.Path, body)
 			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "full_name": "Jane Doe"})
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -340,6 +356,77 @@ func TestCustomersUpdate_JSON(t *testing.T) {
 	}
 	if !strings.Contains(out, `"id": 1`) {
 		t.Errorf("expected updated customer in output, got: %s", out)
+	}
+}
+
+func TestCustomersUpdate_PhonesAndEmailsWireThrough(t *testing.T) {
+	srv := startFakeAPI(t, "tok-update")
+	t.Setenv("WENMAR_URL", srv.URL)
+	t.Setenv("WENMAR_TOKEN", "tok-update")
+
+	if _, err := execute("customers", "update", "42",
+		"--email", "work|jane@corp.com",
+		"--phone", "cell|555-0100",
+		"--remove-phone", "7"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	raw, ok := lastPatchBody.Load("/customers/42")
+	if !ok {
+		t.Fatal("no PATCH body captured at /customers/42")
+	}
+	var body struct {
+		Customer struct {
+			EmailsAttributes []struct {
+				Email string `json:"email"`
+				Label *string `json:"label"`
+			} `json:"emails_attributes"`
+			PhonesAttributes []struct {
+				UnderscoreDestroy *bool   `json:"_destroy"`
+				Id                *int    `json:"id"`
+				Label             *string `json:"label"`
+				Number            *string `json:"number"`
+			} `json:"phones_attributes"`
+		} `json:"customer"`
+	}
+	if err := json.Unmarshal(raw.([]byte), &body); err != nil {
+		t.Fatalf("unmarshal captured body: %v\nbody: %s", err, raw.([]byte))
+	}
+	if n := len(body.Customer.EmailsAttributes); n != 1 || body.Customer.EmailsAttributes[0].Email != "jane@corp.com" {
+		t.Errorf("emails_attributes not wired: %+v", body.Customer.EmailsAttributes)
+	}
+	if n := len(body.Customer.PhonesAttributes); n != 2 {
+		t.Fatalf("want 2 phone attrs (1 add + 1 destroy), got %d: %+v", n, body.Customer.PhonesAttributes)
+	}
+	sawDestroy := false
+	for _, p := range body.Customer.PhonesAttributes {
+		if p.UnderscoreDestroy != nil && p.Id != nil && *p.Id == 7 {
+			sawDestroy = true
+		}
+	}
+	if !sawDestroy {
+		t.Errorf("phones_attributes missing {_destroy:true, id:7}: %+v", body.Customer.PhonesAttributes)
+	}
+}
+
+func TestCustomersUpdate_UnsupportableFlagsRemoved(t *testing.T) {
+	cases := map[string]string{
+		"remove-email":   "3",
+		"remove-address": "5",
+		"tag-id":         "11",
+		"address":        "1 Main St|Springfield|IL|62704|USA",
+	}
+	for flag, value := range cases {
+		t.Run(flag, func(t *testing.T) {
+			srv := startFakeAPI(t, "tok-rm")
+			t.Setenv("WENMAR_URL", srv.URL)
+			t.Setenv("WENMAR_TOKEN", "tok-rm")
+
+			_, err := execute("customers", "update", "42", "--"+flag, value)
+			if err == nil {
+				t.Errorf("--%s must error: unsupported by the update API (flag removed)", flag)
+			}
+		})
 	}
 }
 
