@@ -57,14 +57,24 @@ func ExitCode(err error) int {
 		case "internal_error":
 			return ExitServer
 		default:
+			// Status-code fallbacks keep the documented exit-code contract
+			// intact when the server sends an unrecognized error Code.
+			switch apiErr.StatusCode {
+			case 401:
+				return ExitAuth
+			case 404:
+				return ExitNotFound
+			case 422:
+				return ExitValidation
+			case 429:
+				return ExitRateLimit
+			case 403:
+				return ExitForbidden
+			case 409:
+				return ExitConflict
+			}
 			if apiErr.StatusCode >= 500 {
 				return ExitServer
-			}
-			if apiErr.StatusCode == 403 {
-				return ExitForbidden
-			}
-			if apiErr.StatusCode == 409 {
-				return ExitConflict
 			}
 			return ExitGeneric
 		}

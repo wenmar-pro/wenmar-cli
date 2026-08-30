@@ -3,10 +3,51 @@ package errors
 import (
 	"errors"
 	"net"
+	"net/url"
+	"syscall"
 	"testing"
 
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
+
+func TestExitCode_StatusFallbacksWhenCodeUnrecognized(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{"401 unrecognized code", &wenmar.APIError{Code: "weird_proxy", StatusCode: 401}, 2},
+		{"404 unrecognized code", &wenmar.APIError{Code: "", StatusCode: 404}, 3},
+		{"422 unrecognized code", &wenmar.APIError{Code: "", StatusCode: 422}, 4},
+		{"429 unrecognized code", &wenmar.APIError{Code: "slow_down", StatusCode: 429}, 5},
+		{"502 unrecognized code", &wenmar.APIError{Code: "", StatusCode: 502}, 6},
+		{"409 unrecognized code", &wenmar.APIError{Code: "dup", StatusCode: 409}, 7},
+		{"403 unrecognized code", &wenmar.APIError{Code: "nope", StatusCode: 403}, 8},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := ExitCode(tc.err); got != tc.want {
+				t.Errorf("ExitCode(%v) = %d, want %d", tc.err, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestExitCode_ConnectionRefusedIsOffline(t *testing.T) {
+	// *url.Error wrapping ECONNREFUSED must map to 10, not 1.
+	err := &url.Error{
+		Op:  "Get",
+		URL: "http://127.0.0.1:1/customers",
+		Err: &net.OpError{
+			Op:  "dial",
+			Net: "tcp",
+			Err: syscall.ECONNREFUSED,
+		},
+	}
+	if got := ExitCode(err); got != ExitOffline {
+		t.Errorf("ExitCode(ECONNREFUSED) = %d, want %d", got, ExitOffline)
+	}
+}
 
 func TestExitCode_Success(t *testing.T) {
 	code := ExitCode(nil)

@@ -85,7 +85,17 @@ func printHints(w io.Writer, apiErr *wenmar.APIError) {
 		fmt.Fprintln(w, "  Hint: the resource does not exist, or you lack access to it.")
 	case "rate_limited":
 		fmt.Fprintln(w, "  Hint: you are being rate limited. Wait and retry.")
+	case "conflict":
+		fmt.Fprintln(w, "  Hint: the resource already exists (e.g. a duplicate VIN). Use a different value or check for an existing record.")
+	case "forbidden":
+		fmt.Fprintln(w, "  Hint: your token does not grant access to this resource or action.")
 	default:
+		switch apiErr.StatusCode {
+		case 409:
+			fmt.Fprintln(w, "  Hint: the resource already exists (e.g. a duplicate VIN).")
+		case 403:
+			fmt.Fprintln(w, "  Hint: your token does not grant access to this resource or action.")
+		}
 		if apiErr.StatusCode >= 500 {
 			fmt.Fprintln(w, "  Hint: the server reported an error. Check the server logs or retry later.")
 		}
