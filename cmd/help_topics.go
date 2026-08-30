@@ -126,7 +126,7 @@ Flags:
 var helpCmd = &cobra.Command{
 	Use:   "help [command|topic]",
 	Short: "Help about any command or topic",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cobra.ArbitraryArgs,
 	RunE:  runHelp,
 }
 
@@ -160,8 +160,13 @@ func runHelp(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Fall back to cobra's built-in help for commands.
-	return cmd.Root().Help()
+	// Fall back to cobra's built-in help for commands. Resolve the target
+	// command from the remaining args (topics were checked above).
+	target, _, err := cmd.Root().Find(args)
+	if err != nil || target == cmd.Root() {
+		return fmt.Errorf("unknown help topic or command %q — run `wenmar help` for topics or `wenmar --help` for commands", args[0])
+	}
+	return target.Help()
 }
 
 func emitHelpTopicsJSON(cmd *cobra.Command) error {

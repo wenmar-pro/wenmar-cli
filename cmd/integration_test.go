@@ -309,6 +309,40 @@ func TestUnknownSubcommandFails(t *testing.T) {
 	}
 }
 
+func TestHelpCommandFallback(t *testing.T) {
+	// help <command> prints that command's help, not root help.
+	out, err := execute("help", "customers")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "Manage customers") || !strings.Contains(out, "Available Commands") {
+		t.Errorf("help customers printed:\n%s", out)
+	}
+
+	out, err = execute("help", "customers", "list")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "List all customers") {
+		t.Errorf("help customers list printed:\n%s", out)
+	}
+
+	// Topics still win over command names.
+	out, err = execute("help", "output")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "Output Formats") {
+		t.Errorf("help output printed:\n%s", out)
+	}
+
+	// Unknown help target errors instead of printing root help.
+	_, err = execute("help", "nosuchthing")
+	if err == nil {
+		t.Error("help nosuchthing should error")
+	}
+}
+
 func TestCustomersList_AgentMode(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(
