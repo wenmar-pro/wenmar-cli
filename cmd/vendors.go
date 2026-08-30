@@ -12,6 +12,10 @@ import (
 var vendorsCmd = &cobra.Command{
 	Use:   "vendors",
 	Short: "Manage vendors",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
 var vendorsListCmd = &cobra.Command{

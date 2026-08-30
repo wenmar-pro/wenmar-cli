@@ -15,6 +15,10 @@ import (
 var customersCmd = &cobra.Command{
 	Use:   "customers",
 	Short: "Manage customers",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
 var customersListCmd = &cobra.Command{

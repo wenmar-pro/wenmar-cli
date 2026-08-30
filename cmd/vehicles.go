@@ -12,6 +12,10 @@ import (
 var vehiclesCmd = &cobra.Command{
 	Use:   "vehicles",
 	Short: "Manage vehicles",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
 var vehiclesShowCmd = &cobra.Command{

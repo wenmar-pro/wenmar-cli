@@ -290,6 +290,25 @@ func TestCustomersDuplicates_PhoneWiresThrough(t *testing.T) {
 	}
 }
 
+func TestUnknownSubcommandFails(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{"nonexistent customers subcommand", []string{"customers", "delete"}},
+		{"typo'd work_orders subcommand", []string{"work_orders", "delet"}},
+		{"cross-resource concept", []string{"vehicles", "estimate"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := execute(tc.args...)
+			if err == nil {
+				t.Errorf("%v: expected error, got exit 0", tc.args)
+			}
+		})
+	}
+}
+
 func TestCustomersList_AgentMode(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(

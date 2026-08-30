@@ -15,6 +15,10 @@ var workOrdersCmd = &cobra.Command{
 	Use:     "work_orders",
 	Aliases: []string{"wo"},
 	Short:   "Manage work orders",
+	Args:    cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
 var workOrdersListCmd = &cobra.Command{

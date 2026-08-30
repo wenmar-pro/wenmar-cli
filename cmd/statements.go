@@ -13,6 +13,10 @@ import (
 var statementsCmd = &cobra.Command{
 	Use:   "statements",
 	Short: "Manage statements",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
 var statementsListCmd = &cobra.Command{

@@ -13,6 +13,10 @@ import (
 var driversCmd = &cobra.Command{
 	Use:   "drivers",
 	Short: "Manage drivers",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
 var driversListCmd = &cobra.Command{

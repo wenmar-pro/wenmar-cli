@@ -42,6 +42,7 @@ var rootCmd = &cobra.Command{
 	Version:       version,
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	SuggestionsMinimumDistance: 2,
 }
 
 func Execute() {

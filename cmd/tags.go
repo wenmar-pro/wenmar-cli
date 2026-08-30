@@ -14,6 +14,10 @@ import (
 var tagsCmd = &cobra.Command{
 	Use:   "tags",
 	Short: "Manage customer and vehicle tags",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
 var tagsListCmd = &cobra.Command{

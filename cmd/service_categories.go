@@ -15,6 +15,10 @@ import (
 var serviceCategoriesCmd = &cobra.Command{
 	Use:   "service-categories",
 	Short: "Manage service categories",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
 }
 
 var serviceCategoriesListCmd = &cobra.Command{
