@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
-	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 )
 
 func startFakeAPIReturning401(t *testing.T) *httptest.Server {
@@ -39,7 +38,7 @@ func TestSetup_WritesConfigOnValidToken(t *testing.T) {
 	}
 
 	// Token should be stored in the credential store (file fallback), not config.
-	store := authpkg.NewCredentialStore()
+	store := newCredentialStore()
 	tok, err := store.GetToken(context.Background())
 	if err != nil {
 		t.Fatalf("token not stored in credential store: %v", err)

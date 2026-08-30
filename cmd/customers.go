@@ -108,23 +108,23 @@ var (
 )
 
 var (
-	customerCreateFullName   string
-	customerUpdateFullName   string
-	customerCompanyName      string
-	customerFleetIdentifier  string
-	customerBillingTerms     string
-	customerCreditLimit      string
-	customerTaxExempt        bool
-	customerTaxExemptNumber  string
-	customerNotes            string
-	customerMarketingOptIn   bool
-	customerDiscountPercent  string
-	customerPoRequired       bool
-	customerEmails           []string
-	customerPhones           []string
-	customerAddresses        []string
-	customerTagIDs           []int
-	customerRemovePhoneIDs   []int
+	customerCreateFullName  string
+	customerUpdateFullName  string
+	customerCompanyName     string
+	customerFleetIdentifier string
+	customerBillingTerms    string
+	customerCreditLimit     string
+	customerTaxExempt       bool
+	customerTaxExemptNumber string
+	customerNotes           string
+	customerMarketingOptIn  bool
+	customerDiscountPercent string
+	customerPoRequired      bool
+	customerEmails          []string
+	customerPhones          []string
+	customerAddresses       []string
+	customerTagIDs          []int
+	customerRemovePhoneIDs  []int
 )
 
 func init() {

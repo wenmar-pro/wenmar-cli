@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
-	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 )
 
 func TestDoctor_AllPass(t *testing.T) {
@@ -58,8 +57,11 @@ func TestDoctor_JSON(t *testing.T) {
 }
 
 func TestDoctor_NoToken(t *testing.T) {
+	// Isolate credentials so we never touch the developer's real token.
+	t.Setenv("WENMAR_CONFIG_HOME", t.TempDir())
+
 	// Clear any credential-store token so the test is deterministic.
-	store := authpkg.NewCredentialStore()
+	store := newCredentialStore()
 	_ = store.DeleteToken(context.Background())
 
 	dir := t.TempDir()

@@ -38,6 +38,7 @@ func TestRunAuthLogin_StaticTokenStillWorks(t *testing.T) {
 func TestAuthLogin_StoresToken(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
+	t.Setenv("WENMAR_CONFIG_HOME", t.TempDir())
 
 	oldToken := tokenFlag
 	tokenFlag = "sk-test-1234"
@@ -48,7 +49,7 @@ func TestAuthLogin_StoresToken(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	store := authpkg.NewCredentialStore()
+	store := newCredentialStore()
 	tok, err := store.GetToken(context.Background())
 	if err != nil {
 		t.Fatalf("token not stored: %v", err)
@@ -79,6 +80,7 @@ func TestAuthToken_PrintsToken(t *testing.T) {
 func TestAuthRefresh_StaticTokenGuidance(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
+	t.Setenv("WENMAR_CONFIG_HOME", t.TempDir())
 
 	// Seed a static (non-OAuth) token so the codepath is deterministic —
 	// other tests may have left tokens in the shared real credential store.
@@ -98,6 +100,7 @@ func TestAuthRefresh_StaticTokenGuidance(t *testing.T) {
 func TestAuthRefresh_NotLoggedIn(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
+	t.Setenv("WENMAR_CONFIG_HOME", t.TempDir())
 
 	clearStoredCredentials(t)
 
@@ -113,9 +116,10 @@ func TestAuthRefresh_NotLoggedIn(t *testing.T) {
 func TestAuthLogout_ClearsCredentials(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
+	t.Setenv("WENMAR_CONFIG_HOME", t.TempDir())
 	config.SaveTo(configPath, &config.Config{BaseURL: "https://app.wenmarpro.com"})
 
-	store := authpkg.NewCredentialStore()
+	store := newCredentialStore()
 	_ = store.SaveToken(context.Background(), &authpkg.Token{AccessToken: "sk-temp"})
 
 	if err := runAuthLogout(configPath); err != nil {
@@ -127,10 +131,14 @@ func TestAuthLogout_ClearsCredentials(t *testing.T) {
 	}
 }
 
-// credentialsJSONPath returns the real file-fallback credentials path used by
-// the SDK's NewCredentialStore.
+// credentialsJSONPath returns the file-fallback credentials path used by the
+// SDK credential store. When WENMAR_CONFIG_HOME is set it points under that
+// dir (the test-isolated path); otherwise it's the real user config path.
 func credentialsJSONPath(t *testing.T) string {
 	t.Helper()
+	if base := os.Getenv("WENMAR_CONFIG_HOME"); base != "" {
+		return filepath.Join(base, "wenmar", "credentials.json")
+	}
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".config", "wenmar", "credentials.json")
 }
@@ -154,7 +162,7 @@ func seedCredsFile(t *testing.T, contents string) {
 // themselves or they leak into other tests.
 func clearStoredCredentials(t *testing.T) {
 	t.Helper()
-	store := authpkg.NewCredentialStore()
+	store := newCredentialStore()
 	if err := store.DeleteToken(context.Background()); err != nil {
 		t.Logf("cleanup: delete credentials: %v", err)
 	}

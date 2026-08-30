@@ -7,6 +7,18 @@ import (
 	"testing"
 )
 
+func TestConfigPathHonorsConfigHome(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("WENMAR_CONFIG_HOME", dir)
+	path, err := ConfigPath()
+	if err != nil {
+		t.Fatalf("ConfigPath: %v", err)
+	}
+	if want := filepath.Join(dir, "wenmar", "config"); path != want {
+		t.Errorf("ConfigPath = %q, want %q", path, want)
+	}
+}
+
 func TestLoad_ReturnsConfigWhenFileExists(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".wenmar", "config")

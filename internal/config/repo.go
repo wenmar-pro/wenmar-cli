@@ -100,6 +100,9 @@ func TrustRepo(repoDir string) error {
 }
 
 func trustedReposPath() (string, error) {
+	if base := os.Getenv("WENMAR_CONFIG_HOME"); base != "" {
+		return filepath.Join(base, "wenmar", "trusted_repos"), nil
+	}
 	xdg := os.Getenv("XDG_CONFIG_HOME")
 	if xdg == "" {
 		home, err := os.UserHomeDir()

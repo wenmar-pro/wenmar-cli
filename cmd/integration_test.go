@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,11 +25,20 @@ var lastPatchBody sync.Map // path -> []byte
 // lastDupQuery records the most recent check_duplicate query string.
 var lastDupQuery atomic.Value // url.Values
 
-
 func TestMain(m *testing.M) {
 	// Ensure tests never inherit a real token or base URL.
 	os.Unsetenv("WENMAR_TOKEN")
 	os.Unsetenv("WENMAR_URL")
+	// ...and never touch the developer's real credentials: point the
+	// config home at a temp dir for the whole test binary.
+	cfgHome, err := os.MkdirTemp("", "wenmar-test-config-*")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "mkdir temp:", err)
+		os.Exit(1)
+	}
+	os.Setenv("WENMAR_CONFIG_HOME", cfgHome)
+	defer os.RemoveAll(cfgHome)
+
 	code := m.Run()
 	os.Exit(code)
 }
@@ -484,7 +494,7 @@ func TestCustomersUpdate_PhonesAndEmailsWireThrough(t *testing.T) {
 	var body struct {
 		Customer struct {
 			EmailsAttributes []struct {
-				Email string `json:"email"`
+				Email string  `json:"email"`
 				Label *string `json:"label"`
 			} `json:"emails_attributes"`
 			PhonesAttributes []struct {

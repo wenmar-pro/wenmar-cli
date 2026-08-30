@@ -35,12 +35,12 @@ var (
 var currentDebugInfo *errors.DebugInfo
 
 var rootCmd = &cobra.Command{
-	Use:           "wenmar",
-	Short:         "Wenmar Pro API CLI",
-	Long:          "A command-line interface for the Wenmar Pro automotive shop management API.",
-	Version:       version,
-	SilenceUsage:  true,
-	SilenceErrors: true,
+	Use:                        "wenmar",
+	Short:                      "Wenmar Pro API CLI",
+	Long:                       "A command-line interface for the Wenmar Pro automotive shop management API.",
+	Version:                    version,
+	SilenceUsage:               true,
+	SilenceErrors:              true,
 	SuggestionsMinimumDistance: 2,
 }
 

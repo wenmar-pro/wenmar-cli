@@ -6,9 +6,14 @@ import (
 	"path/filepath"
 )
 
-// xdgConfigPath returns the XDG-compliant config path:
-// $XDG_CONFIG_HOME/wenmar/config, or ~/.config/wenmar/config as fallback.
+// xdgConfigPath returns the config path: $WENMAR_CONFIG_HOME/wenmar/config
+// when WENMAR_CONFIG_HOME is set (used by tests to avoid touching real
+// credentials), otherwise $XDG_CONFIG_HOME/wenmar/config, or
+// ~/.config/wenmar/config as fallback.
 func xdgConfigPath() (string, error) {
+	if base := os.Getenv("WENMAR_CONFIG_HOME"); base != "" {
+		return filepath.Join(base, "wenmar", "config"), nil
+	}
 	xdg := os.Getenv("XDG_CONFIG_HOME")
 	if xdg == "" {
 		home, err := os.UserHomeDir()

@@ -46,10 +46,20 @@ func ResolveTokenFrom(flagToken, configPath string) (string, error) {
 	return rt.Token, nil
 }
 
+// newDefaultStore returns the SDK credential store with the file fallback
+// redirected under $WENMAR_CONFIG_HOME when set (so tests never touch the
+// developer's real keyring or credentials file).
+func newDefaultStore() authpkg.CredentialStore {
+	if base := os.Getenv("WENMAR_CONFIG_HOME"); base != "" {
+		return authpkg.FileStore{Path: filepath.Join(base, "wenmar", "credentials.json")}
+	}
+	return authpkg.NewCredentialStore()
+}
+
 // ResolveTokenWithSource resolves a token and reports where it came from,
 // so callers can surface useful diagnostics on auth failures.
 func ResolveTokenWithSource(flagToken, configPath string) (ResolvedToken, error) {
-	return ResolveTokenWithSourceFrom(flagToken, configPath, authpkg.NewCredentialStore())
+	return ResolveTokenWithSourceFrom(flagToken, configPath, newDefaultStore())
 }
 
 // ResolveTokenWithSourceFrom is ResolveTokenWithSource with an injectable
@@ -80,7 +90,7 @@ func ResolveTokenWithSourceFrom(flagToken, configPath string, store authpkg.Cred
 // keyringToken reads the token from the SDK credential store (keyring with
 // file fallback). Returns an error if no token is stored.
 func keyringToken() (string, error) {
-	return keyringTokenFrom(authpkg.NewCredentialStore())
+	return keyringTokenFrom(newDefaultStore())
 }
 
 func keyringTokenFrom(store authpkg.CredentialStore) (string, error) {
@@ -98,7 +108,7 @@ func keyringTokenFrom(store authpkg.CredentialStore) (string, error) {
 // It returns an AuthManager whose provider resolves the token with the
 // correct precedence. flagToken is the --token flag value.
 func ResolveAuthManager(flagToken, configPath string) (*authpkg.AuthManager, error) {
-	return ResolveAuthManagerWithStore(flagToken, configPath, authpkg.NewCredentialStore())
+	return ResolveAuthManagerWithStore(flagToken, configPath, newDefaultStore())
 }
 
 // ResolveAuthManagerWithStore is ResolveAuthManager with an injectable

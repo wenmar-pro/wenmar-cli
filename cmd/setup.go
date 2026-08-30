@@ -111,7 +111,7 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 	fmt.Fprintf(out, "  Connected successfully to %s\n", baseURL)
 
 	// Store the token in the keyring (with file fallback), not the config file.
-	store := authpkg.NewCredentialStore()
+	store := newCredentialStore()
 	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
 		return fmt.Errorf("failed to store token: %w", err)
 	}
