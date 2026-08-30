@@ -87,7 +87,7 @@
         {
           "path": "wenmar auth login",
           "use": "login",
-          "short": "Store your API token (OAuth browser flow coming in a future release)",
+          "short": "Log in via OAuth browser flow (or --token for static token)",
           "flags": null
         },
         {
@@ -262,8 +262,38 @@
           "short": "List all customers, paginated via the Link header",
           "flags": [
             {
+              "name": "all",
+              "default": "false"
+            },
+            {
+              "name": "has-balance",
+              "default": "false"
+            },
+            {
+              "name": "has-vehicle",
+              "default": "false"
+            },
+            {
+              "name": "last-visit-months",
+              "default": "0"
+            },
+            {
               "name": "page",
               "default": "0"
+            },
+            {
+              "name": "per-page",
+              "default": "0"
+            },
+            {
+              "name": "query"
+            },
+            {
+              "name": "tag-ids",
+              "default": "[]"
+            },
+            {
+              "name": "type"
             }
           ]
         },
@@ -280,6 +310,7 @@
           "flags": [
             {
               "name": "source-id",
+              "required": true,
               "default": "0"
             }
           ]
@@ -301,10 +332,6 @@
           "use": "update \u003cid\u003e",
           "short": "Update a customer by ID",
           "flags": [
-            {
-              "name": "address",
-              "default": "[]"
-            },
             {
               "name": "billing-terms"
             },
@@ -343,19 +370,7 @@
               "default": "false"
             },
             {
-              "name": "remove-address",
-              "default": "[]"
-            },
-            {
-              "name": "remove-email",
-              "default": "[]"
-            },
-            {
               "name": "remove-phone",
-              "default": "[]"
-            },
-            {
-              "name": "tag-id",
               "default": "[]"
             },
             {
@@ -400,10 +415,12 @@
           "flags": [
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             },
             {
-              "name": "full-name"
+              "name": "full-name",
+              "required": true
             },
             {
               "name": "phone"
@@ -417,6 +434,7 @@
           "flags": [
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             },
             {
@@ -432,6 +450,7 @@
           "flags": [
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             }
           ]
@@ -443,6 +462,7 @@
           "flags": [
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             }
           ]
@@ -454,6 +474,7 @@
           "flags": [
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             },
             {
@@ -474,6 +495,91 @@
           "use": "show \u003cid\u003e",
           "short": "Show a location by ID",
           "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar service-categories",
+      "use": "service-categories",
+      "short": "Manage service categories",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar service-categories create",
+          "use": "create",
+          "short": "Create a new service category",
+          "flags": [
+            {
+              "name": "icon",
+              "default": "wrench"
+            },
+            {
+              "name": "name",
+              "required": true
+            },
+            {
+              "name": "service-type",
+              "default": "maintenance"
+            }
+          ]
+        },
+        {
+          "path": "wenmar service-categories deactivate \u003cid\u003e",
+          "use": "deactivate \u003cid\u003e",
+          "short": "Deactivate a service category by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar service-categories delete \u003cid\u003e",
+          "use": "delete \u003cid\u003e",
+          "short": "Delete a service category by ID",
+          "flags": [
+            {
+              "name": "dry-run",
+              "default": "false"
+            }
+          ]
+        },
+        {
+          "path": "wenmar service-categories list",
+          "use": "list",
+          "short": "List all service categories",
+          "flags": null
+        },
+        {
+          "path": "wenmar service-categories move-down \u003cid\u003e",
+          "use": "move-down \u003cid\u003e",
+          "short": "Move a service category down one position",
+          "flags": null
+        },
+        {
+          "path": "wenmar service-categories move-up \u003cid\u003e",
+          "use": "move-up \u003cid\u003e",
+          "short": "Move a service category up one position",
+          "flags": null
+        },
+        {
+          "path": "wenmar service-categories reactivate \u003cid\u003e",
+          "use": "reactivate \u003cid\u003e",
+          "short": "Reactivate a service category by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar service-categories seed-defaults",
+          "use": "seed-defaults",
+          "short": "Seed default service categories for the account",
+          "flags": null
+        },
+        {
+          "path": "wenmar service-categories update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "Update a service category by ID",
+          "flags": [
+            {
+              "name": "name",
+              "required": true
+            }
+          ]
         }
       ]
     },
@@ -536,6 +642,7 @@
           "flags": [
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             }
           ]
@@ -545,76 +652,6 @@
           "use": "show \u003cid\u003e",
           "short": "Show a single statement by ID",
           "flags": null
-        }
-      ]
-    },
-    {
-      "path": "wenmar surface-snapshot",
-      "use": "surface-snapshot",
-      "short": "Dump the command tree as JSON (for CI diffing)",
-      "flags": [
-        {
-          "name": "agent",
-          "default": "false"
-        },
-        {
-          "name": "allow-partial",
-          "default": "false"
-        },
-        {
-          "name": "base-url"
-        },
-        {
-          "name": "config-path"
-        },
-        {
-          "name": "count",
-          "default": "false"
-        },
-        {
-          "name": "debug",
-          "default": "false"
-        },
-        {
-          "name": "help",
-          "default": "false"
-        },
-        {
-          "name": "html",
-          "default": "false"
-        },
-        {
-          "name": "ids-only",
-          "default": "false"
-        },
-        {
-          "name": "jq"
-        },
-        {
-          "name": "json",
-          "default": "false"
-        },
-        {
-          "name": "location"
-        },
-        {
-          "name": "markdown",
-          "default": "false"
-        },
-        {
-          "name": "md",
-          "default": "false"
-        },
-        {
-          "name": "quiet",
-          "default": "false"
-        },
-        {
-          "name": "styled",
-          "default": "false"
-        },
-        {
-          "name": "token"
         }
       ]
     },
@@ -630,7 +667,8 @@
           "short": "Create a customer or vehicle tag",
           "flags": [
             {
-              "name": "name"
+              "name": "name",
+              "required": true
             },
             {
               "name": "type",
@@ -645,6 +683,7 @@
           "flags": [
             {
               "name": "id",
+              "required": true,
               "default": "0"
             },
             {
@@ -666,10 +705,12 @@
           "flags": [
             {
               "name": "id",
+              "required": true,
               "default": "0"
             },
             {
-              "name": "name"
+              "name": "name",
+              "required": true
             },
             {
               "name": "type",
@@ -749,6 +790,7 @@
             },
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             },
             {
@@ -761,10 +803,12 @@
               "name": "fleet-identifier"
             },
             {
-              "name": "make"
+              "name": "make",
+              "required": true
             },
             {
-              "name": "model"
+              "name": "model",
+              "required": true
             },
             {
               "name": "notes"
@@ -803,6 +847,7 @@
             },
             {
               "name": "year",
+              "required": true,
               "default": "0"
             }
           ]
@@ -849,6 +894,7 @@
           "flags": [
             {
               "name": "source-id",
+              "required": true,
               "default": "0"
             }
           ]
@@ -876,6 +922,7 @@
           "flags": [
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             },
             {
@@ -1012,10 +1059,12 @@
           "flags": [
             {
               "name": "customer-id",
+              "required": true,
               "default": "0"
             },
             {
               "name": "vehicle-id",
+              "required": true,
               "default": "0"
             }
           ]
@@ -1047,12 +1096,7 @@
           "path": "wenmar work_orders list",
           "use": "list",
           "short": "List all work orders, paginated via the Link header",
-          "flags": [
-            {
-              "name": "page",
-              "default": "0"
-            }
-          ]
+          "flags": null
         },
         {
           "path": "wenmar work_orders parts \u003cid\u003e",

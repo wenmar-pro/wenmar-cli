@@ -11,8 +11,9 @@ import (
 )
 
 var surfaceSnapshotCmd = &cobra.Command{
-	Use:   "surface-snapshot",
-	Short: "Dump the command tree as JSON (for CI diffing)",
+	Use:    "surface-snapshot",
+	Short:  "Dump the command tree as JSON (for CI diffing)",
+	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		snapshot := buildSurfaceSnapshot(rootCmd, "")
 		enc := json.NewEncoder(os.Stdout)
@@ -68,9 +69,9 @@ func buildSurfaceSnapshot(cmd *cobra.Command, parentPath string) SurfaceCommand 
 		})
 	})
 	// Mark required flags.
-	for _, f := range surf.Flags {
-		if cmd.Flags().Lookup(f.Name) != nil {
-			f.Required = cmd.Flags().Lookup(f.Name).Annotations["cobra_annotation_bash_completion_one_required_flag"] != nil
+	for i := range surf.Flags {
+		if lf := cmd.Flags().Lookup(surf.Flags[i].Name); lf != nil {
+			surf.Flags[i].Required = lf.Annotations["cobra_annotation_bash_completion_one_required_flag"] != nil
 		}
 	}
 
