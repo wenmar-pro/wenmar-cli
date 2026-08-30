@@ -94,8 +94,6 @@ var (
 )
 
 func init() {
-	workOrdersListCmd.Flags().Int("page", 0, "Page number")
-
 	workOrdersCreateCmd.Flags().IntVar(&workOrderCreateCustomer, "customer-id", 0, "Customer ID (required)")
 	workOrdersCreateCmd.Flags().IntVar(&workOrderCreateVehicle, "vehicle-id", 0, "Vehicle ID (required)")
 	workOrdersCreateCmd.MarkFlagRequired("customer-id")

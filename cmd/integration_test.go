@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
@@ -17,6 +19,9 @@ import (
 // lastPatchBody records the most recent PATCH body seen by the fake API,
 // keyed by path. Tests use this to assert request wiring.
 var lastPatchBody sync.Map // path -> []byte
+
+// lastDupQuery records the most recent check_duplicate query string.
+var lastDupQuery atomic.Value // url.Values
 
 
 func TestMain(m *testing.M) {
@@ -111,6 +116,16 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
+	})
+
+	// GET /customers/check_duplicate
+	mux.HandleFunc("/customers/check_duplicate", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		lastDupQuery.Store(r.URL.Query())
+		writeJSON(w, http.StatusOK, map[string]any{"matches": []any{}})
 	})
 
 	// GET /vehicles
@@ -252,6 +267,27 @@ func writeError(w http.ResponseWriter, status int, code, msg string) {
 	writeJSON(w, status, map[string]any{
 		"error": map[string]any{"code": code, "message": msg, "details": map[string]any{}},
 	})
+}
+
+func TestCustomersDuplicates_PhoneWiresThrough(t *testing.T) {
+	srv := startFakeAPI(t, "tok-dup")
+	t.Setenv("WENMAR_URL", srv.URL)
+	t.Setenv("WENMAR_TOKEN", "tok-dup")
+
+	if _, err := execute("customers", "duplicates", "--first-name", "Jane", "--phone", "5550100"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	q, ok := lastDupQuery.Load().(url.Values)
+	if !ok {
+		t.Fatal("no check_duplicate query captured")
+	}
+	if q.Get("phone") != "5550100" {
+		t.Errorf("phone param not sent, got %q", q.Get("phone"))
+	}
+	if q.Get("first_name") != "Jane" {
+		t.Errorf("first_name param not sent, got %q", q.Get("first_name"))
+	}
 }
 
 func TestCustomersList_AgentMode(t *testing.T) {

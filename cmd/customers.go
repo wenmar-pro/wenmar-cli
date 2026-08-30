@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -311,6 +312,13 @@ func runCustomersDuplicates(cmd *cobra.Command, args []string) error {
 			FirstName: strPtr(customerDuplicateFirstName),
 			LastName:  strPtr(customerDuplicateLastName),
 			Email:     strPtr(customerDuplicateEmail),
+		}
+		if customerDuplicatePhone != "" {
+			phone, err := strconv.Atoi(customerDuplicatePhone)
+			if err != nil {
+				return nil, fmt.Errorf("--phone must be a numeric phone number (the API expects digits): %w", err)
+			}
+			params.Phone = &phone
 		}
 		resp, err := client.CheckCustomerDuplicate(ctx, params)
 		if err != nil {
