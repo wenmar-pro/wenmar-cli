@@ -49,10 +49,11 @@ type BodyField struct {
 	JSONName  string // snake_case (e.g. "full_name")
 	GoName    string // PascalCase (e.g. "FullName")
 	FlagName  string // kebab-case (e.g. "full-name")
-	Type      string // "string", "integer", "boolean"
+	Type      string // "string", "integer", "boolean", "array"
 	Required  bool
 	IsPointer bool // true if the SDK struct field is a pointer type
 	HelpText  string
+	NoFlag    bool // true if the field appears in the body struct but has no CLI flag (arrays)
 }
 
 // groupOperations reads the spec and overrides to produce command groups.
@@ -228,6 +229,9 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides) (string, er
 		}
 		// Body field flags.
 		for _, bf := range cmd.BodyFields {
+			if bf.NoFlag {
+				continue
+			}
 			vn := bodyFieldVarName(cmd.Resource, bf.GoName)
 			flagVarsSeen[vn] = goType(bf.Type)
 		}
@@ -359,7 +363,7 @@ func classifyCommand(cmd GenCommand) string {
 			}
 			return "listPaginated"
 		}
-		if cmd.QueryParamStruct != "" {
+		if cmd.QueryParamStruct != "" && len(cmd.QueryFields) > 0 {
 			return "queryParam"
 		}
 		return "list"
@@ -466,6 +470,9 @@ func emitFlagRegistration(g *jen.Group, cmd GenCommand) {
 
 	// Body field flags.
 	for _, bf := range cmd.BodyFields {
+		if bf.NoFlag {
+			continue
+		}
 		varName := bodyFieldVarName(cmd.Resource, bf.GoName)
 		args := []jen.Code{jen.Op("&").Id(varName), jen.Lit(bf.FlagName), DefaultForType(bf.Type), jen.Lit(bf.HelpText)}
 		g.Id(cmdVar).Dot("Flags").Call().Dot(flagBindMethod(bf.Type)).Call(args...)
@@ -672,8 +679,10 @@ func extractScalarFields(spec *Spec, schema Schema, requestStruct, wrapper strin
 		if prop.Ref != "" && spec != nil {
 			prop = spec.Resolve(prop)
 		}
-		// Skip arrays and objects — they need hand-written flag logic.
-		if prop.Type == "array" || prop.Type == "object" {
+		// Skip objects — they need hand-written flag logic. Arrays are
+		// captured so the anonymous struct stays assignable to the SDK's
+		// inline struct, but they get no CLI flag.
+		if prop.Type == "object" {
 			continue
 		}
 		f := BodyField{
@@ -684,6 +693,12 @@ func extractScalarFields(spec *Spec, schema Schema, requestStruct, wrapper strin
 			Required:  contains(required, name),
 			IsPointer: !contains(required, name), // optional fields are pointers
 			HelpText:  prettifyParamName(name),
+		}
+		if prop.Type == "array" {
+			// Arrays appear in the anonymous struct for assignability but
+			// have no CLI flag (they need hand-written flag logic).
+			f.NoFlag = true
+			f.IsPointer = true
 		}
 		if f.Required {
 			f.HelpText += " (required)"
@@ -878,6 +893,11 @@ func emitShowStrHandler(g *jen.Group, cmd GenCommand) {
 
 func emitListHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
+	callArgs := sdkCallArgs(cmd, false)
+	if cmd.QueryParamStruct != "" {
+		// SDK list methods that take a params struct accept nil for unfiltered.
+		callArgs = append(callArgs, jen.Nil())
+	}
 	g.Return(jen.Id("runList").Call(
 		jen.Id("cmd"),
 		jen.Lit(resource),
@@ -886,7 +906,7 @@ func emitListHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Error()).Block(
-			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(sdkCallArgs(cmd, false)...),
+			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(callArgs...),
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			),
@@ -905,11 +925,11 @@ func emitListPaginatedHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Op("*").Qual(wenmarPkg, "Paginator"), jen.Error()).Block(
-			jen.List(jen.Id("resp"), jen.Id("paginator"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)+"WithPagination").Call(sdkCallArgs(cmd, false)...),
+			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(sdkCallArgs(cmd, false)...),
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 			),
-			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Id("paginator"), jen.Nil()),
+			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil()),
 		),
 	))
 }
@@ -957,22 +977,19 @@ func emitListPaginatedWithParamsHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Op("*").Qual(wenmarPkg, "Paginator"), jen.Error()).BlockFunc(func(bg *jen.Group) {
 			bg.If(jen.Id(hasFiltersFnName(cmd)).Call()).BlockFunc(func(ibg *jen.Group) {
-				ibg.List(jen.Id("resp"), jen.Id("paginator"), jen.Id("err")).Op(":=").Id("client").
-					Dot(sdkMethodNameFor(cmd) + "WithParamsWithPagination").Call(
-					jen.Id("ctx"),
-					jen.Qual(wenmarPkg, cmd.QueryParamStruct).Values(queryParamDict(cmd)),
-				)
+				ibg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").
+					Dot(sdkMethodNameFor(cmd)).Call(jen.Id("ctx"), jen.Op("&").Qual(wenmarPkg, cmd.QueryParamStruct).Values(queryParamDict(cmd)))
 				ibg.If(jen.Id("err").Op("!=").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 				)
-				ibg.Return(jen.Id("resp").Dot("JSON200"), jen.Id("paginator"), jen.Nil())
+				ibg.Return(jen.Id("resp").Dot("JSON200"), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil())
 			}).Else().BlockFunc(func(ebg *jen.Group) {
-				ebg.List(jen.Id("resp"), jen.Id("paginator"), jen.Id("err")).Op(":=").Id("client").
-					Dot(sdkMethodNameFor(cmd) + "WithPagination").Call(jen.Id("ctx"))
+				ebg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").
+					Dot(sdkMethodNameFor(cmd)).Call(jen.Id("ctx"), jen.Nil())
 				ebg.If(jen.Id("err").Op("!=").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 				)
-				ebg.Return(jen.Id("resp").Dot("JSON200"), jen.Id("paginator"), jen.Nil())
+				ebg.Return(jen.Id("resp").Dot("JSON200"), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil())
 			})
 		}),
 	))
@@ -980,7 +997,9 @@ func emitListPaginatedWithParamsHandler(g *jen.Group, cmd GenCommand) {
 
 // bodyStructFields renders SDK-compatible anonymous struct fields. The
 // SDK's inline structs list fields alphabetically; json tags match the
-// spec's property names. Optional fields are pointer-typed.
+// spec's property names. Optional fields are pointer-typed and carry
+// ",omitempty" to match the SDK's generated tags (required for anonymous
+// struct assignability).
 func bodyStructFields(cmd GenCommand) []jen.Code {
 	fields := make([]jen.Code, 0, len(cmd.BodyFields))
 	for _, bf := range cmd.BodyFields {
@@ -988,17 +1007,25 @@ func bodyStructFields(cmd GenCommand) []jen.Code {
 		if bf.IsPointer {
 			goT = "*" + goT
 		}
+		tag := bf.JSONName
+		if bf.IsPointer {
+			tag += ",omitempty"
+		}
 		fields = append(fields,
-			jen.Id(bf.GoName).Id(goT).Tag(map[string]string{"json": bf.JSONName}),
+			jen.Id(bf.GoName).Id(goT).Tag(map[string]string{"json": tag}),
 		)
 	}
 	return fields
 }
 
-// bodyLiteralDict builds the value dict for the body literal.
+// bodyLiteralDict builds the value dict for the body literal. Fields with
+// NoFlag (arrays) are omitted so they stay zero-valued in the struct.
 func bodyLiteralDict(cmd GenCommand) jen.Dict {
 	dict := jen.Dict{}
 	for _, bf := range cmd.BodyFields {
+		if bf.NoFlag {
+			continue
+		}
 		varName := bodyFieldVarName(cmd.Resource, bf.GoName)
 		if bf.IsPointer {
 			dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
@@ -1205,9 +1232,25 @@ func emitTabHandler(g *jen.Group, cmd GenCommand) {
 	))
 }
 
+// positionalQueryField returns the query field the positional arg maps to.
+// The twins map the positional string to the search-term field (Query or
+// Vin), never the optional id field, so skip any field named "Id".
+func positionalQueryField(cmd GenCommand) BodyField {
+	for _, bf := range cmd.QueryFields {
+		if bf.GoName != "Id" {
+			return bf
+		}
+	}
+	if len(cmd.QueryFields) > 0 {
+		return cmd.QueryFields[0]
+	}
+	return BodyField{}
+}
+
 func emitPositionalArgHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
 	sdkMethod := sdkMethodNameFor(cmd)
+	field := positionalQueryField(cmd)
 	g.Return(jen.Id("runList").Call(
 		jen.Id("cmd"),
 		jen.Lit(resource),
@@ -1216,7 +1259,13 @@ func emitPositionalArgHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Error()).Block(
-			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(jen.Id("ctx"), jen.Id("args").Index(jen.Lit(0))),
+			jen.Id("query").Op(":=").Id("args").Index(jen.Lit(0)),
+			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(
+				jen.Id("ctx"),
+				jen.Op("&").Qual(wenmarPkg, cmd.QueryParamStruct).Values(jen.Dict{
+					jen.Id(field.GoName): jen.Id("strPtr").Call(jen.Id("query")),
+				}),
+			),
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			),
@@ -1238,7 +1287,7 @@ func emitQueryParamHandler(g *jen.Group, cmd GenCommand) {
 		).Params(jen.Any(), jen.Error()).Block(
 			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethod).Call(
 				jen.Id("ctx"),
-				jen.Qual(wenmarPkg, cmd.QueryParamStruct).Values(queryParamDict(cmd)),
+				jen.Op("&").Qual(wenmarPkg, cmd.QueryParamStruct).Values(queryParamDict(cmd)),
 			),
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
@@ -1293,12 +1342,15 @@ func emitActionNoBodyHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 			jen.Id("id").Id("int"),
 		).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
-			callArgs := sdkCallArgs(cmd, true)
+			callArgs := []jen.Code{jen.Id("ctx"), jen.Id("id")}
+			if cmd.RequestStruct != "" {
+				callArgs = append(callArgs, jen.Qual(wenmarPkg, cmd.RequestStruct).Values())
+			}
 			bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(callArgs...)
 			bg.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			)
-			bg.Return(jen.Id("resp").Dot("JSON200"), jen.Nil())
+			bg.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil())
 		}),
 	))
 }
@@ -1314,7 +1366,11 @@ func emitSeedActionHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
-			bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(jen.Id("ctx"))
+			callArgs := []jen.Code{jen.Id("ctx")}
+			if cmd.RequestStruct != "" {
+				callArgs = append(callArgs, jen.Qual(wenmarPkg, cmd.RequestStruct).Values())
+			}
+			bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(callArgs...)
 			bg.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			)
@@ -1355,7 +1411,7 @@ func goType(openapiType string) string {
 	case "number":
 		return "float64"
 	case "array":
-		return "[]string"
+		return "[]interface{}"
 	default:
 		return "string"
 	}

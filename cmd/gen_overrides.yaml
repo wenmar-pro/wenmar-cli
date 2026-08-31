@@ -117,6 +117,7 @@ commands:
     summary: Search customers by name/email/phone
     method: LookupCustomer
     positional_arg: string
+    query_param_struct: LookupCustomerParams
   check_customer_duplicate:
     resource: customers
     command: duplicates
@@ -141,6 +142,7 @@ commands:
     summary: List all vehicles
     method: ListVehicles
     paginated: false
+    query_param_struct: ListVehiclesParams
   show_vehicle:
     resource: vehicles
     command: show
@@ -168,6 +170,7 @@ commands:
     summary: Decode a VIN into make/model
     method: DecodeVin
     positional_arg: string
+    query_param_struct: DecodeVinParams
   check_vehicle_duplicate:
     resource: vehicles
     command: duplicates
@@ -198,6 +201,7 @@ commands:
     summary: Search vehicles by make/model/plate/vin
     method: LookupVehicle
     positional_arg: string
+    query_param_struct: LookupVehicleParams
   list_vehicles_work_orders:
     resource: vehicles
     command: work-orders
@@ -296,26 +300,31 @@ commands:
     command: deactivate
     summary: Deactivate a service category by ID
     method: DeactivateServiceCategory
+    request_struct: DeactivateServiceCategoryRequest
   reactivate_service_category:
     resource: servicecategories
     command: reactivate
     summary: Reactivate a service category by ID
     method: ReactivateServiceCategory
+    request_struct: ReactivateServiceCategoryRequest
   move_up_service_category:
     resource: servicecategories
     command: move-up
     summary: Move a service category up one position
     method: MoveUpServiceCategory
+    request_struct: MoveUpServiceCategoryRequest
   move_down_service_category:
     resource: servicecategories
     command: move-down
     summary: Move a service category down one position
     method: MoveDownServiceCategory
+    request_struct: MoveDownServiceCategoryRequest
   seed_defaults_service_categories:
     resource: servicecategories
     command: seed-defaults
     summary: Seed default service categories for the account
     method: SeedDefaultsServiceCategories
+    request_struct: SeedDefaultsServiceCategoriesRequest
     action_summary: Default service categories seeded.
 
   # tags

@@ -40,6 +40,34 @@ func TestEmitCreate_WrapperBody(t *testing.T) {
 	}
 }
 
+func TestEmitActionNoBody_EmptyStructArg(t *testing.T) {
+	cmd := GenCommand{
+		OperationID:    "deactivate_service_category",
+		Resource:      "servicecategories",
+		Command:       "deactivate",
+		Method:         "patch",
+		Path:           "/service_categories/{id}/deactivate",
+		HasIDParam:     true,
+		IDParam:        "id",
+		IDType:         "int",
+		SDKMethod:      "DeactivateServiceCategory",
+		RequestStruct:  "DeactivateServiceCategoryRequest",
+		ActionSummary:  "Service category deactivated.",
+		RequestBody:    &RequestBody{Content: map[string]Media{"application/json": {Schema: Schema{Type: "object"}}}},
+	}
+	group := CommandGroup{Resource: "servicecategories", Commands: []GenCommand{cmd}}
+	code, err := emitGroup(group, nil, &Overrides{})
+	if err != nil {
+		t.Fatalf("emitGroup: %v", err)
+	}
+	if !strings.Contains(code, "DeactivateServiceCategoryRequest{}") {
+		t.Errorf("action call missing empty-struct body arg:\n%s", code)
+	}
+	if !strings.Contains(code, "runActionNoBody") {
+		t.Errorf("expected runActionNoBody runner:\n%s", code)
+	}
+}
+
 func TestResolveSchemaRef(t *testing.T) {
 	spec := &Spec{
 		Paths: map[string]PathItem{},
@@ -174,7 +202,8 @@ func TestEmitGroup_CustomersListWithFiltersPaginated(t *testing.T) {
 	}
 	for _, want := range []string{
 		"runListPaginatedWithAll",
-		"ListCustomersWithParamsWithPagination",
+		"ListCustomers(ctx, &wenmar.ListCustomersParams",
+		"PaginatorFromResponse",
 		"customersQuery",
 		"customersPage",
 		"\"query\"",
