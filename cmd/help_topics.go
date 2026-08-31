@@ -150,7 +150,6 @@ Fields:
   aliases     Alternative names for this command
   args        Positional arguments [{name, type, required}]
   flags       Flags [{name, short, type, required, default, description}]
-              Global output flags are omitted from leaf help; see "wenmar help output".
 
 The same schema powers "wenmar commands" (the full catalog). One builder
 produces both, so they always agree.`,

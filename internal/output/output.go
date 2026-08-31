@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/mattn/go-isatty"
 )
@@ -11,15 +12,11 @@ import (
 type Mode int
 
 const (
-	ModeDefault Mode = iota
-	ModeMD
-	ModeJSON
-	ModeAgent
-	ModeJQ
-	ModeQuiet
-	ModeIDsOnly
-	ModeCount
-	ModeHTML
+	ModeDefault Mode = iota // human table (also forced by --styled when piped)
+	ModeJSON                // --json: full envelope {ok, data, summary, meta, breadcrumbs}
+	ModeAgent               // --agent: raw JSON, no envelope (also the piped default)
+	ModeJQ                  // --jq <expr>
+	ModeIDsOnly             // --ids-only: one ID per line
 )
 
 // Breadcrumb is an actionable navigation hint emitted in the JSON envelope.
@@ -40,61 +37,49 @@ type Meta struct {
 	HasNext bool `json:"has_next"`
 }
 
-// ModeSpec carries the output-mode flags from the command line. --output
-// is the canonical selector; --json/--agent/--quiet/--jq are sugar.
+// ModeSpec carries the output-mode flags from the command line. All five
+// are peers — there is no umbrella flag. More than one set is an error.
 type ModeSpec struct {
-	Output string
-	JSON   bool
-	Agent  bool
-	Quiet  bool
-	JQ     string
+	JSON    bool
+	Agent   bool
+	JQ      string
+	IDsOnly bool
+	Styled  bool
 }
 
-// modeNames maps --output values to Modes. "styled" and "table" both render
-// the default table; "styled" exists to override the pipe auto-switch.
-var modeNames = map[string]Mode{
-	"table":    ModeDefault,
-	"styled":   ModeDefault,
-	"md":       ModeMD,
-	"json":     ModeJSON,
-	"agent":    ModeAgent,
-	"quiet":    ModeQuiet,
-	"ids-only": ModeIDsOnly,
-	"count":    ModeCount,
-	"html":     ModeHTML,
-}
-
-// ParseMode resolves the output mode from ModeSpec. It errors on unknown
-// mode names and on combinations that would silently pick a winner
-// (--output plus any sugar, or two sugar flags together). With nothing set
-// and a piped stdout it auto-switches to ModeQuiet so piped output is
-// machine-readable.
+// ParseMode resolves the output mode from ModeSpec. Exactly one mode flag
+// may be set — combining them errors with the offending flag names rather
+// than silently picking a winner. With nothing set: table on a terminal,
+// raw JSON when piped.
 func ParseMode(spec ModeSpec) (Mode, error) {
-	if spec.Output != "" {
-		if spec.JSON || spec.Agent || spec.Quiet || spec.JQ != "" {
-			return 0, fmt.Errorf("--output cannot be combined with --json/--agent/--quiet/--jq — pick one")
-		}
-		m, ok := modeNames[spec.Output]
-		if !ok {
-			return 0, fmt.Errorf("unknown output mode %q (valid: table, md, json, agent, quiet, ids-only, count, html, styled)", spec.Output)
-		}
-		return m, nil
+	active := []string{}
+	if spec.JSON {
+		active = append(active, "--json")
+	}
+	if spec.Agent {
+		active = append(active, "--agent")
+	}
+	if spec.JQ != "" {
+		active = append(active, "--jq")
+	}
+	if spec.IDsOnly {
+		active = append(active, "--ids-only")
+	}
+	if spec.Styled {
+		active = append(active, "--styled")
 	}
 
-	n := 0
-	for _, set := range []bool{spec.JSON, spec.Agent, spec.Quiet, spec.JQ != ""} {
-		if set {
-			n++
-		}
+	if len(active) > 1 {
+		return 0, fmt.Errorf("conflicting output flags: %s (use only one)", strings.Join(active, ", "))
 	}
-	if n > 1 {
-		return 0, fmt.Errorf("conflicting output flags — use --output <mode> to select one")
-	}
+
 	switch {
 	case spec.JQ != "":
 		return ModeJQ, nil
-	case spec.Quiet:
-		return ModeQuiet, nil
+	case spec.IDsOnly:
+		return ModeIDsOnly, nil
+	case spec.Styled:
+		return ModeDefault, nil // forces the human table even when piped
 	case spec.Agent:
 		return ModeAgent, nil
 	case spec.JSON:
@@ -103,7 +88,7 @@ func ParseMode(spec ModeSpec) (Mode, error) {
 
 	// Auto-switch: piped stdout gets machine-readable raw JSON.
 	if !isTerminal(os.Stdout) {
-		return ModeQuiet, nil
+		return ModeAgent, nil
 	}
 	return ModeDefault, nil
 }
@@ -114,20 +99,16 @@ func isTerminal(f *os.File) bool {
 
 func Render(w io.Writer, data any, summary string, meta *Meta, opts Options) error {
 	switch opts.Mode {
-	case ModeMD, ModeDefault:
+	case ModeDefault:
 		return renderMarkdown(w, data, summary)
 	case ModeJSON:
 		return renderJSON(w, data, summary, meta, opts.Breadcrumbs, opts.Notice)
-	case ModeAgent, ModeQuiet:
+	case ModeAgent:
 		return renderJSONRaw(w, data)
 	case ModeJQ:
 		return renderJQ(w, data, opts.JQFilter)
 	case ModeIDsOnly:
 		return renderIDsOnly(w, data)
-	case ModeCount:
-		return renderCount(w, data)
-	case ModeHTML:
-		return renderHTML(w, data, summary)
 	default:
 		return fmt.Errorf("unknown output mode")
 	}

@@ -13,11 +13,11 @@ import (
 // modeSpec snapshots the output-mode flags for ParseMode.
 func modeSpec() output.ModeSpec {
 	return output.ModeSpec{
-		Output: outputFlag,
-		JSON:   jsonFlag,
-		Agent:  agentFlag,
-		Quiet:  quietFlag,
-		JQ:     jqFlag,
+		JSON:    jsonFlag,
+		Agent:   agentFlag,
+		JQ:      jqFlag,
+		IDsOnly: idsOnlyFlag,
+		Styled:  styledFlag,
 	}
 }
 
@@ -152,7 +152,7 @@ func runListPaginated(cmd *cobra.Command, resource, path string,
 	if err != nil {
 		return err
 	}
-	if mode == output.ModeIDsOnly || mode == output.ModeCount {
+	if mode == output.ModeIDsOnly {
 		output.PrintPaginationNotice(meta, 1)
 	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resource)}
@@ -205,7 +205,7 @@ func runListPaginatedWithAll(cmd *cobra.Command, resource, path string, allFlag 
 	if err != nil {
 		return err
 	}
-	if mode == output.ModeIDsOnly || mode == output.ModeCount {
+	if mode == output.ModeIDsOnly {
 		output.PrintPaginationNotice(meta, pages)
 	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resource)}

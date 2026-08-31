@@ -1,6 +1,7 @@
 # Wenmar CLI
 
 A command-line interface for the Wenmar Pro automotive shop management API.
+Single static binary; all examples below are real, tested commands.
 
 ## Install
 
@@ -8,189 +9,80 @@ A command-line interface for the Wenmar Pro automotive shop management API.
 curl -fsSL https://raw.githubusercontent.com/Wenmar-Pro/wenmar-cli/main/install-cli | bash
 ```
 
-Installs `wenmar` to `~/bin` or `~/.local/bin` and verifies the SHA-256
-checksum against the release. See `install-cli` in the repo root for
-`WENMAR_BIN_DIR` / `WENMAR_VERSION` / `WENMAR_RELEASES_BASE` options.
+Installs `wenmar` to `~/bin` or `~/.local/bin`; verifies SHA-256 checksum and
+the cosign signature when available. Env overrides: `WENMAR_BIN_DIR`,
+`WENMAR_VERSION`, `WENMAR_RELEASES_BASE`.
 
-## Auth
+## Authentication
 
-Set your API token as an environment variable:
+Pick ONE, in this precedence order:
 
-```bash
-export WENMAR_TOKEN="your-api-token"
-```
+1. `--token` flag (per command): `wenmar --token <tok> customers list`
+2. `WENMAR_TOKEN` env var: `export WENMAR_TOKEN="<tok>"` (best for agents/CI)
+3. Stored credentials: `wenmar auth login --token <tok>` — persists to the
+   system keyring (file fallback `~/.config/wenmar/credentials.json`), then
+   works without env vars: `wenmar auth status` verifies.
+4. OAuth browser flow (humans): `wenmar auth login`
 
-Or pass it on each command:
+Get a token from the Wenmar Pro settings page, or via the Rails console:
+`User.find(1).generate_api_token!`.
 
-```bash
-wenmar --token "your-api-token" customers list
-```
-
-To get a token, generate one from the Wenmar Pro settings page or via
-the Rails console: `User.find(1).generate_api_token!`.
+For agents: `WENMAR_TOKEN` or `auth login --token` are the two non-interactive
+paths. Check state with `wenmar auth status`, and `wenmar auth token` to
+print the token in scripts.
 
 ## Preflight checklist
 
-Before starting an agent workflow:
+1. `wenmar doctor` — auth, connectivity, config, completion, skill checks
+2. `wenmar commands` — full command catalog as JSON (paths, flags, args,
+   aliases, required flags)
+3. `wenmar <command> --help --agent` — structured JSON for ONE command
+4. Read `wenmar help output` and `wenmar help exit-codes` for the contracts
 
-1. `wenmar doctor` — Verify auth, connectivity, and config
-2. `wenmar commands` — Discover the full command surface
-3. Set output mode explicitly (`--output <mode>`, or a quick flag like
-   `--json`/`--jq`/`--agent`)
-
-## Agent Invariants
+## Agent invariants
 
 These rules MUST be followed without exception:
 
 1. **Parse VINs first** with `wenmar vehicles decode-vin <vin>` — never
-   assume a VIN format or try to decode it yourself.
-2. **Work order and resource IDs are positional**, not flags:
-   `wenmar work_orders show 12345`, not `--id 12345`.
-3. **Destructive operations require `--dry-run` first.** Run
-   `wenmar vehicles delete 42 --dry-run` to preview before executing.
-4. **`--base-url` selects the shop instance**; omitting it uses the
-   config default (`~/.config/wenmar/config`).
-5. **Check `wenmar commands`** for the full command catalog when unsure
-   what's available.
-6. **Choose the right output mode:**
-   - `--jq` to filter/extract specific fields
-   - `--json` for full envelope `{ok, data, summary, meta}`
-   - `--output md` for human-readable GFM tables
-   - `--output ids-only` for shell loops (`| xargs`)
-   - `--output count` for bare integer counts (monitoring)
-   - `--agent` for headless agent workflows (raw JSON, no envelope)
-   - Never combine output flags: use `--output <mode>` alone, or one quick
-     flag (`--json`/`--agent`/`--quiet`/`--jq`). Combining them is an error.
-7. **Never pipe to external `jq`** — use `--jq` instead (built-in,
-   no external dependency).
-8. **Parse URLs first** with `wenmar url parse "<url>"` to extract the
-   resource type and ID before calling `show`/`update`/`delete`.
-
-## Decision trees
-
-### Finding a work order
-
-```
-Need to find a work order?
-├── Have the WO number? → wenmar work_orders show <number>
-├── Have the VIN? → wenmar vehicles decode-vin <vin> → find vehicle → wenmar work_orders list --jq '.[] | select(.vehicle.id == <id>)'
-├── My active jobs? → wenmar work_orders list --jq '.[] | select(.status == "in_progress")'
-├── Overdue jobs? → wenmar work_orders list --jq '.[] | select(.status == "overdue")'
-└── Have a URL? → wenmar url parse "<url>" → use extracted id
-```
-
-### Finding a vehicle
-
-```
-Need to find a vehicle?
-├── Have the VIN? → wenmar vehicles decode-vin <vin>
-├── Have a plate? → wenmar vehicles lookup "<plate>"
-├── Know the customer? → wenmar customers show <id> → follow vehicles_url
-└── Have a URL? → wenmar url parse "<url>" → use extracted id
-```
-
-### Finding a customer
-
-```
-Need to find a customer?
-├── Have the ID? → wenmar customers show <id>
-├── Know the name? → wenmar customers list --jq '.[] | select(.full_name | test("Jane"; "i"))'
-├── Have the email? → wenmar customers list --jq '.[] | select(.emails[]?.address == "jane@example.com")'
-└── Have a URL? → wenmar url parse "<url>" → use extracted id
-```
-
-### Modifying resources
-
-```
-Want to change something?
-├── Have a URL? → wenmar url parse "<url>" → use extracted id
-├── Create? → wenmar <type> create --field value --json
-├── Update? → wenmar <type> update <id> --field value --json
-└── Delete?
-    ├── Preview first: wenmar <type> delete <id> --dry-run --json
-    └── Execute: wenmar <type> delete <id> --json
-```
+   assume a VIN format.
+2. **Resource IDs are positional**, never flags: `wenmar customers show 42`.
+3. **Preview destructive ops** with `--dry-run` where offered
+   (vehicles/drivers/workorders/servicecategories delete). There is no
+   `--force` flag; a delete without `--dry-run` executes immediately.
+4. **Set an explicit output mode** for anything parsed: `--output agent`
+   (or the `--agent` shorthand). Default piped output is raw JSON, but
+   explicit beats implicit.
+5. **Never combine output flags**: `--output` alone, or exactly one of
+   `--json`/`--agent`/`--quiet`/`--jq`. Mixing them errors.
+6. **Never pipe to external `jq`** — use `--jq 'expr'` (built-in).
+7. **Use `wenmar commands`** when unsure what exists — it lists canonical
+   paths plus aliases (`canonical: false` entries).
+8. **Parse pasted URLs first**: `wenmar url parse "<url>"` extracts
+   `resource_type` and `id` before any show/update/delete.
+9. **Canonical names**: `workorders` (aliases `work_orders`, `wo`),
+   `servicecategories` (aliases `service-categories`, `sc`). Old spellings
+   keep working; prefer canonical in new scripts.
+10. **Branch on exit codes** (see the table below) — never parse stderr.
 
 ## Output modes
 
-The canonical flag is `--output <mode>`:
+`--output <mode>` is canonical:
 
-- `--output table`: Human-readable table (default on a terminal)
-- `--output md`: GFM table
-- `--output json`: Full envelope `{ok, data, summary, meta, breadcrumbs}`
-- `--output agent`: Raw JSON data (no envelope) — for AI agents
-- `--output quiet`: Raw JSON data (no envelope). Unlike `--agent`, does not
-  hijack `--help` to emit CommandInfo JSON.
-- `--output ids-only`: One ID per line — for shell loops
-- `--output count`: Bare integer count — for monitoring
-- `--output styled`: Force human tables even when piped
+| Mode | What you get |
+|------|--------------|
+| `table` | Human table (terminal default) |
+| `md` | GFM table |
+| `json` | Full envelope `{ok, data, summary, meta, breadcrumbs}` |
+| `agent` | Raw JSON data, no envelope |
+| `quiet` | Raw JSON; the default when piped |
+| `ids-only` | One ID per line (shell loops) |
+| `count` | Bare integer count |
+| `html` | HTML document |
+| `styled` | Force tables even when piped |
 
-Quick flags (equivalents, hidden from subcommand help): `--json`, `--agent`,
-`--quiet`, `--jq '.filter'` (implies json). Combining `--output` with a quick
-flag (or two quick flags together) is an error — pick one.
-
-Always pass an explicit mode for scripts and agents. When stdout is not a
-TTY (e.g. piped) and no mode flag is set, wenmar emits raw JSON so the
-output is machine-readable.
-
-## Common workflows
-
-### List customers
-
-```bash
-wenmar customers list --output md
-wenmar customers list --json
-wenmar customers list --jq '.[].full_name'
-wenmar customers list --output ids-only | xargs -I{} wenmar customers show {}
-wenmar customers list --output count
-```
-
-### Show a customer's details
-
-```bash
-wenmar customers show 42 --output md
-wenmar customers show 42 --jq '.emails[]?.address'
-```
-
-### Create a customer
-
-```bash
-wenmar customers create --full-name "Jane Doe" --email "jane@test.com" --json
-```
-
-### Work orders
-
-```bash
-wenmar work_orders list --output md
-wenmar work_orders list --json
-wenmar work_orders show 100 --output md
-wenmar work_orders show 100 --jq '.vehicle.make'
-wenmar work_orders create --customer-id 1 --vehicle-id 1 --json
-```
-
-### Delete with dry-run
-
-```bash
-wenmar vehicles delete 42 --dry-run --json   # Preview
-wenmar vehicles delete 42 --json             # Execute
-```
-
-## Diagnostics
-
-```bash
-wenmar doctor          # Auth, connectivity, config, completion check
-wenmar doctor --json   # Structured for agents
-wenmar config path     # Show config file location
-wenmar config list     # Show all config values
-```
-
-## Shell completion
-
-```bash
-wenmar completion bash > ~/.local/share/bash-completion/completions/wenmar
-wenmar completion zsh > "${fpath[1]}/_wenmar"
-wenmar completion fish > ~/.config/fish/completions/wenmar.fish
-```
+Shorthands (hidden from subcommand help, still work): `--json`, `--agent`
+(also makes `--help` emit JSON), `--quiet`, `--jq 'expr'` (implies json).
+Piped stdout with no explicit mode → `quiet`. Conflicts error out.
 
 ## Exit codes
 
@@ -198,33 +90,120 @@ wenmar completion fish > ~/.config/fish/completions/wenmar.fish
 |------|---------|
 | 0 | Success |
 | 1 | Generic error |
-| 2 | Auth failure |
+| 2 | Auth failure / not logged in |
 | 3 | Not found |
 | 4 | Validation error |
 | 5 | Rate limited |
 | 6 | Server error |
 | 7 | Conflict (e.g. duplicate VIN) |
-| 8 | Forbidden (403) |
-| 9 | Truncated response without `--allow-partial` |
+| 8 | Forbidden |
+| 9 | Truncated response — pass `--allow-partial` to accept |
 | 10 | Network unreachable |
 
-When the server sends an unrecognized error `code`, the exit code falls
-back to the HTTP status class (401→2, 404→3, 422→4, 429→5, 403→8,
-409→7, 5xx→6), so the contract holds even for new error codes.
+## Common workflows
 
-Scripts can branch on failure class without parsing stderr.
+### Customers
 
-## Gotchas
+```bash
+wenmar customers list
+wenmar customers list --query "jane" --all          # full-text + all pages
+wenmar customers list --output ids-only
+wenmar customers show 42
+wenmar customers show 42 --jq '.emails[]?.address'
+wenmar customers create --full-name "Jane Doe" --email "jane@test.com"
+wenmar customers update 42 --company-name "New Corp"
+wenmar customers lookup "jane doe"                  # name/email/phone search
+wenmar customers duplicates --first-name Jane --last-name Doe --email j@x.com
+wenmar customers vehicles 42
+wenmar customers workorders 42
+```
 
-- **Pagination is via the Link header**, not a body field. The SDK
-  follows `rel="next"` automatically. `customers list` supports `--page N`;
-  `work_orders list` does not (it follows the Link header only).
-- **Work orders have nested customer/vehicle** — the `--output md` table
-  truncates nested objects. Use `--json` or `--jq` for full detail.
-- **The API is additive-only** — no versioned URLs. New fields may
-  appear but existing fields keep their meaning.
-- **Destructive ops without `--dry-run` execute immediately** — always
-  preview first in agent workflows.
+### Work orders
+
+```bash
+wenmar workorders list
+wenmar workorders list --output count
+wenmar workorders show 100
+wenmar workorders show 100 --jq '.vehicle.make'
+wenmar workorders create --customer-id 42 --vehicle-id 5
+wenmar workorders update 100 --intake-method drop_off
+wenmar workorders delete 100 --dry-run
+wenmar workorders estimate 100      # also: wip, inspection, parts, payments
+```
+
+### Vehicles
+
+```bash
+wenmar vehicles list
+wenmar vehicles list --jq '.[].plate'
+wenmar vehicles show 5
+wenmar vehicles decode-vin 1HGCM82633A004352
+wenmar vehicles lookup "honda civic"                # make/model/plate/vin
+wenmar vehicles prefill --vin 1HGCM82633A004352
+wenmar vehicles duplicates 1HGCM82633A004352       # VIN as positional arg
+wenmar vehicles create --customer-id 42 --make Honda --model Civic --year 2020
+wenmar vehicles transfer 5 --customer-id 43
+wenmar vehicles delete 42 --dry-run
+```
+
+### Drivers, vendors, statements, locations, service categories, tags
+
+```bash
+wenmar drivers list --customer-id 42
+wenmar drivers create --customer-id 42 --full-name "Jane Doe"
+wenmar vendors list
+wenmar vendors show 7
+wenmar statements list --customer-id 42
+wenmar statements show 9001
+wenmar locations show main
+wenmar account show
+wenmar servicecategories list
+wenmar servicecategories create --name "Oil change" --service-type maintenance
+wenmar servicecategories seed-defaults
+wenmar tags list
+wenmar tags create --name "Fleet A"
+wenmar tags create --type vehicle --name "Priority"
+```
+
+### Location scoping
+
+```bash
+wenmar --location loc_abc workorders list     # or WENMAR_LOCATION_ID env,
+                                             # or location_id in config
+wenmar help location                         # full topic
+```
+
+### Pagination
+
+Lists paginate via the Link header. `customers list` supports `--page N`,
+`--per-page N`, and `--all` (follow every page). When `meta.has_next` is
+true in `--output json`, more pages exist.
+
+### Truncated responses
+
+If a response is truncated, wenmar exits 9. Re-run with `--allow-partial` to
+accept the data plus a truncation notice in the envelope.
+
+## Diagnostics
+
+```bash
+wenmar doctor                 # auth, connectivity, config checks
+wenmar doctor --json          # structured {ok, checks:[...]}
+wenmar config path
+wenmar config list
+wenmar watch --resource workorders --interval 5s   # poll + JSON events
+```
+
+## URL decomposition
+
+```bash
+wenmar url parse "https://app.wenmarpro.com/work_orders/42.json"
+# {"resource_type": "work_orders", "id": "42", "format": "json", ...}
+```
+
+Recognized resources: customers, vehicles, workorders/work_orders, account,
+locations, servicecategories (+ spellings), vendors, drivers, statements,
+tags. Unknown paths return `{host, path, format}` only.
 
 ## Full capability discovery
 
@@ -232,17 +211,15 @@ Scripts can branch on failure class without parsing stderr.
 wenmar commands
 ```
 
-Dumps every command, its flags, args, and descriptions as JSON. An agent
-can learn the entire tool surface from this one command.
+Every command with path, description, aliases, args, and flags (with
+`required`). Alias entries carry `canonical: false` and `compatibility_for`.
 
-## Decomposing URLs
+## Gotchas
 
-```bash
-wenmar url parse "https://app.wenmarpro.com/work_orders/42.json"
-# { "host": "app.wenmarpro.com", "resource_type": "work_orders", "id": "42", "format": "json" }
-```
-
-Given a user-pasted URL, `url parse` extracts `resource_type`, `id`,
-`format`, and `query_params` so an agent can immediately call the
-matching `show`/`update`/`delete`. Unknown paths return `{host, path,
-format}` with no resource type.
+- **Pagination is Link-header based** — no page numbers in response bodies.
+- **Nested objects truncate in tables** — use `--output json` or `--jq`
+  for full detail.
+- **`customers update` cannot change emails/addresses/tags** — the update
+  API only accepts phone changes (with `--remove-phone` by ID) and scalar
+  fields. Nested emails/addresses/tags are set at CREATE time only.
+- **The API is additive-only** — new fields may appear; existing meanings hold.

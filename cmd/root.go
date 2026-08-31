@@ -16,11 +16,11 @@ var (
 	tokenFlag      string
 	baseURLFlag    string
 	locationFlag   string
-	outputFlag     string
 	jsonFlag       bool
 	agentFlag      bool
-	quietFlag      bool
 	jqFlag         string
+	idsOnlyFlag    bool
+	styledFlag     bool
 	allowPartial   bool
 	configPathFlag string
 	debugFlag      bool
@@ -48,10 +48,11 @@ Getting started:
   wenmar setup        Configure your API token (or export WENMAR_TOKEN)
 
 Output:
-  --output <mode>    table | md | json | agent | quiet | ids-only |
-                      count | html | styled  (default: table on a
-                      terminal, quiet when piped)
-  Quick flags: --json --agent --quiet --jq   (see 'wenmar help output')
+  --json              Full JSON envelope {ok, data, summary, meta}
+  --agent             Raw JSON (no envelope); --agent --help emits JSON
+  --jq <expr>         Filter output with a jq expression
+  --ids-only          One ID per line; --styled forces tables when piped
+  (default: table on a terminal, raw JSON when piped)
 
 Topics:
   wenmar help output      All output modes and the envelope format
@@ -98,21 +99,17 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "API bearer token (or set WENMAR_TOKEN env)")
 	rootCmd.PersistentFlags().StringVar(&baseURLFlag, "base-url", "", "API base URL (default: https://app.wenmarpro.com)")
 	rootCmd.PersistentFlags().StringVar(&locationFlag, "location", "", "Location ID to scope requests (or set WENMAR_LOCATION_ID)")
-	rootCmd.PersistentFlags().StringVar(&outputFlag, "output", "", "Output mode: table, md, json, agent, quiet, ids-only, count, html, styled (see 'wenmar help output')")
-	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Shorthand for --output json")
-	rootCmd.PersistentFlags().BoolVar(&agentFlag, "agent", false, "Shorthand for --output agent (also makes --help emit JSON)")
-	rootCmd.PersistentFlags().BoolVar(&quietFlag, "quiet", false, "Shorthand for --output quiet")
-	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "jq filter expression (shorthand for --output json plus a filter)")
+	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output as full JSON envelope {ok, data, summary, meta}")
+	rootCmd.PersistentFlags().BoolVar(&agentFlag, "agent", false, "Output raw JSON data, no envelope (with --help: structured JSON)")
+	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "Filter output with a jq expression")
+	rootCmd.PersistentFlags().BoolVar(&idsOnlyFlag, "ids-only", false, "Print one ID per line (for shell loops)")
+	rootCmd.PersistentFlags().BoolVar(&styledFlag, "styled", false, "Force the human table even when piped")
 	rootCmd.PersistentFlags().BoolVar(&allowPartial, "allow-partial", false, "Accept truncated responses (adds a notice to the envelope)")
 	rootCmd.PersistentFlags().StringVar(&configPathFlag, "config-path", "", "Path to config file")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Print request debug info (token source, base URL, method/path) to stderr")
 
-	// Sugar flags work everywhere but stay out of leaf help; the root
-	// Long and `wenmar help output` are their discovery surfaces.
-	rootCmd.PersistentFlags().MarkHidden("json")
-	rootCmd.PersistentFlags().MarkHidden("agent")
-	rootCmd.PersistentFlags().MarkHidden("quiet")
-	rootCmd.PersistentFlags().MarkHidden("jq")
+	// --config-path stays hidden (it's for testing); the output-mode flags
+	// are all visible at every help level.
 	rootCmd.PersistentFlags().MarkHidden("config-path")
 
 	// Fail fast on mode conflicts/typos BEFORE any command runs (and

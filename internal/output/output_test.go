@@ -11,7 +11,7 @@ func TestRender_MD(t *testing.T) {
 		{"id": 1, "name": "Jane"},
 		{"id": 2, "name": "John"},
 	}
-	err := Render(&buf, data, "2 of 2 customers", nil, Options{Mode: ModeMD})
+	err := Render(&buf, data, "2 of 2 customers", nil, Options{Mode: ModeDefault})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -31,7 +31,7 @@ func TestRender_MD_LargeIntegerIDs(t *testing.T) {
 	data := []map[string]any{
 		{"id": float64(1043910119), "name": "Jane"},
 	}
-	err := Render(&buf, data, "", nil, Options{Mode: ModeMD})
+	err := Render(&buf, data, "", nil, Options{Mode: ModeDefault})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -122,10 +122,10 @@ func TestRenderJSON_NoBreadcrumbsWhenEmpty(t *testing.T) {
 	}
 }
 
-func TestRender_QuietRawJSON(t *testing.T) {
+func TestRender_AgentRawJSON(t *testing.T) {
 	var buf bytes.Buffer
 	data := []map[string]any{{"id": 1, "name": "Jane"}}
-	err := Render(&buf, data, "", nil, Options{Mode: ModeQuiet})
+	err := Render(&buf, data, "", nil, Options{Mode: ModeAgent})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestRender_QuietRawJSON(t *testing.T) {
 		t.Error("expected raw data without envelope")
 	}
 	if contains(output, `"ok"`) {
-		t.Error("expected no envelope in quiet mode")
+		t.Error("expected no envelope in agent mode")
 	}
 }
 
@@ -145,23 +145,17 @@ func TestParseMode(t *testing.T) {
 		want    Mode
 		wantErr bool
 	}{
-		{name: "output table", spec: ModeSpec{Output: "table"}, want: ModeDefault},
-		{name: "output md", spec: ModeSpec{Output: "md"}, want: ModeMD},
-		{name: "output json", spec: ModeSpec{Output: "json"}, want: ModeJSON},
-		{name: "output agent", spec: ModeSpec{Output: "agent"}, want: ModeAgent},
-		{name: "output quiet", spec: ModeSpec{Output: "quiet"}, want: ModeQuiet},
-		{name: "output ids-only", spec: ModeSpec{Output: "ids-only"}, want: ModeIDsOnly},
-		{name: "output count", spec: ModeSpec{Output: "count"}, want: ModeCount},
-		{name: "output html", spec: ModeSpec{Output: "html"}, want: ModeHTML},
-		{name: "output styled forces table", spec: ModeSpec{Output: "styled"}, want: ModeDefault},
-		{name: "sugar json", spec: ModeSpec{JSON: true}, want: ModeJSON},
-		{name: "sugar agent", spec: ModeSpec{Agent: true}, want: ModeAgent},
-		{name: "sugar quiet", spec: ModeSpec{Quiet: true}, want: ModeQuiet},
-		{name: "jq implies json mode", spec: ModeSpec{JQ: ".[]"}, want: ModeJQ},
-		{name: "unknown mode errors", spec: ModeSpec{Output: "yaml"}, wantErr: true},
-		{name: "output plus sugar conflicts", spec: ModeSpec{Output: "md", JSON: true}, wantErr: true},
-		{name: "two sugars conflict", spec: ModeSpec{JSON: true, Agent: true}, wantErr: true},
-		{name: "jq plus output conflicts", spec: ModeSpec{Output: "md", JQ: ".[]"}, wantErr: true},
+		{name: "json", spec: ModeSpec{JSON: true}, want: ModeJSON},
+		{name: "agent", spec: ModeSpec{Agent: true}, want: ModeAgent},
+		{name: "jq", spec: ModeSpec{JQ: ".[]"}, want: ModeJQ},
+		{name: "ids-only", spec: ModeSpec{IDsOnly: true}, want: ModeIDsOnly},
+		{name: "styled forces default", spec: ModeSpec{Styled: true}, want: ModeDefault},
+		{name: "json plus agent conflicts", spec: ModeSpec{JSON: true, Agent: true}, wantErr: true},
+		{name: "json plus jq conflicts", spec: ModeSpec{JSON: true, JQ: ".[]"}, wantErr: true},
+		{name: "agent plus ids-only conflicts", spec: ModeSpec{Agent: true, IDsOnly: true}, wantErr: true},
+		{name: "styled plus json conflicts", spec: ModeSpec{Styled: true, JSON: true}, wantErr: true},
+		{name: "styled plus ids-only conflicts", spec: ModeSpec{Styled: true, IDsOnly: true}, wantErr: true},
+		{name: "jq plus ids-only conflicts", spec: ModeSpec{JQ: ".[]", IDsOnly: true}, wantErr: true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -187,20 +181,20 @@ func TestParseModeAutoSwitch(t *testing.T) {
 	// ParseMode only when nothing explicit is set. This test pins that the
 	// explicit table mode survives even when piped (test stdout is not a
 	// TTY in CI).
-	got, err := ParseMode(ModeSpec{Output: "table"})
+	got, err := ParseMode(ModeSpec{Styled: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got != ModeDefault {
-		t.Errorf("explicit table mode should win over pipe auto-switch, got %v", got)
+		t.Errorf("explicit styled mode should win over pipe auto-switch, got %v", got)
 	}
-	// With nothing set and piped stdout, quiet is chosen.
+	// With nothing set and piped stdout, raw JSON is chosen.
 	got, err = ParseMode(ModeSpec{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != ModeQuiet {
-		t.Errorf("piped stdout with no explicit mode should auto-switch to quiet, got %v", got)
+	if got != ModeAgent {
+		t.Errorf("piped stdout with no explicit mode should auto-switch to raw JSON (ModeAgent), got %v", got)
 	}
 }
 
