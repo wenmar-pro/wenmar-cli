@@ -138,15 +138,69 @@ func TestRender_QuietRawJSON(t *testing.T) {
 	}
 }
 
-func TestResolveMode_Quiet(t *testing.T) {
-	if mode := ResolveMode(false, false, false, true, false, false, ""); mode != ModeQuiet {
-		t.Errorf("expected ModeQuiet, got %v", mode)
+func TestParseMode(t *testing.T) {
+	cases := []struct {
+		name    string
+		spec    ModeSpec
+		want    Mode
+		wantErr bool
+	}{
+		{name: "output table", spec: ModeSpec{Output: "table"}, want: ModeDefault},
+		{name: "output md", spec: ModeSpec{Output: "md"}, want: ModeMD},
+		{name: "output json", spec: ModeSpec{Output: "json"}, want: ModeJSON},
+		{name: "output agent", spec: ModeSpec{Output: "agent"}, want: ModeAgent},
+		{name: "output quiet", spec: ModeSpec{Output: "quiet"}, want: ModeQuiet},
+		{name: "output ids-only", spec: ModeSpec{Output: "ids-only"}, want: ModeIDsOnly},
+		{name: "output count", spec: ModeSpec{Output: "count"}, want: ModeCount},
+		{name: "output html", spec: ModeSpec{Output: "html"}, want: ModeHTML},
+		{name: "output styled forces table", spec: ModeSpec{Output: "styled"}, want: ModeDefault},
+		{name: "sugar json", spec: ModeSpec{JSON: true}, want: ModeJSON},
+		{name: "sugar agent", spec: ModeSpec{Agent: true}, want: ModeAgent},
+		{name: "sugar quiet", spec: ModeSpec{Quiet: true}, want: ModeQuiet},
+		{name: "jq implies json mode", spec: ModeSpec{JQ: ".[]"}, want: ModeJQ},
+		{name: "unknown mode errors", spec: ModeSpec{Output: "yaml"}, wantErr: true},
+		{name: "output plus sugar conflicts", spec: ModeSpec{Output: "md", JSON: true}, wantErr: true},
+		{name: "two sugars conflict", spec: ModeSpec{JSON: true, Agent: true}, wantErr: true},
+		{name: "jq plus output conflicts", spec: ModeSpec{Output: "md", JQ: ".[]"}, wantErr: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := ParseMode(tc.spec)
+			if tc.wantErr {
+				if err == nil {
+					t.Errorf("ParseMode(%+v) expected error, got mode %v", tc.spec, got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParseMode(%+v): %v", tc.spec, err)
+			}
+			if got != tc.want {
+				t.Errorf("ParseMode(%+v) = %v, want %v", tc.spec, got, tc.want)
+			}
+		})
 	}
 }
 
-func TestResolveMode_JQOverridesQuiet(t *testing.T) {
-	if mode := ResolveMode(false, false, true, true, false, false, ".[].id"); mode != ModeJQ {
-		t.Errorf("expected ModeJQ to win over quiet, got %v", mode)
+func TestParseModeAutoSwitch(t *testing.T) {
+	// ParseMode must not auto-switch here: the pipe check happens inside
+	// ParseMode only when nothing explicit is set. This test pins that the
+	// explicit table mode survives even when piped (test stdout is not a
+	// TTY in CI).
+	got, err := ParseMode(ModeSpec{Output: "table"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != ModeDefault {
+		t.Errorf("explicit table mode should win over pipe auto-switch, got %v", got)
+	}
+	// With nothing set and piped stdout, quiet is chosen.
+	got, err = ParseMode(ModeSpec{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != ModeQuiet {
+		t.Errorf("piped stdout with no explicit mode should auto-switch to quiet, got %v", got)
 	}
 }
 

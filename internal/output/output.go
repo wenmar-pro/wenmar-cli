@@ -85,6 +85,74 @@ func ResolveModeStyled(md, json, agent, quiet, idsOnly, count bool, jq string, h
 	return ModeDefault
 }
 
+// ModeSpec carries the output-mode flags from the command line. --output
+// is the canonical selector; --json/--agent/--quiet/--jq are sugar.
+type ModeSpec struct {
+	Output string
+	JSON   bool
+	Agent  bool
+	Quiet  bool
+	JQ     string
+}
+
+// modeNames maps --output values to Modes. "styled" and "table" both render
+// the default table; "styled" exists to override the pipe auto-switch.
+var modeNames = map[string]Mode{
+	"table":    ModeDefault,
+	"styled":   ModeDefault,
+	"md":       ModeMD,
+	"json":     ModeJSON,
+	"agent":    ModeAgent,
+	"quiet":    ModeQuiet,
+	"ids-only": ModeIDsOnly,
+	"count":    ModeCount,
+	"html":     ModeHTML,
+}
+
+// ParseMode resolves the output mode from ModeSpec. It errors on unknown
+// mode names and on combinations that would silently pick a winner
+// (--output plus any sugar, or two sugar flags together). With nothing set
+// and a piped stdout it auto-switches to ModeQuiet so piped output is
+// machine-readable.
+func ParseMode(spec ModeSpec) (Mode, error) {
+	if spec.Output != "" {
+		if spec.JSON || spec.Agent || spec.Quiet || spec.JQ != "" {
+			return 0, fmt.Errorf("--output cannot be combined with --json/--agent/--quiet/--jq — pick one")
+		}
+		m, ok := modeNames[spec.Output]
+		if !ok {
+			return 0, fmt.Errorf("unknown output mode %q (valid: table, md, json, agent, quiet, ids-only, count, html, styled)", spec.Output)
+		}
+		return m, nil
+	}
+
+	n := 0
+	for _, set := range []bool{spec.JSON, spec.Agent, spec.Quiet, spec.JQ != ""} {
+		if set {
+			n++
+		}
+	}
+	if n > 1 {
+		return 0, fmt.Errorf("conflicting output flags — use --output <mode> to select one")
+	}
+	switch {
+	case spec.JQ != "":
+		return ModeJQ, nil
+	case spec.Quiet:
+		return ModeQuiet, nil
+	case spec.Agent:
+		return ModeAgent, nil
+	case spec.JSON:
+		return ModeJSON, nil
+	}
+
+	// Auto-switch: piped stdout gets machine-readable raw JSON.
+	if !isTerminal(os.Stdout) {
+		return ModeQuiet, nil
+	}
+	return ModeDefault, nil
+}
+
 func isTerminal(f *os.File) bool {
 	return isatty.IsTerminal(f.Fd())
 }
