@@ -372,7 +372,7 @@ func TestHelpCommandFallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(out, "Output Formats") {
+	if !strings.Contains(out, "Output Modes") {
 		t.Errorf("help output printed:\n%s", out)
 	}
 

@@ -107,19 +107,40 @@ wenmar vehicles show 5
 
 ## Output modes
 
-| Flag | Description |
-|------|-------------|
-| (default) | GFM table — human-readable |
-| `--md` / `-m` | GFM table (explicit) |
-| `--json` | Full JSON envelope `{ok, data, summary, meta}` |
-| `--agent` | Raw JSON data (no envelope) |
-| `--jq 'filter'` | jq-filtered JSON |
-| `--html` | HTML document |
-| `--styled` | Force human tables even when piped |
+The canonical flag is `--output <mode>`:
 
-When stdout is not a TTY (e.g. piped to another command) and no explicit
-output mode is set, wenmar emits raw JSON so the output is machine-readable.
-Use `--styled` to force human tables in a pipe.
+| Command | Description |
+|---------|-------------|
+| (default) | Human-readable table — or raw JSON when piped |
+| `--output table` | Human-readable table (explicit) |
+| `--output md` | GFM table |
+| `--output json` | Full JSON envelope `{ok, data, summary, meta}` |
+| `--output agent` | Raw JSON data (no envelope) |
+| `--output quiet` | Raw JSON output, no envelope |
+| `--output ids-only` | One ID per line (for shell loops) |
+| `--output count` | Bare integer count |
+| `--output html` | HTML document |
+| `--output styled` | Force human tables even when piped |
+
+Quick flags (still work, hidden from subcommand help): `--json`, `--agent`,
+`--quiet`, `--jq 'filter'` (implies json). Combining quick flags with
+`--output` is an error.
+
+When stdout is not a TTY and no explicit mode is set, wenmar emits raw
+JSON so piped output is machine-readable. Use `--output styled` to force
+tables in a pipe.
+
+### Migration from earlier pre-release flags
+
+| Old | New |
+|-----|-----|
+| `--md` / `-m` / `--markdown` | `--output md` |
+| `--ids-only` | `--output ids-only` |
+| `--count` | `--output count` |
+| `--html` | `--output html` |
+| `--styled` | `--output styled` |
+
+Run `wenmar help output` for the full reference.
 
 ## Exit codes
 

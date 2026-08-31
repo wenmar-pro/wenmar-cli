@@ -35,7 +35,8 @@ Before starting an agent workflow:
 
 1. `wenmar doctor` — Verify auth, connectivity, and config
 2. `wenmar commands` — Discover the full command surface
-3. Set output mode explicitly (`--json`, `--jq`, `--agent`, `--md`)
+3. Set output mode explicitly (`--output <mode>`, or a quick flag like
+   `--json`/`--jq`/`--agent`)
 
 ## Agent Invariants
 
@@ -54,10 +55,12 @@ These rules MUST be followed without exception:
 6. **Choose the right output mode:**
    - `--jq` to filter/extract specific fields
    - `--json` for full envelope `{ok, data, summary, meta}`
-   - `--md` for human-readable GFM tables
-   - `--ids-only` for shell loops (`| xargs`)
-   - `--count` for bare integer counts (monitoring)
+   - `--output md` for human-readable GFM tables
+   - `--output ids-only` for shell loops (`| xargs`)
+   - `--output count` for bare integer counts (monitoring)
    - `--agent` for headless agent workflows (raw JSON, no envelope)
+   - Never combine output flags: use `--output <mode>` alone, or one quick
+     flag (`--json`/`--agent`/`--quiet`/`--jq`). Combining them is an error.
 7. **Never pipe to external `jq`** — use `--jq` instead (built-in,
    no external dependency).
 8. **Parse URLs first** with `wenmar url parse "<url>"` to extract the
@@ -110,36 +113,42 @@ Want to change something?
 
 ## Output modes
 
-- Default (no flag): GFM table — human-readable
-- `--md` / `-m` / `--markdown`: GFM table (explicit)
-- `--json`: Full envelope `{ok, data, summary, meta, breadcrumbs}`
-- `--agent`: Raw JSON data (no envelope) — for AI agents
-- `--quiet`: Raw JSON data (no envelope). Unlike `--agent`, does not
-  hijack `--help` to emit CommandInfo JSON.
-- `--jq '.filter'`: jq-filtered JSON — implies `--json`
-- `--ids-only`: One ID per line — for shell loops
-- `--count`: Bare integer count — for monitoring
+The canonical flag is `--output <mode>`:
 
-Always pass an explicit flag for scripts and agents. When stdout is not a
+- `--output table`: Human-readable table (default on a terminal)
+- `--output md`: GFM table
+- `--output json`: Full envelope `{ok, data, summary, meta, breadcrumbs}`
+- `--output agent`: Raw JSON data (no envelope) — for AI agents
+- `--output quiet`: Raw JSON data (no envelope). Unlike `--agent`, does not
+  hijack `--help` to emit CommandInfo JSON.
+- `--output ids-only`: One ID per line — for shell loops
+- `--output count`: Bare integer count — for monitoring
+- `--output styled`: Force human tables even when piped
+
+Quick flags (equivalents, hidden from subcommand help): `--json`, `--agent`,
+`--quiet`, `--jq '.filter'` (implies json). Combining `--output` with a quick
+flag (or two quick flags together) is an error — pick one.
+
+Always pass an explicit mode for scripts and agents. When stdout is not a
 TTY (e.g. piped) and no mode flag is set, wenmar emits raw JSON so the
-output is machine-readable; `--styled` forces human tables in a pipe.
+output is machine-readable.
 
 ## Common workflows
 
 ### List customers
 
 ```bash
-wenmar customers list --md
+wenmar customers list --output md
 wenmar customers list --json
 wenmar customers list --jq '.[].full_name'
-wenmar customers list --ids-only | xargs -I{} wenmar customers show {}
-wenmar customers list --count
+wenmar customers list --output ids-only | xargs -I{} wenmar customers show {}
+wenmar customers list --output count
 ```
 
 ### Show a customer's details
 
 ```bash
-wenmar customers show 42 --md
+wenmar customers show 42 --output md
 wenmar customers show 42 --jq '.emails[]?.address'
 ```
 
@@ -152,9 +161,9 @@ wenmar customers create --full-name "Jane Doe" --email "jane@test.com" --json
 ### Work orders
 
 ```bash
-wenmar work_orders list --md
+wenmar work_orders list --output md
 wenmar work_orders list --json
-wenmar work_orders show 100 --md
+wenmar work_orders show 100 --output md
 wenmar work_orders show 100 --jq '.vehicle.make'
 wenmar work_orders create --customer-id 1 --vehicle-id 1 --json
 ```
@@ -210,7 +219,7 @@ Scripts can branch on failure class without parsing stderr.
 - **Pagination is via the Link header**, not a body field. The SDK
   follows `rel="next"` automatically. `customers list` supports `--page N`;
   `work_orders list` does not (it follows the Link header only).
-- **Work orders have nested customer/vehicle** — the `--md` table
+- **Work orders have nested customer/vehicle** — the `--output md` table
   truncates nested objects. Use `--json` or `--jq` for full detail.
 - **The API is additive-only** — no versioned URLs. New fields may
   appear but existing fields keep their meaning.
