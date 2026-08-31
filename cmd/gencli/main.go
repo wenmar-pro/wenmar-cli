@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -63,7 +64,28 @@ func fatal(format string, args ...any) {
 
 // Spec is a minimal OpenAPI spec representation for parsing.
 type Spec struct {
-	Paths map[string]PathItem `yaml:"paths"`
+	Paths      map[string]PathItem `yaml:"paths"`
+	Components Components          `yaml:"components"`
+}
+
+// Components holds the spec's reusable schema definitions.
+type Components struct {
+	Schemas map[string]Schema `yaml:"schemas"`
+}
+
+// Resolve follows a "#/components/schemas/<name>" $ref one level and
+// returns the referenced schema. Unresolvable refs return the schema
+// untouched so callers treat it as an opaque (non-object) schema.
+func (s *Spec) Resolve(sc Schema) Schema {
+	if sc.Ref == "" {
+		return sc
+	}
+	const prefix = "#/components/schemas/"
+	name := strings.TrimPrefix(sc.Ref, prefix)
+	if target, ok := s.Components.Schemas[name]; ok {
+		return target
+	}
+	return sc
 }
 
 type PathItem map[string]Operation // keyed by HTTP method (get, post, patch, delete, put)

@@ -5,6 +5,38 @@ import (
 	"testing"
 )
 
+func TestResolveSchemaRef(t *testing.T) {
+	spec := &Spec{
+		Paths: map[string]PathItem{},
+		Components: Components{
+			Schemas: map[string]Schema{
+				"CreateDriverRequest": {
+					Type: "object",
+					Properties: map[string]Schema{
+						"driver": {Type: "object", Properties: map[string]Schema{
+							"full_name": {Type: "string"},
+							"phone":     {Type: "string"},
+						}},
+					},
+				},
+			},
+		},
+	}
+	body := &RequestBody{Content: map[string]Media{
+		"application/json": {Schema: Schema{Ref: "#/components/schemas/CreateDriverRequest"}},
+	}}
+
+	resolved := spec.Resolve(body.Content["application/json"].Schema)
+	if resolved.Type != "object" || resolved.Properties["driver"].Type != "object" {
+		t.Fatalf("ref not resolved: %+v", resolved)
+	}
+	// Unresolvable refs return the schema untouched (defensive).
+	untouched := spec.Resolve(Schema{Ref: "#/components/schemas/NoSuch"})
+	if untouched.Ref != "#/components/schemas/NoSuch" {
+		t.Fatalf("unresolved ref should pass through, got %+v", untouched)
+	}
+}
+
 func TestSdkMethodNameFor(t *testing.T) {
 	tests := []struct {
 		name string

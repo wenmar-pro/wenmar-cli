@@ -68,7 +68,7 @@ func groupOperations(spec *Spec, overrides *Overrides) []CommandGroup {
 			if op.OperationID == "" || excluded[op.OperationID] {
 				continue
 			}
-			cmd := buildCommand(op, method, path, overrides)
+			cmd := buildCommand(spec, op, method, path, overrides)
 			if cmd == nil {
 				continue
 			}
@@ -99,7 +99,7 @@ func groupOperations(spec *Spec, overrides *Overrides) []CommandGroup {
 	return groups
 }
 
-func buildCommand(op Operation, method, path string, overrides *Overrides) *GenCommand {
+func buildCommand(spec *Spec, op Operation, method, path string, overrides *Overrides) *GenCommand {
 	cmd := &GenCommand{
 		OperationID: op.OperationID,
 		Method:      method,
@@ -138,7 +138,7 @@ func buildCommand(op Operation, method, path string, overrides *Overrides) *GenC
 		}
 		if ov.RequestStruct != "" {
 			cmd.RequestStruct = ov.RequestStruct
-			cmd.BodyFields = parseBodyFields(op, ov.RequestStruct, overrides.FlagOverrides[op.OperationID])
+			cmd.BodyFields = parseBodyFields(spec, op, ov.RequestStruct, overrides.FlagOverrides[op.OperationID])
 		}
 		if ov.PositionalArg != "" {
 			cmd.PositionalArg = ov.PositionalArg
@@ -606,7 +606,7 @@ func requestPathExpr(cmd GenCommand) jen.Code {
 // parseBodyFields extracts scalar fields from the request body schema
 // and maps them to Go struct field names. Array and object fields are
 // skipped (they need hand-written flag logic).
-func parseBodyFields(op Operation, requestStruct string, flagOverrides map[string]FlagOverride) []BodyField {
+func parseBodyFields(spec *Spec, op Operation, requestStruct string, flagOverrides map[string]FlagOverride) []BodyField {
 	if op.RequestBody == nil {
 		return nil
 	}
@@ -614,7 +614,7 @@ func parseBodyFields(op Operation, requestStruct string, flagOverrides map[strin
 	if !ok {
 		return nil
 	}
-	schema := media.Schema
+	schema := spec.Resolve(media.Schema)
 
 	// Unwrap wrapper object (e.g. { customer: { ... } }).
 	props := schemaProps(schema)
@@ -628,7 +628,7 @@ func parseBodyFields(op Operation, requestStruct string, flagOverrides map[strin
 			if propSchema.Type == "object" {
 				// It's a wrapper — use the inner object's properties, keyed
 				// by their dotted path (e.g. "customer.first_name").
-				return extractScalarFields(propSchema, requestStruct, propName, flagOverrides)
+				return extractScalarFields(spec, propSchema, requestStruct, propName, flagOverrides)
 			}
 			// Not a wrapper — flat body.
 			_ = propName
@@ -636,14 +636,14 @@ func parseBodyFields(op Operation, requestStruct string, flagOverrides map[strin
 	}
 
 	// Flat body (e.g. merge_customer: { source_customer_id: int }).
-	return extractScalarFields(schema, requestStruct, "", flagOverrides)
+	return extractScalarFields(spec, schema, requestStruct, "", flagOverrides)
 }
 
 // extractScalarFields returns BodyFields for scalar properties of a schema.
 // Array and object fields are skipped. flagOverrides are keyed by the field's
 // dotted path (e.g. "customer.first_name") and override flag name, help text,
 // and required-marking.
-func extractScalarFields(schema Schema, requestStruct, wrapper string, flagOverrides map[string]FlagOverride) []BodyField {
+func extractScalarFields(spec *Spec, schema Schema, requestStruct, wrapper string, flagOverrides map[string]FlagOverride) []BodyField {
 	props := schemaProps(schema)
 	if props == nil {
 		return nil
@@ -655,6 +655,11 @@ func extractScalarFields(schema Schema, requestStruct, wrapper string, flagOverr
 
 	var fields []BodyField
 	for name, prop := range props {
+		// Resolve property refs defensively (e.g. a property that is itself
+		// a $ref to a component schema).
+		if prop.Ref != "" && spec != nil {
+			prop = spec.Resolve(prop)
+		}
 		// Skip arrays and objects — they need hand-written flag logic.
 		if prop.Type == "array" || prop.Type == "object" {
 			continue
