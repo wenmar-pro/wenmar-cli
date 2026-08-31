@@ -84,3 +84,37 @@ func TestEmitGroup_ServiceCategoryActionsCompile(t *testing.T) {
 		t.Error("action stub still emitted")
 	}
 }
+
+func TestEmitGroup_CustomersListWithFiltersPaginated(t *testing.T) {
+	cmd := GenCommand{
+		OperationID:      "list_customers",
+		Resource:         "customers",
+		Command:          "list",
+		Method:           "get",
+		Path:             "/customers",
+		IsPaginated:      true,
+		QueryParamStruct: "ListCustomersParams",
+		SDKMethod:        "ListCustomers",
+		QueryFields: []BodyField{
+			{JSONName: "query", GoName: "Query", FlagName: "query", Type: "string", HelpText: "Full-text search"},
+			{JSONName: "page", GoName: "Page", FlagName: "page", Type: "integer", HelpText: "Page number"},
+		},
+	}
+	group := CommandGroup{Resource: "customers", Commands: []GenCommand{cmd}}
+	code, err := emitGroup(group, nil, &Overrides{})
+	if err != nil {
+		t.Fatalf("emitGroup: %v", err)
+	}
+	for _, want := range []string{
+		"runListPaginatedWithAll",
+		"ListCustomersWithParamsWithPagination",
+		"customersQuery",
+		"customersPage",
+		"\"query\"",
+		"\"page\"",
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("emitted code missing %q:\n%s", want, code)
+		}
+	}
+}

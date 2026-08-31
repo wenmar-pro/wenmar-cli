@@ -93,6 +93,7 @@ commands:
     command: list
     summary: List all customers, paginated via the Link header
     method: ListCustomers
+    query_param_struct: ListCustomersParams
   show_customer:
     resource: customers
     command: show

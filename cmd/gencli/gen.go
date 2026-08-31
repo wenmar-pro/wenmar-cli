@@ -211,6 +211,10 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides) (string, er
 			dryRunVar := flagVarName(cmd.Resource, "delete_dry_run")
 			flagVarsSeen[dryRunVar] = "bool"
 		}
+		// --all flag for paginated-with-params lists.
+		if classifyCommand(cmd) == "listPaginatedWithParams" {
+			flagVarsSeen[hasFiltersVarName(cmd)] = "bool"
+		}
 		// Body field flags.
 		for _, bf := range cmd.BodyFields {
 			vn := bodyFieldVarName(cmd.Resource, bf.GoName)
@@ -230,6 +234,14 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides) (string, er
 
 	for _, cmd := range group.Commands {
 		emitCommand(f, cmd, overrides)
+	}
+
+	// Emit has-filters helpers for paginated-with-params lists.
+	for _, cmd := range group.Commands {
+		if classifyCommand(cmd) != "listPaginatedWithParams" || len(cmd.QueryFields) == 0 {
+			continue
+		}
+		emitHasFiltersFunc(f, cmd)
 	}
 
 	// Emit init() with flag registration + cobra registration.
@@ -322,9 +334,6 @@ func classifyCommand(cmd GenCommand) string {
 	if cmd.Tab != "" {
 		return "tab"
 	}
-	if cmd.QueryParamStruct != "" {
-		return "queryParam"
-	}
 	switch cmd.Method {
 	case "get":
 		if cmd.HasIDParam {
@@ -333,9 +342,14 @@ func classifyCommand(cmd GenCommand) string {
 			}
 			return "show"
 		}
-		// No {id} param — it's a list operation, even if it has other path params.
 		if cmd.IsPaginated {
+			if cmd.QueryParamStruct != "" {
+				return "listPaginatedWithParams"
+			}
 			return "listPaginated"
+		}
+		if cmd.QueryParamStruct != "" {
+			return "queryParam"
 		}
 		return "list"
 	case "post":
@@ -469,6 +483,17 @@ func emitFlagRegistration(g *jen.Group, cmd GenCommand) {
 			jen.Lit("Preview what would be deleted without making an API call"),
 		)
 	}
+
+	// Paginated-with-params lists get --all auto-pagination.
+	if classifyCommand(cmd) == "listPaginatedWithParams" {
+		allVar := hasFiltersVarName(cmd)
+		g.Id(cmdVar).Dot("Flags").Call().Dot("BoolVar").Call(
+			jen.Op("&").Id(allVar),
+			jen.Lit("all"),
+			jen.False(),
+			jen.Lit("Fetch all pages by following pagination links"),
+		)
+	}
 }
 
 // prettifyParamName converts snake_case to "Customer ID" style.
@@ -511,6 +536,8 @@ func emitHandler(f *jen.File, cmd GenCommand, cmdType string, overrides *Overrid
 			emitListHandler(g, cmd)
 		case "listPaginated":
 			emitListPaginatedHandler(g, cmd)
+		case "listPaginatedWithParams":
+			emitListPaginatedWithParamsHandler(g, cmd)
 		case "create":
 			emitCreateHandler(g, cmd)
 		case "delete":
@@ -721,6 +748,10 @@ func extractQueryFields(op Operation, queryParamStruct string) []BodyField {
 		if p.In != "query" {
 			continue
 		}
+		// Skip array/object query params — they need custom parsing.
+		if p.Schema.Type == "array" || p.Schema.Type == "object" {
+			continue
+		}
 		f := BodyField{
 			JSONName:  p.Name,
 			GoName:    snakeToPascal(p.Name),
@@ -861,6 +892,70 @@ func emitListPaginatedHandler(g *jen.Group, cmd GenCommand) {
 			),
 			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Id("paginator"), jen.Nil()),
 		),
+	))
+}
+
+func hasFiltersFnName(cmd GenCommand) string {
+	return toCamelCase(cmd.Resource) + "ListHasFilters"
+}
+
+// emitHasFiltersFunc emits a function that reports whether any filter flag
+// was set, so the paginated-with-params handler can decide between the
+// filtered and plain SDK calls.
+func emitHasFiltersFunc(f *jen.File, cmd GenCommand) {
+	f.Func().Id(hasFiltersFnName(cmd)).Params().Id("bool").BlockFunc(func(g *jen.Group) {
+		for _, bf := range cmd.QueryFields {
+			varName := bodyFieldVarName(cmd.Resource, bf.GoName)
+			switch bf.Type {
+			case "string":
+				g.If(jen.Id(varName).Op("!=").Lit("")).Block(jen.Return(jen.True()))
+			case "integer":
+				g.If(jen.Id(varName).Op(">").Lit(0)).Block(jen.Return(jen.True()))
+			case "boolean":
+				g.If(jen.Id(varName)).Block(jen.Return(jen.True()))
+			}
+		}
+		g.Return(jen.False())
+	})
+}
+
+func hasFiltersVarName(cmd GenCommand) string {
+	return toCamelCase(cmd.Resource) + "ListAll"
+}
+
+// emitListPaginatedWithParamsHandler emits a paginated list whose SDK call
+// takes a query-params struct (customers list with filters). Falls back to
+// the plain paginated call when no filter flags were provided.
+func emitListPaginatedWithParamsHandler(g *jen.Group, cmd GenCommand) {
+	resource := cmd.Resource
+	g.Return(jen.Id("runListPaginatedWithAll").Call(
+		jen.Id("cmd"),
+		jen.Lit(resource),
+		requestPathExpr(cmd),
+		jen.Id(hasFiltersVarName(cmd)),
+		jen.Func().Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+		).Params(jen.Any(), jen.Op("*").Qual(wenmarPkg, "Paginator"), jen.Error()).BlockFunc(func(bg *jen.Group) {
+			bg.If(jen.Id(hasFiltersFnName(cmd)).Call()).BlockFunc(func(ibg *jen.Group) {
+				ibg.List(jen.Id("resp"), jen.Id("paginator"), jen.Id("err")).Op(":=").Id("client").
+					Dot(sdkMethodNameFor(cmd) + "WithParamsWithPagination").Call(
+					jen.Id("ctx"),
+					jen.Qual(wenmarPkg, cmd.QueryParamStruct).Values(queryParamDict(cmd)),
+				)
+				ibg.If(jen.Id("err").Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
+				)
+				ibg.Return(jen.Id("resp").Dot("JSON200"), jen.Id("paginator"), jen.Nil())
+			}).Else().BlockFunc(func(ebg *jen.Group) {
+				ebg.List(jen.Id("resp"), jen.Id("paginator"), jen.Id("err")).Op(":=").Id("client").
+					Dot(sdkMethodNameFor(cmd) + "WithPagination").Call(jen.Id("ctx"))
+				ebg.If(jen.Id("err").Op("!=").Nil()).Block(
+					jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
+				)
+				ebg.Return(jen.Id("resp").Dot("JSON200"), jen.Id("paginator"), jen.Nil())
+			})
+		}),
 	))
 }
 
