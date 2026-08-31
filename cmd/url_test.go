@@ -54,3 +54,28 @@ func TestParseURL_UnknownPath(t *testing.T) {
 		t.Errorf("expected path preserved, got '%s'", r.Path)
 	}
 }
+
+func TestParseWenmarURL_CanonicalAndLegacyResources(t *testing.T) {
+	cases := []struct {
+		name string
+		url  string
+		want string // resource_type ("" = unknown)
+	}{
+		{"workorders canonical", "https://app.wenmarpro.com/workorders/42.json", "workorders"},
+		{"work_orders legacy still parses", "https://app.wenmarpro.com/work_orders/42.json", "work_orders"},
+		{"servicecategories", "https://app.wenmarpro.com/servicecategories/7.json", "servicecategories"},
+		{"service-categories legacy", "https://app.wenmarpro.com/service-categories/7.json", "service-categories"},
+		{"vendors", "https://app.wenmarpro.com/vendors/3.json", "vendors"},
+		{"drivers", "https://app.wenmarpro.com/drivers/9.json", "drivers"},
+		{"statements", "https://app.wenmarpro.com/statements/9001.json", "statements"},
+		{"tags", "https://app.wenmarpro.com/customer_tags/5.json", "customer_tags"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := parseWenmarURL(tc.url)
+			if got.ResourceType != tc.want {
+				t.Errorf("parseWenmarURL(%q).ResourceType = %q, want %q", tc.url, got.ResourceType, tc.want)
+			}
+		})
+	}
+}

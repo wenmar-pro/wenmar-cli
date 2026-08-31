@@ -45,15 +45,24 @@ func init() {
 	rootCmd.AddCommand(urlCmd)
 }
 
-// knownResources are the public API flat routes the parser recognizes.
+// knownResources are the API route segments the parser recognizes. Both
+// canonical CLI names and legacy/alias spellings appear because URLs come
+// from the API/web app, which may use either over time.
 var knownResources = map[string]bool{
-	"customers":         true,
-	"vehicles":          true,
-	"work_orders":       true,
-	"workorders":        true,
-	"servicecategories": true,
-	"account":           true,
-	"locations":         true,
+	"customers":          true,
+	"vehicles":           true,
+	"workorders":         true,
+	"work_orders":        true,
+	"account":            true,
+	"locations":          true,
+	"servicecategories":  true,
+	"service_categories": true,
+	"service-categories": true,
+	"vendors":            true,
+	"drivers":            true,
+	"statements":         true,
+	"customer_tags":      true,
+	"vehicle_tags":       true,
 }
 
 // parseWenmarURL decomposes a Wenmar URL into resource type, id, and format.
