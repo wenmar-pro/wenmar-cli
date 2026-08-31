@@ -21,6 +21,7 @@ var (
 	jqFlag         string
 	idsOnlyFlag    bool
 	styledFlag     bool
+	countFlag      bool
 	allowPartial   bool
 	configPathFlag string
 	debugFlag      bool
@@ -52,6 +53,7 @@ Output:
   --agent             Raw JSON (no envelope); --agent --help emits JSON
   --jq <expr>         Filter output with a jq expression
   --ids-only          One ID per line; --styled forces tables when piped
+  --count             Bare integer count (for monitoring)
   (default: table on a terminal, raw JSON when piped)
 
 Topics:
@@ -104,6 +106,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "Filter output with a jq expression")
 	rootCmd.PersistentFlags().BoolVar(&idsOnlyFlag, "ids-only", false, "Print one ID per line (for shell loops)")
 	rootCmd.PersistentFlags().BoolVar(&styledFlag, "styled", false, "Force the human table even when piped")
+	rootCmd.PersistentFlags().BoolVar(&countFlag, "count", false, "Print a bare integer count (for monitoring)")
 	rootCmd.PersistentFlags().BoolVar(&allowPartial, "allow-partial", false, "Accept truncated responses (adds a notice to the envelope)")
 	rootCmd.PersistentFlags().StringVar(&configPathFlag, "config-path", "", "Path to config file")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Print request debug info (token source, base URL, method/path) to stderr")

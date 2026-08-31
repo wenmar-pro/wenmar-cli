@@ -54,7 +54,7 @@ func runWorkordersDelete(cmd *cobra.Command, args []string) error {
 }
 
 var workordersListCmd = &cobra.Command{
-	Example: "wenmar workorders list\nwenmar workorders list --jq '.[].number'\nwenmar workorders list --output count\n",
+	Example: "wenmar workorders list\nwenmar workorders list --jq '.[].number'\nwenmar workorders list --jq 'length'\n",
 	RunE:    runWorkordersList,
 	Short:   "List all work orders, paginated via the Link header",
 	Use:     "list",

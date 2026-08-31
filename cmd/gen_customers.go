@@ -45,7 +45,7 @@ func runCustomersDuplicates(cmd *cobra.Command, args []string) error {
 }
 
 var customersListCmd = &cobra.Command{
-	Example: "wenmar customers list\nwenmar customers list --query \"jane\" --all\nwenmar customers list --output agent | head -20\n",
+	Example: "wenmar customers list\nwenmar customers list --query \"jane\" --all\nwenmar customers list --agent | head -20\n",
 	RunE:    runCustomersList,
 	Short:   "List all customers, paginated via the Link header",
 	Use:     "list",

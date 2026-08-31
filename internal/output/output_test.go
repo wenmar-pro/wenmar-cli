@@ -149,6 +149,7 @@ func TestParseMode(t *testing.T) {
 		{name: "agent", spec: ModeSpec{Agent: true}, want: ModeAgent},
 		{name: "jq", spec: ModeSpec{JQ: ".[]"}, want: ModeJQ},
 		{name: "ids-only", spec: ModeSpec{IDsOnly: true}, want: ModeIDsOnly},
+		{name: "count", spec: ModeSpec{Count: true}, want: ModeCount},
 		{name: "styled forces default", spec: ModeSpec{Styled: true}, want: ModeDefault},
 		{name: "json plus agent conflicts", spec: ModeSpec{JSON: true, Agent: true}, wantErr: true},
 		{name: "json plus jq conflicts", spec: ModeSpec{JSON: true, JQ: ".[]"}, wantErr: true},

@@ -4,6 +4,10 @@
   "short": "Wenmar Pro API CLI",
   "flags": [
     {
+      "name": "agent",
+      "default": "false"
+    },
+    {
       "name": "allow-partial",
       "default": "false"
     },
@@ -11,14 +15,30 @@
       "name": "base-url"
     },
     {
+      "name": "count",
+      "default": "false"
+    },
+    {
       "name": "debug",
+      "default": "false"
+    },
+    {
+      "name": "ids-only",
+      "default": "false"
+    },
+    {
+      "name": "jq"
+    },
+    {
+      "name": "json",
       "default": "false"
     },
     {
       "name": "location"
     },
     {
-      "name": "output"
+      "name": "styled",
+      "default": "false"
     },
     {
       "name": "token"

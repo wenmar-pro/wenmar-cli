@@ -46,7 +46,7 @@ func TestMain(m *testing.M) {
 // execute runs the root command with the given args and returns stdout/err.
 func execute(args ...string) (string, error) {
 	// Reset global output flags so prior tests don't leak state.
-	jsonFlag, agentFlag, jqFlag, idsOnlyFlag, styledFlag = false, false, "", false, false
+	jsonFlag, agentFlag, jqFlag, idsOnlyFlag, styledFlag, countFlag = false, false, "", false, false, false
 	// Cobra lazily adds a --help flag whose "true" value and Changed bit
 	// persist across Execute calls once a test invokes --help; clear it on
 	// every command so a later --agent run isn't hijacked into printing help.
@@ -706,7 +706,7 @@ func TestLocationsShow_JSON(t *testing.T) {
 func TestCustomersList_Count(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(
-		"customers", "list", "--jq", "length",
+		"customers", "list", "--count",
 		"--base-url", srv.URL, "--token", "secret-token",
 	)
 	if err != nil {
@@ -719,7 +719,7 @@ func TestCustomersList_Count(t *testing.T) {
 }
 
 func TestDroppedOutputFlagsRemoved(t *testing.T) {
-	dropped := []string{"--output", "--md", "-m", "--markdown", "--quiet", "--count", "--html"}
+	dropped := []string{"--output", "--md", "-m", "--markdown", "--quiet", "--html"}
 	for _, flag := range dropped {
 		t.Run(flag, func(t *testing.T) {
 			args := []string{"customers", "list", flag}
@@ -757,6 +757,14 @@ func TestOutputFlags(t *testing.T) {
 	lines := strings.FieldsFunc(out, func(r rune) bool { return r == '\n' })
 	if len(lines) != 2 || lines[0] != "1" || lines[1] != "2" {
 		t.Errorf("--ids-only should print one ID per line, got %q", out)
+	}
+
+	out, err = execute("customers", "list", "--count")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.TrimSpace(out) != "2" {
+		t.Errorf("--count should print a bare integer, got %q", out)
 	}
 }
 

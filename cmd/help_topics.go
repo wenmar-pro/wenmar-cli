@@ -26,13 +26,13 @@ var helpTopics = []helpTopic{
   --jq <expr>      Filter output with a jq expression (e.g. --jq 'length'
                    for a bare count, --jq '.[].full_name' for one field)
   --ids-only       One ID per line (for shell loops: | xargs)
+  --count          Bare integer count (for monitoring)
   --styled         Force the human table even when piped
 
 Default: a human-readable table on a terminal; raw JSON (--agent shape)
 when piped, so piped output is always machine-readable. --styled overrides
 the pipe default.
 
-Counts: there is no --count flag; use --jq 'length'.
 GFM tables: there is no --md flag; the default table IS markdown. Use
 --styled to force it when piped.
 
@@ -44,7 +44,7 @@ Migration from the pre-release --output interface:
   --output table    -> default renderer
   --output styled   -> --styled
   --output ids-only -> --ids-only
-  --output count    -> --jq 'length'
+  --output count    -> --count
   --output html     -> (removed)
 
 Envelope structure:

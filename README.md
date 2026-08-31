@@ -107,38 +107,31 @@ wenmar vehicles show 5
 
 ## Output modes
 
-The canonical flag is `--output <mode>`:
+One flag, one mode — combining them is an error:
 
-| Command | Description |
-|---------|-------------|
+| Flag | Description |
+|------|-------------|
 | (default) | Human-readable table — or raw JSON when piped |
-| `--output table` | Human-readable table (explicit) |
-| `--output md` | GFM table |
-| `--output json` | Full JSON envelope `{ok, data, summary, meta}` |
-| `--output agent` | Raw JSON data (no envelope) |
-| `--output quiet` | Raw JSON output, no envelope |
-| `--output ids-only` | One ID per line (for shell loops) |
-| `--output count` | Bare integer count |
-| `--output html` | HTML document |
-| `--output styled` | Force human tables even when piped |
+| `--json` | Full JSON envelope `{ok, data, summary, meta}` |
+| `--agent` | Raw JSON data (no envelope) |
+| `--jq 'expr'` | Filter output with a jq expression (`--jq 'length'` for counts) |
+| `--ids-only` | One ID per line (for shell loops) |
+| `--count` | Bare integer count (for monitoring) |
+| `--styled` | Force human tables even when piped |
 
-Quick flags (still work, hidden from subcommand help): `--json`, `--agent`,
-`--quiet`, `--jq 'filter'` (implies json). Combining quick flags with
-`--output` is an error.
+When stdout is not a TTY and no flag is set, wenmar emits raw JSON so piped
+output is machine-readable. Use `--styled` to force tables in a pipe.
 
-When stdout is not a TTY and no explicit mode is set, wenmar emits raw
-JSON so piped output is machine-readable. Use `--output styled` to force
-tables in a pipe.
-
-### Migration from earlier pre-release flags
+### Migration from the pre-release `--output` interface
 
 | Old | New |
 |-----|-----|
-| `--md` / `-m` / `--markdown` | `--output md` |
-| `--ids-only` | `--output ids-only` |
-| `--count` | `--output count` |
-| `--html` | `--output html` |
-| `--styled` | `--output styled` |
+| `--output json` / `--output agent` | `--json` / `--agent` |
+| `--output quiet` | `--agent` (or nothing — piping already does it) |
+| `--output md` / `--output table` | default renderer; `--styled` when piped |
+| `--output ids-only` | `--ids-only` |
+| `--output count` | `--count` |
+| `--output html` | (removed) |
 
 Run `wenmar help output` for the full reference.
 

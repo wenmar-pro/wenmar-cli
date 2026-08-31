@@ -18,6 +18,7 @@ func modeSpec() output.ModeSpec {
 		JQ:      jqFlag,
 		IDsOnly: idsOnlyFlag,
 		Styled:  styledFlag,
+		Count:   countFlag,
 	}
 }
 
@@ -152,7 +153,7 @@ func runListPaginated(cmd *cobra.Command, resource, path string,
 	if err != nil {
 		return err
 	}
-	if mode == output.ModeIDsOnly {
+	if mode == output.ModeIDsOnly || mode == output.ModeCount {
 		output.PrintPaginationNotice(meta, 1)
 	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resource)}
@@ -205,7 +206,7 @@ func runListPaginatedWithAll(cmd *cobra.Command, resource, path string, allFlag 
 	if err != nil {
 		return err
 	}
-	if mode == output.ModeIDsOnly {
+	if mode == output.ModeIDsOnly || mode == output.ModeCount {
 		output.PrintPaginationNotice(meta, pages)
 	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resource)}

@@ -17,6 +17,7 @@ const (
 	ModeAgent               // --agent: raw JSON, no envelope (also the piped default)
 	ModeJQ                  // --jq <expr>
 	ModeIDsOnly             // --ids-only: one ID per line
+	ModeCount               // --count: bare integer count
 )
 
 // Breadcrumb is an actionable navigation hint emitted in the JSON envelope.
@@ -37,7 +38,7 @@ type Meta struct {
 	HasNext bool `json:"has_next"`
 }
 
-// ModeSpec carries the output-mode flags from the command line. All five
+// ModeSpec carries the output-mode flags from the command line. All six
 // are peers — there is no umbrella flag. More than one set is an error.
 type ModeSpec struct {
 	JSON    bool
@@ -45,6 +46,7 @@ type ModeSpec struct {
 	JQ      string
 	IDsOnly bool
 	Styled  bool
+	Count   bool
 }
 
 // ParseMode resolves the output mode from ModeSpec. Exactly one mode flag
@@ -68,6 +70,9 @@ func ParseMode(spec ModeSpec) (Mode, error) {
 	if spec.Styled {
 		active = append(active, "--styled")
 	}
+	if spec.Count {
+		active = append(active, "--count")
+	}
 
 	if len(active) > 1 {
 		return 0, fmt.Errorf("conflicting output flags: %s (use only one)", strings.Join(active, ", "))
@@ -84,6 +89,8 @@ func ParseMode(spec ModeSpec) (Mode, error) {
 		return ModeAgent, nil
 	case spec.JSON:
 		return ModeJSON, nil
+	case spec.Count:
+		return ModeCount, nil
 	}
 
 	// Auto-switch: piped stdout gets machine-readable raw JSON.
@@ -109,6 +116,8 @@ func Render(w io.Writer, data any, summary string, meta *Meta, opts Options) err
 		return renderJQ(w, data, opts.JQFilter)
 	case ModeIDsOnly:
 		return renderIDsOnly(w, data)
+	case ModeCount:
+		return renderCount(w, data)
 	default:
 		return fmt.Errorf("unknown output mode")
 	}

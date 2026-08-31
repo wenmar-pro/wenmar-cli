@@ -171,7 +171,7 @@ commands:
     example: |
       wenmar customers list
       wenmar customers list --query "jane" --all
-      wenmar customers list --output agent | head -20
+      wenmar customers list --agent | head -20
   show_customer:
     resource: customers
     command: show
@@ -301,7 +301,7 @@ commands:
     example: |
       wenmar workorders list
       wenmar workorders list --jq '.[].number'
-      wenmar workorders list --output count
+      wenmar workorders list --jq 'length'
   create_work_order:
     resource: workorders
     command: create
