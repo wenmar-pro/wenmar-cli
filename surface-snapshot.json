@@ -252,7 +252,8 @@
               "name": "last-name"
             },
             {
-              "name": "phone"
+              "name": "phone",
+              "default": "0"
             }
           ]
         },
@@ -298,8 +299,8 @@
           ]
         },
         {
-          "path": "wenmar customers lookup \u003cquery\u003e",
-          "use": "lookup \u003cquery\u003e",
+          "path": "wenmar customers lookup \u003cstring\u003e",
+          "use": "lookup \u003cstring\u003e",
           "short": "Search customers by name/email/phone",
           "flags": null
         },
@@ -319,12 +320,6 @@
           "path": "wenmar customers show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single customer by ID",
-          "flags": null
-        },
-        {
-          "path": "wenmar customers statements \u003cid\u003e",
-          "use": "statements \u003cid\u003e",
-          "short": "List a customer's statements",
           "flags": null
         },
         {
@@ -389,8 +384,8 @@
           "flags": null
         },
         {
-          "path": "wenmar customers work-orders \u003cid\u003e",
-          "use": "work-orders \u003cid\u003e",
+          "path": "wenmar customers workorders \u003cid\u003e",
+          "use": "workorders \u003cid\u003e",
           "short": "List a customer's work orders",
           "flags": null
         }
@@ -499,13 +494,13 @@
       ]
     },
     {
-      "path": "wenmar service-categories",
-      "use": "service-categories",
+      "path": "wenmar servicecategories",
+      "use": "servicecategories",
       "short": "Manage service categories",
       "flags": null,
       "children": [
         {
-          "path": "wenmar service-categories create",
+          "path": "wenmar servicecategories create",
           "use": "create",
           "short": "Create a new service category",
           "flags": [
@@ -524,13 +519,13 @@
           ]
         },
         {
-          "path": "wenmar service-categories deactivate \u003cid\u003e",
+          "path": "wenmar servicecategories deactivate \u003cid\u003e",
           "use": "deactivate \u003cid\u003e",
           "short": "Deactivate a service category by ID",
           "flags": null
         },
         {
-          "path": "wenmar service-categories delete \u003cid\u003e",
+          "path": "wenmar servicecategories delete \u003cid\u003e",
           "use": "delete \u003cid\u003e",
           "short": "Delete a service category by ID",
           "flags": [
@@ -541,37 +536,37 @@
           ]
         },
         {
-          "path": "wenmar service-categories list",
+          "path": "wenmar servicecategories list",
           "use": "list",
           "short": "List all service categories",
           "flags": null
         },
         {
-          "path": "wenmar service-categories move-down \u003cid\u003e",
+          "path": "wenmar servicecategories move-down \u003cid\u003e",
           "use": "move-down \u003cid\u003e",
           "short": "Move a service category down one position",
           "flags": null
         },
         {
-          "path": "wenmar service-categories move-up \u003cid\u003e",
+          "path": "wenmar servicecategories move-up \u003cid\u003e",
           "use": "move-up \u003cid\u003e",
           "short": "Move a service category up one position",
           "flags": null
         },
         {
-          "path": "wenmar service-categories reactivate \u003cid\u003e",
+          "path": "wenmar servicecategories reactivate \u003cid\u003e",
           "use": "reactivate \u003cid\u003e",
           "short": "Reactivate a service category by ID",
           "flags": null
         },
         {
-          "path": "wenmar service-categories seed-defaults",
+          "path": "wenmar servicecategories seed-defaults",
           "use": "seed-defaults",
           "short": "Seed default service categories for the account",
           "flags": null
         },
         {
-          "path": "wenmar service-categories update \u003cid\u003e",
+          "path": "wenmar servicecategories update \u003cid\u003e",
           "use": "update \u003cid\u003e",
           "short": "Update a service category by ID",
           "flags": [
@@ -853,8 +848,8 @@
           ]
         },
         {
-          "path": "wenmar vehicles decode-vin \u003cvin\u003e",
-          "use": "decode-vin \u003cvin\u003e",
+          "path": "wenmar vehicles decode-vin \u003cstring\u003e",
+          "use": "decode-vin \u003cstring\u003e",
           "short": "Decode a VIN into make/model",
           "flags": null
         },
@@ -870,8 +865,8 @@
           ]
         },
         {
-          "path": "wenmar vehicles duplicates \u003cvin\u003e",
-          "use": "duplicates \u003cvin\u003e",
+          "path": "wenmar vehicles duplicates \u003cstring\u003e",
+          "use": "duplicates \u003cstring\u003e",
           "short": "Check for duplicate vehicles matching a VIN",
           "flags": null
         },
@@ -879,11 +874,20 @@
           "path": "wenmar vehicles list",
           "use": "list",
           "short": "List all vehicles",
-          "flags": null
+          "flags": [
+            {
+              "name": "customer-id",
+              "default": "0"
+            },
+            {
+              "name": "page",
+              "default": "0"
+            }
+          ]
         },
         {
-          "path": "wenmar vehicles lookup \u003cquery\u003e",
-          "use": "lookup \u003cquery\u003e",
+          "path": "wenmar vehicles lookup \u003cstring\u003e",
+          "use": "lookup \u003cstring\u003e",
           "short": "Search vehicles by make/model/plate/vin",
           "flags": null
         },
@@ -905,7 +909,17 @@
           "short": "Prefill vehicle data from a VIN",
           "flags": [
             {
+              "name": "make"
+            },
+            {
+              "name": "model"
+            },
+            {
               "name": "vin"
+            },
+            {
+              "name": "year",
+              "default": "0"
             }
           ]
         },
@@ -988,8 +1002,8 @@
           ]
         },
         {
-          "path": "wenmar vehicles work-orders \u003cid\u003e",
-          "use": "work-orders \u003cid\u003e",
+          "path": "wenmar vehicles workorders \u003cid\u003e",
+          "use": "workorders \u003cid\u003e",
           "short": "List a vehicle's work orders",
           "flags": null
         }
@@ -1047,13 +1061,13 @@
       ]
     },
     {
-      "path": "wenmar work_orders",
-      "use": "work_orders",
+      "path": "wenmar workorders",
+      "use": "workorders",
       "short": "Manage work orders",
       "flags": null,
       "children": [
         {
-          "path": "wenmar work_orders create",
+          "path": "wenmar workorders create",
           "use": "create",
           "short": "Create a new work order",
           "flags": [
@@ -1070,7 +1084,7 @@
           ]
         },
         {
-          "path": "wenmar work_orders delete \u003cid\u003e",
+          "path": "wenmar workorders delete \u003cid\u003e",
           "use": "delete \u003cid\u003e",
           "short": "Delete a work order by ID",
           "flags": [
@@ -1081,43 +1095,43 @@
           ]
         },
         {
-          "path": "wenmar work_orders estimate \u003cid\u003e",
+          "path": "wenmar workorders estimate \u003cid\u003e",
           "use": "estimate \u003cid\u003e",
           "short": "Show the estimate tab (services) for a work order",
           "flags": null
         },
         {
-          "path": "wenmar work_orders inspection \u003cid\u003e",
+          "path": "wenmar workorders inspection \u003cid\u003e",
           "use": "inspection \u003cid\u003e",
           "short": "Show the inspection tab (inspection reports) for a work order",
           "flags": null
         },
         {
-          "path": "wenmar work_orders list",
+          "path": "wenmar workorders list",
           "use": "list",
           "short": "List all work orders, paginated via the Link header",
           "flags": null
         },
         {
-          "path": "wenmar work_orders parts \u003cid\u003e",
+          "path": "wenmar workorders parts \u003cid\u003e",
           "use": "parts \u003cid\u003e",
           "short": "Show the parts tab (services) for a work order",
           "flags": null
         },
         {
-          "path": "wenmar work_orders payments \u003cid\u003e",
+          "path": "wenmar workorders payments \u003cid\u003e",
           "use": "payments \u003cid\u003e",
           "short": "Show the payments tab (payments) for a work order",
           "flags": null
         },
         {
-          "path": "wenmar work_orders show \u003cid\u003e",
+          "path": "wenmar workorders show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single work order by ID",
           "flags": null
         },
         {
-          "path": "wenmar work_orders update \u003cid\u003e",
+          "path": "wenmar workorders update \u003cid\u003e",
           "use": "update \u003cid\u003e",
           "short": "Update a work order by ID",
           "flags": [
@@ -1127,7 +1141,7 @@
           ]
         },
         {
-          "path": "wenmar work_orders wip \u003cid\u003e",
+          "path": "wenmar workorders wip \u003cid\u003e",
           "use": "wip \u003cid\u003e",
           "short": "Show the work-in-progress tab (services) for a work order",
           "flags": null

@@ -3,4 +3,3 @@ go.work
 go.work.sum
 .worktrees/
 /gencli
-cmd/gen_*.go

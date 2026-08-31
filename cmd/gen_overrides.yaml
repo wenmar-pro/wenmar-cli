@@ -16,6 +16,9 @@ exclude:
   # companions — customers
   - create_customer
   - update_customer
+  # companions — vehicles (pointer-typed wrapper bodies with omitempty)
+  - create_vehicle
+  - update_vehicle
   # companions — tags (all tag ops live in cmd/tags.go)
   - create_customer_tag
   - create_vehicle_tag
@@ -70,9 +73,9 @@ groups:
   statements:
     short: Manage statements
   locations:
-    short: Manage locations
+    short: Show location details
   account:
-    short: Show account details
+    short: Show the current account
   tags:
     short: Manage tags
 
@@ -202,12 +205,6 @@ commands:
     command: show
     summary: Show a single vehicle by ID
     method: ShowVehicle
-  create_vehicle:
-    resource: vehicles
-    command: create
-    summary: Create a new vehicle
-    method: CreateVehicle
-    request_struct: CreateVehicleRequest
   update_vehicle:
     resource: vehicles
     command: update
@@ -231,6 +228,7 @@ commands:
     command: duplicates
     summary: Check for duplicate vehicles matching a VIN
     method: CheckVehicleDuplicate
+    positional_arg: string
     query_param_struct: CheckVehicleDuplicateParams
   transfer_vehicle:
     resource: vehicles
@@ -348,20 +346,49 @@ commands:
 # exclusion takes precedence and the entry would be dead.
 
 # Flag overrides: map request body fields to flag names with help text.
+# Fields not listed here auto-derive from the property name (snake_case -> kebab-case).
+# `required: false` un-marks a spec-required field; `default` sets a flag default;
+# `suppress: true` hides a field from the CLI surface.
 flag_overrides:
-  create_vehicle:
-    vehicle.make:
-      required: true
-      help: Vehicle make
-    vehicle.model:
-      required: true
-      help: Vehicle model
-    vehicle.year:
-      required: true
-      help: Vehicle year
-    vehicle.customer_id:
-      required: true
-      help: Customer ID
+  list_customers:
+    tag_ids:
+      flag: tag-ids
+      flag_type: intslice
+      help: Filter by customer tag IDs (comma-separated)
+  merge_customer:
+    source_customer_id:
+      flag: source-id
+      help: Source customer ID to merge into keeper (required)
+  merge_vehicle:
+    source_vehicle_id:
+      flag: source-id
+      help: Source vehicle ID (required)
+  transfer_vehicle:
+    mode:
+      required: false
+      default: vehicle_only
+      help: Transfer mode (vehicle_only, vehicle_and_history, everything)
+  create_driver:
+    driver.phone:
+      required: false
+      help: Driver phone
+  update_driver:
+    driver.full_name:
+      required: false
+      help: Driver full name
+  create_service_category:
+    service_category.icon:
+      required: false
+      default: wrench
+      help: Icon (wrench, disc, engine, etc.)
+    service_category.service_type:
+      required: false
+      default: maintenance
+      help: Service type (maintenance, repair, diagnostic, recall, sublet)
+  update_work_order:
+    work_order.intake_method:
+      required: false
+      help: Intake method (e.g. drop_off, walk_in)
   create_work_order:
     work_order.customer_id:
       required: true

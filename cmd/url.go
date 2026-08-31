@@ -43,11 +43,13 @@ func init() {
 
 // knownResources are the public API flat routes the parser recognizes.
 var knownResources = map[string]bool{
-	"customers":   true,
-	"vehicles":    true,
-	"work_orders": true,
-	"account":     true,
-	"locations":   true,
+	"customers":        true,
+	"vehicles":         true,
+	"work_orders":      true,
+	"workorders":       true,
+	"servicecategories": true,
+	"account":          true,
+	"locations":        true,
 }
 
 // parseWenmarURL decomposes a Wenmar URL into resource type, id, and format.

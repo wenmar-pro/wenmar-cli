@@ -174,7 +174,10 @@ type CommandOverride struct {
 type FlagOverride struct {
 	Flag     string `yaml:"flag"`
 	Help     string `yaml:"help"`
-	Required bool   `yaml:"required"`
+	Required *bool  `yaml:"required"`
+	Suppress bool   `yaml:"suppress"`
+	Default  string `yaml:"default"`
+	FlagType string `yaml:"flag_type"` // "intslice" for array params bound via IntSliceVar
 }
 
 func loadOverrides(path string) (*Overrides, error) {

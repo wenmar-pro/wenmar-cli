@@ -1,4 +1,4 @@
-.PHONY: build test check check-published clean generate test-generated surface-snapshot surface-diff
+.PHONY: build test check check-published clean generate surface-snapshot surface-diff golden-update
 
 build:
 	go build -o ./wenmar ./cmd/wenmar
@@ -24,10 +24,9 @@ SPEC_PATH ?= ../wenmar-sdk/spec/openapi.enriched.yaml
 generate:
 	go run ./cmd/gencli -spec $(SPEC_PATH) -overrides cmd/gen_overrides.yaml -out cmd/
 
-# Test the generated commands (excludes hand-written ones via build tags).
-test-generated: generate
-	go build -tags generated ./...
-	go test -tags generated ./cmd/... -run "TestVendors|TestLocations|TestAccount|TestDriversShow|TestDriversDelete|TestVehiclesDelete|TestVehiclesShow|TestStatements|TestCustomersShow" -v
+# Refresh the committed golden fixtures (regen-drift gate).
+golden-update:
+	go run ./cmd/gencli -spec $(SPEC_PATH) -overrides cmd/gen_overrides.yaml -out cmd/golden
 
 clean:
 	rm -f wenmar

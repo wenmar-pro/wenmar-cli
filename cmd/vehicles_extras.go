@@ -1,6 +1,9 @@
-//go:build !generated
-
 package cmd
+
+// vehicles_extras.go holds the two vehicle commands whose wrapper bodies
+// use pointer-typed fields with omitempty tags (not per-operation
+// derivable by the generator): create and update. Everything else under
+// "vehicles" is generated (gen_vehicles.go).
 
 import (
 	"context"
@@ -8,29 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
-
-var vehiclesCmd = &cobra.Command{
-	Use:   "vehicles",
-	Short: "Manage vehicles",
-	Args:  cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return cmd.Help()
-	},
-}
-
-var vehiclesShowCmd = &cobra.Command{
-	Use:   "show <id>",
-	Short: "Show a single vehicle by ID",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesShow,
-}
-
-var vehiclesListCmd = &cobra.Command{
-	Use:     "list",
-	Aliases: []string{"ls"},
-	Short:   "List all vehicles",
-	RunE:    runVehiclesList,
-}
 
 var vehiclesCreateCmd = &cobra.Command{
 	Use:   "create",
@@ -45,67 +25,11 @@ var vehiclesUpdateCmd = &cobra.Command{
 	RunE:  runVehiclesUpdate,
 }
 
-var vehiclesDeleteCmd = &cobra.Command{
-	Use:   "delete <id>",
-	Short: "Delete a vehicle by ID",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesDelete,
-}
-
-var vehiclesDecodeVinCmd = &cobra.Command{
-	Use:   "decode-vin <vin>",
-	Short: "Decode a VIN into make/model",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesDecodeVin,
-}
-
-var vehiclesDuplicatesCmd = &cobra.Command{
-	Use:   "duplicates <vin>",
-	Short: "Check for duplicate vehicles matching a VIN",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesDuplicates,
-}
-
-var vehiclesTransferCmd = &cobra.Command{
-	Use:   "transfer <id>",
-	Short: "Transfer a vehicle to a new customer",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesTransfer,
-}
-
-var vehiclesMergeCmd = &cobra.Command{
-	Use:   "merge <id>",
-	Short: "Merge a source vehicle into this keeper",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesMerge,
-}
-
-var vehiclesPrefillCmd = &cobra.Command{
-	Use:   "prefill",
-	Short: "Prefill vehicle data from a VIN",
-	RunE:  runVehiclesPrefill,
-}
-
-var vehiclesLookupCmd = &cobra.Command{
-	Use:   "lookup <query>",
-	Short: "Search vehicles by make/model/plate/vin",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesLookup,
-}
-
-var vehiclesWorkOrdersCmd = &cobra.Command{
-	Use:   "work-orders <id>",
-	Short: "List a vehicle's work orders",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesWorkOrders,
-}
-
 var (
 	vehicleCreateMake         string
 	vehicleCreateModel        string
 	vehicleCreateYear         int
 	vehicleCreateCustomer     int
-	vehiclesDeleteDryRun      bool
 	vehicleUpdateMake         string
 	vehicleVin                string
 	vehicleSubmodel           string
@@ -123,10 +47,6 @@ var (
 	vehicleProductionDate     string
 	vehicleNotes              string
 	vehicleTagIDs             []int
-	vehicleTransferCustomerID int
-	vehicleTransferMode       string
-	vehicleMergeSourceID      int
-	vehiclePrefillVIN         string
 )
 
 func init() {
@@ -172,38 +92,7 @@ func init() {
 	vehiclesUpdateCmd.Flags().StringVar(&vehicleProductionDate, "production-date", "", "Production date")
 	vehiclesUpdateCmd.Flags().StringVar(&vehicleNotes, "notes", "", "Notes")
 
-	vehiclesTransferCmd.Flags().IntVar(&vehicleTransferCustomerID, "customer-id", 0, "New customer ID (required)")
-	vehiclesTransferCmd.Flags().StringVar(&vehicleTransferMode, "mode", "vehicle_only", "Transfer mode (vehicle_only, vehicle_and_history, everything)")
-	vehiclesTransferCmd.MarkFlagRequired("customer-id")
-	vehiclesMergeCmd.Flags().IntVar(&vehicleMergeSourceID, "source-id", 0, "Source vehicle ID (required)")
-	vehiclesMergeCmd.MarkFlagRequired("source-id")
-	vehiclesPrefillCmd.Flags().StringVar(&vehiclePrefillVIN, "vin", "", "VIN")
-
-	vehiclesDeleteCmd.Flags().BoolVar(&vehiclesDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
-
-	vehiclesCmd.AddCommand(vehiclesShowCmd, vehiclesListCmd, vehiclesCreateCmd, vehiclesUpdateCmd, vehiclesDeleteCmd, vehiclesDecodeVinCmd, vehiclesDuplicatesCmd,
-		vehiclesTransferCmd, vehiclesMergeCmd, vehiclesPrefillCmd, vehiclesLookupCmd, vehiclesWorkOrdersCmd)
-	rootCmd.AddCommand(vehiclesCmd)
-}
-
-func runVehiclesShow(cmd *cobra.Command, args []string) error {
-	return runShow(cmd, args, "vehicles", "GET", idPath("/vehicles/"), func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ShowVehicle(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-func runVehiclesList(cmd *cobra.Command, args []string) error {
-	return runList(cmd, "vehicles", "/vehicles", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListVehicles(ctx, nil)
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
+	vehiclesCmd.AddCommand(vehiclesCreateCmd, vehiclesUpdateCmd)
 }
 
 func runVehiclesCreate(cmd *cobra.Command, args []string) error {
@@ -280,33 +169,6 @@ func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 	})
 }
 
-func runVehiclesDelete(cmd *cobra.Command, args []string) error {
-	return runDelete(cmd, args, "Vehicle", "vehicles", idPath("/vehicles/"), vehiclesDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		return client.DeleteVehicle(ctx, id)
-	})
-}
-
-func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
-	return runList(cmd, "vehicles", "/vehicles/vin_decode", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.DecodeVin(ctx, &wenmar.DecodeVinParams{Vin: strPtr(args[0])})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
-	return runList(cmd, "vehicles", "/vehicles/check_duplicate", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		vin := args[0]
-		resp, err := client.CheckVehicleDuplicate(ctx, &wenmar.CheckVehicleDuplicateParams{Vin: &vin})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
 func applyVehicleFlags(req *wenmar.CreateVehicleRequest) {
 	req.Vehicle.Vin = strPtr(vehicleVin)
 	req.Vehicle.Submodel = strPtr(vehicleSubmodel)
@@ -349,62 +211,4 @@ func applyVehicleUpdateFlags(req *wenmar.UpdateVehicleRequest) {
 		req.Vehicle.OdometerReading = &vehicleOdometer
 	}
 	req.Vehicle.OdometerUnit = strPtr(vehicleOdometerUnit)
-}
-
-func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
-	return runAction(cmd, args, "vehicles", "PATCH", func(a []string) string { return "/vehicles/" + a[0] + "/transfer" }, "Vehicle transferred.", func(id int) (any, error) {
-		return wenmar.TransferVehicleRequest{
-			CustomerId: vehicleTransferCustomerID,
-			Mode:       vehicleTransferMode,
-		}, nil
-	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.TransferVehicle(ctx, id, body.(wenmar.TransferVehicleRequest))
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-func runVehiclesMerge(cmd *cobra.Command, args []string) error {
-	return runAction(cmd, args, "vehicles", "POST", func(a []string) string { return "/vehicles/" + a[0] + "/merge" }, "Vehicle merged.", func(id int) (any, error) {
-		return wenmar.MergeVehicleRequest{SourceVehicleId: vehicleMergeSourceID}, nil
-	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.MergeVehicle(ctx, id, body.(wenmar.MergeVehicleRequest))
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-func runVehiclesPrefill(cmd *cobra.Command, args []string) error {
-	return runList(cmd, "vehicles", "/vehicles/prefill", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		params := wenmar.PrefillVehicleParams{Vin: strPtr(vehiclePrefillVIN)}
-		resp, err := client.PrefillVehicle(ctx, &params)
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-func runVehiclesLookup(cmd *cobra.Command, args []string) error {
-	return runList(cmd, "vehicles", "/vehicles/lookup", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.LookupVehicle(ctx, &wenmar.LookupVehicleParams{Query: strPtr(args[0])})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-func runVehiclesWorkOrders(cmd *cobra.Command, args []string) error {
-	return runShow(cmd, args, "vehicles", "GET", func(a []string) string { return "/vehicles/" + a[0] + "/work_orders" }, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ListVehiclesWorkOrders(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
 }
