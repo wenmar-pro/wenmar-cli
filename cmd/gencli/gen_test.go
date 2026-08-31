@@ -164,7 +164,7 @@ func TestGroupOverridesPlumbThrough(t *testing.T) {
 	if err != nil {
 		t.Fatalf("emitGroup: %v", err)
 	}
-	if !strings.Contains(code, `Aliases: {"work_orders", "wo"}`) {
+	if !strings.Contains(code, `Aliases: []string{"work_orders", "wo"}`) {
 		t.Errorf("parent aliases not emitted:\n%s", code)
 	}
 	if !strings.Contains(code, `Short: "Manage work orders"`) {

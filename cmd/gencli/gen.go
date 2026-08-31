@@ -293,7 +293,7 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides) (string, er
 				for _, a := range ov.Aliases {
 					aliasLit = append(aliasLit, jen.Lit(a))
 				}
-				parentDict[jen.Id("Aliases")] = jen.Values(aliasLit...)
+				parentDict[jen.Id("Aliases")] = jen.Index().String().Values(aliasLit...)
 			}
 		}
 		parentDict[jen.Id("Short")] = jen.Lit(short)
@@ -339,7 +339,7 @@ func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) {
 		for _, a := range cmd.Aliases {
 			aliasLit = append(aliasLit, jen.Lit(a))
 		}
-		dict[jen.Id("Aliases")] = jen.Values(aliasLit...)
+		dict[jen.Id("Aliases")] = jen.Index().String().Values(aliasLit...)
 	}
 
 	f.Var().Id(varName).Op("=").Op("&").Qual("github.com/spf13/cobra", "Command").Values(dict)

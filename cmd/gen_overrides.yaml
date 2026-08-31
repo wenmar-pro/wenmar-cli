@@ -1,24 +1,81 @@
 # gen_overrides.yaml maps OpenAPI operations to CLI command names.
-# This file is hand-maintained — the generator reads it to produce
-# ergonomic command names and groupings.
+# Hand-maintained — the generator reads it to produce ergonomic command
+# names and groupings. Verified against wenmar-sdk go/v0.4.1 (method
+# signatures in wenmar/operations.gen.go).
+#
+# Exclusion taxonomy:
+#   - companions: commands whose flag/parse logic is not per-op derivable
+#     (tags type-branching, customer splitName/email/phone parsing,
+#     work-order tab truncation) — owned by cmd/tags.go,
+#     cmd/customers_extras.go, cmd/work_orders_extras.go
+#   - no CLI surface: work-order lifecycle/auth/history ops the CLI has
+#     never exposed (SDK 0.4.1 has methods; surface predates them)
+#   - not exposed: delete_customer, list_team, vehicle history
 
-# Operations to exclude from generation (no SDK wrapper yet, or
-# requires hand-written flag/param logic).
 exclude:
-  - get_customers_vehicle_history
-  - delete_customer
-  - list_team
-  - get_work_orders_summary
-  - create_work_order_payment
-  - update_tags
+  # companions — customers
+  - create_customer
+  - update_customer
+  # companions — tags (all tag ops live in cmd/tags.go)
   - create_customer_tag
   - create_vehicle_tag
-  # create_customer uses --full-name flag (semantic override, not in spec)
-  - create_customer
+  - update_tags
+  - list_tags
+  - list_customer_tags
+  - list_vehicle_tags
+  - delete_customer_tag
+  - delete_vehicle_tag
+  - update_customer_tag
+  - update_vehicle_tag
+  # companions — work orders show/tabs
+  - show_work_order
+  - show_work_order_estimate
+  - show_work_order_wip
+  - show_work_order_inspection
+  - show_work_order_parts
+  - show_work_order_payments
+  # work-order lifecycle/auth/history — no CLI surface
+  - close_work_order
+  - close_work_order_as_paid
+  - reopen_work_order
+  - return_work_order_to_board
+  - save_work_order_for_later
+  - stage_transition_work_order
+  - decline_all_work_order_services
+  - show_work_order_declined_services
+  - show_work_order_service_history
+  - create_work_order_authorization
+  - update_work_order_authorization_decisions
+  - create_work_order_payment
+  # not exposed by the CLI
+  - delete_customer
+  - list_team
+  - get_customers_vehicle_history
 
-# Map operationId -> CLI resource (cobra parent command name) and
-# subcommand name. If an operationId is not listed here, the generator
-# auto-derives from the path.
+groups:
+  workorders:
+    short: Manage work orders
+    aliases: [work_orders, wo]
+  servicecategories:
+    short: Manage service categories
+    aliases: [service-categories, sc]
+  customers:
+    short: Manage customers
+  vehicles:
+    short: Manage vehicles
+  drivers:
+    short: Manage drivers
+  vendors:
+    short: Manage vendors
+  statements:
+    short: Manage statements
+  locations:
+    short: Manage locations
+  account:
+    short: Show account details
+  tags:
+    short: Manage tags
+
 commands:
   # account
   list_account:
@@ -27,7 +84,7 @@ commands:
     summary: Show account details
     method: ListAccount
 
-  # vendors (trivial, auto-derivable)
+  # vendors
   list_vendors:
     resource: vendors
     command: list
@@ -46,24 +103,24 @@ commands:
     summary: Show a location by ID
     method: ShowLocation
 
-  # statements
-  list_customers_statements:
-    resource: statements
-    command: list
-    summary: List statements for a customer, paginated via the Link header
-    method: ListStatements
+  # statements — flag-based list (Decision A: customers statements <id> dropped)
   show_statement:
     resource: statements
     command: show
     summary: Show a single statement by ID
     method: ShowStatement
+  list_customers_statements:
+    resource: statements
+    command: list
+    summary: List statements for a customer, paginated via the Link header
+    method: ListCustomersStatements
 
-  # drivers (nested under /customers but CLI groups as their own resource)
+  # drivers — Decision B: --customer-id flag on all commands, no id_param
   list_customers_drivers:
     resource: drivers
     command: list
     summary: List drivers for a customer, paginated via the Link header
-    method: ListDrivers
+    method: ListCustomersDrivers
   show_driver:
     resource: drivers
     command: show
@@ -99,12 +156,6 @@ commands:
     command: show
     summary: Show a single customer by ID
     method: ShowCustomer
-  update_customer:
-    resource: customers
-    command: update
-    summary: Update a customer by ID
-    method: UpdateCustomer
-    request_struct: UpdateCustomerRequest
   merge_customer:
     resource: customers
     command: merge
@@ -128,12 +179,15 @@ commands:
     resource: customers
     command: vehicles
     summary: List a customer's vehicles
-    method: ListCustomerVehicles
+    method: ListCustomersVehicles
+    id_param: customer_id
   list_customers_work_orders:
     resource: customers
-    command: work-orders
+    command: workorders
     summary: List a customer's work orders
-    method: ListCustomerWorkOrders
+    method: ListCustomersWorkOrders
+    id_param: customer_id
+    aliases: [work-orders]
 
   # vehicles
   list_vehicles:
@@ -159,6 +213,7 @@ commands:
     command: update
     summary: Update a vehicle by ID
     method: UpdateVehicle
+    request_struct: UpdateVehicleRequest
   delete_vehicle:
     resource: vehicles
     command: delete
@@ -204,75 +259,37 @@ commands:
     query_param_struct: LookupVehicleParams
   list_vehicles_work_orders:
     resource: vehicles
-    command: work-orders
+    command: workorders
     summary: List a vehicle's work orders
-    method: ListVehicleWorkOrders
+    method: ListVehiclesWorkOrders
+    id_param: vehicle_id
+    aliases: [work-orders]
 
-  # work_orders
+  # work orders (resource renamed per D2; aliases preserve work_orders/wo)
   list_work_orders:
-    resource: work_orders
+    resource: workorders
     command: list
     summary: List all work orders, paginated via the Link header
     method: ListWorkOrders
-  show_work_order:
-    resource: work_orders
-    command: show
-    summary: Show a single work order by ID
-    method: ShowWorkOrder
   create_work_order:
-    resource: work_orders
+    resource: workorders
     command: create
     summary: Create a new work order
     method: CreateWorkOrder
     request_struct: CreateWorkOrderRequest
   update_work_order:
-    resource: work_orders
+    resource: workorders
     command: update
     summary: Update a work order by ID
     method: UpdateWorkOrder
     request_struct: UpdateWorkOrderRequest
   delete_work_order:
-    resource: work_orders
+    resource: workorders
     command: delete
     summary: Delete a work order by ID
     method: DeleteWorkOrder
-  show_work_order_estimate:
-    resource: work_orders
-    command: estimate
-    summary: Show the estimate tab (services) for a work order
-    method: ShowWorkOrderEstimate
-    tab: estimate
-  show_work_order_wip:
-    resource: work_orders
-    command: wip
-    summary: Show the work-in-progress tab (services) for a work order
-    method: ShowWorkOrderWip
-    tab: wip
-  show_work_order_inspection:
-    resource: work_orders
-    command: inspection
-    summary: Show the inspection tab (inspection reports) for a work order
-    method: ShowWorkOrderInspection
-    tab: inspection
-  show_work_order_parts:
-    resource: work_orders
-    command: parts
-    summary: Show the parts tab (services) for a work order
-    method: ShowWorkOrderParts
-    tab: parts
-  show_work_order_payments:
-    resource: work_orders
-    command: payments
-    summary: Show the payments tab (payments) for a work order
-    method: ShowWorkOrderPayments
-    tab: payments
-  create_work_order_payment:
-    resource: work_orders
-    command: create-payment
-    summary: Create a payment against a work order
-    method: CreateWorkOrderPayment
 
-  # service categories
+  # service categories (resource renamed per D2)
   list_service_categories:
     resource: servicecategories
     command: list
@@ -327,25 +344,11 @@ commands:
     request_struct: SeedDefaultsServiceCategoriesRequest
     action_summary: Default service categories seeded.
 
-  # tags
-  list_tags:
-    resource: tags
-    command: list
-    summary: List all customer and vehicle tags
-    method: ListTags
-
-# NOTE: operations listed in `exclude:` must not also appear under
-# `commands:` — exclusion takes precedence and the entry would be dead.
+# NOTE: operations in `exclude:` must not also appear under `commands:` —
+# exclusion takes precedence and the entry would be dead.
 
 # Flag overrides: map request body fields to flag names with help text.
-# Fields not listed here auto-derive from the property name (snake_case -> kebab-case).
 flag_overrides:
-  create_customer:
-    customer.first_name:
-      flag: full-name
-      help: Customer full name
-    customer.last_name:
-      help: Customer last name
   create_vehicle:
     vehicle.make:
       required: true
