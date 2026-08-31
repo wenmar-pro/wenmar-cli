@@ -40,51 +40,6 @@ type Meta struct {
 	HasNext bool `json:"has_next"`
 }
 
-// ResolveMode resolves the output mode from the explicit flags. If no
-// explicit mode is set and stdout is not a TTY, it auto-switches to
-// ModeQuiet (raw JSON) so piped output is machine-readable. --styled forces
-// ModeDefault (human tables) even when piped.
-func ResolveMode(md, json, agent, quiet, idsOnly, count bool, jq string) Mode {
-	return ResolveModeStyled(md, json, agent, quiet, idsOnly, count, jq, false, false)
-}
-
-// ResolveModeStyled is ResolveMode with --html and --styled support.
-func ResolveModeStyled(md, json, agent, quiet, idsOnly, count bool, jq string, html, styled bool) Mode {
-	if jq != "" {
-		return ModeJQ
-	}
-	if count {
-		return ModeCount
-	}
-	if idsOnly {
-		return ModeIDsOnly
-	}
-	if agent {
-		return ModeAgent
-	}
-	if quiet {
-		return ModeQuiet
-	}
-	if json {
-		return ModeJSON
-	}
-	if html {
-		return ModeHTML
-	}
-	if md {
-		return ModeMD
-	}
-	if styled {
-		return ModeDefault
-	}
-	// Auto-switch: when stdout is not a TTY and no explicit mode is set,
-	// emit raw JSON so piped output is machine-readable.
-	if !isTerminal(os.Stdout) {
-		return ModeQuiet
-	}
-	return ModeDefault
-}
-
 // ModeSpec carries the output-mode flags from the command line. --output
 // is the canonical selector; --json/--agent/--quiet/--jq are sugar.
 type ModeSpec struct {

@@ -160,7 +160,10 @@ func runTagsMutation(cmd *cobra.Command, summary string, bodyBuilder func() wenm
 	}
 
 	data := extractData(resp.JSON200)
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("tags")}
 	return output.Render(cmd.OutOrStdout(), data, summary, nil, opts)
 }

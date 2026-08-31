@@ -84,7 +84,10 @@ func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
 	}
 
 	data := extractData(resp.JSON200)
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs("workorders", args[0]), Notice: notice}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }

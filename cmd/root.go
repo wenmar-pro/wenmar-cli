@@ -9,21 +9,18 @@ import (
 	"github.com/wenmar-pro/wenmar-cli/internal/agent"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
+	"github.com/wenmar-pro/wenmar-cli/internal/output"
 )
 
 var (
 	tokenFlag      string
 	baseURLFlag    string
 	locationFlag   string
-	mdFlag         bool
+	outputFlag     string
 	jsonFlag       bool
 	agentFlag      bool
 	quietFlag      bool
 	jqFlag         string
-	idsOnlyFlag    bool
-	countFlag      bool
-	htmlFlag       bool
-	styledFlag     bool
 	allowPartial   bool
 	configPathFlag string
 	debugFlag      bool
@@ -74,19 +71,29 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "API bearer token (or set WENMAR_TOKEN env)")
 	rootCmd.PersistentFlags().StringVar(&baseURLFlag, "base-url", "", "API base URL (default: https://app.wenmarpro.com)")
 	rootCmd.PersistentFlags().StringVar(&locationFlag, "location", "", "Location ID to scope requests (or set WENMAR_LOCATION_ID)")
-	rootCmd.PersistentFlags().BoolVarP(&mdFlag, "md", "m", false, "Output as GFM table")
-	rootCmd.PersistentFlags().BoolVar(&mdFlag, "markdown", false, "Output as GFM table (alias for --md)")
-	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output as full JSON envelope {ok, data, summary, meta}")
-	rootCmd.PersistentFlags().BoolVar(&agentFlag, "agent", false, "Output raw JSON data (no envelope)")
-	rootCmd.PersistentFlags().BoolVar(&quietFlag, "quiet", false, "Raw JSON output, no envelope, no agent discovery")
-	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "jq filter expression (implies --json)")
-	rootCmd.PersistentFlags().BoolVar(&idsOnlyFlag, "ids-only", false, "Print one ID per line (for shell loops)")
-	rootCmd.PersistentFlags().BoolVar(&countFlag, "count", false, "Print the count of results (bare integer)")
-	rootCmd.PersistentFlags().BoolVar(&htmlFlag, "html", false, "Output as an HTML document")
-	rootCmd.PersistentFlags().BoolVar(&styledFlag, "styled", false, "Force human tables even when piped")
+	rootCmd.PersistentFlags().StringVar(&outputFlag, "output", "", "Output mode: table, md, json, agent, quiet, ids-only, count, html, styled (see 'wenmar help output')")
+	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Shorthand for --output json")
+	rootCmd.PersistentFlags().BoolVar(&agentFlag, "agent", false, "Shorthand for --output agent (also makes --help emit JSON)")
+	rootCmd.PersistentFlags().BoolVar(&quietFlag, "quiet", false, "Shorthand for --output quiet")
+	rootCmd.PersistentFlags().StringVar(&jqFlag, "jq", "", "jq filter expression (shorthand for --output json plus a filter)")
 	rootCmd.PersistentFlags().BoolVar(&allowPartial, "allow-partial", false, "Accept truncated responses (adds a notice to the envelope)")
-	rootCmd.PersistentFlags().StringVar(&configPathFlag, "config-path", "", "Path to config file (for testing)")
+	rootCmd.PersistentFlags().StringVar(&configPathFlag, "config-path", "", "Path to config file")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Print request debug info (token source, base URL, method/path) to stderr")
+
+	// Sugar flags work everywhere but stay out of leaf help; the root
+	// Long and `wenmar help output` are their discovery surfaces.
+	rootCmd.PersistentFlags().MarkHidden("json")
+	rootCmd.PersistentFlags().MarkHidden("agent")
+	rootCmd.PersistentFlags().MarkHidden("quiet")
+	rootCmd.PersistentFlags().MarkHidden("jq")
+	rootCmd.PersistentFlags().MarkHidden("config-path")
+
+	// Fail fast on mode conflicts/typos BEFORE any command runs (and
+	// before any API call inside it).
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		_, err := output.ParseMode(modeSpec())
+		return err
+	}
 
 	// When --debug is set, surface the request context on success too.
 	rootCmd.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {

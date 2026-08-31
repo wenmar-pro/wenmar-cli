@@ -10,9 +10,22 @@ import (
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
-// resolveMode resolves the output mode from the root persistent flags.
-func resolveMode() output.Mode {
-	return output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+// modeSpec snapshots the output-mode flags for ParseMode.
+func modeSpec() output.ModeSpec {
+	return output.ModeSpec{
+		Output: outputFlag,
+		JSON:   jsonFlag,
+		Agent:  agentFlag,
+		Quiet:  quietFlag,
+		JQ:     jqFlag,
+	}
+}
+
+// resolveMode resolves the output mode. ParseMode validated the flags in
+// PersistentPreRunE; the error path here is defensive for direct handler
+// calls (tests) and still propagates.
+func resolveMode() (output.Mode, error) {
+	return output.ParseMode(modeSpec())
 }
 
 // parseInt converts args[0] to an int with a consistent error message.
@@ -62,7 +75,10 @@ func runShow(cmd *cobra.Command, args []string, resource, method string, pathFn 
 	}
 
 	data := extractData(respData)
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs(resource, args[0])}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
@@ -82,7 +98,10 @@ func runShowStr(cmd *cobra.Command, args []string, resource, method string, path
 	}
 
 	data := extractData(respData)
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs(resource, args[0])}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
@@ -102,7 +121,10 @@ func runList(cmd *cobra.Command, resource, path string,
 	}
 
 	data := extractData(respData)
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resource)}
 	return output.Render(cmd.OutOrStdout(), data, "", nil, opts)
 }
@@ -126,7 +148,10 @@ func runListPaginated(cmd *cobra.Command, resource, path string,
 	summary := fmt.Sprintf("Page 1. More results: %v", paginator.HasNext())
 	meta := &output.Meta{HasNext: paginator.HasNext()}
 
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	if mode == output.ModeIDsOnly || mode == output.ModeCount {
 		output.PrintPaginationNotice(meta, 1)
 	}
@@ -176,7 +201,10 @@ func runListPaginatedWithAll(cmd *cobra.Command, resource, path string, allFlag 
 		meta = &output.Meta{HasNext: false}
 	}
 
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	if mode == output.ModeIDsOnly || mode == output.ModeCount {
 		output.PrintPaginationNotice(meta, pages)
 	}
@@ -205,7 +233,10 @@ func runCreate(cmd *cobra.Command, resource, path, summary string,
 	}
 
 	data := extractData(respData)
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: createBreadcrumbs(resource, "0")}
 	return output.Render(cmd.OutOrStdout(), data, summary, nil, opts)
 }
@@ -246,7 +277,10 @@ func runAction(cmd *cobra.Command, args []string, resource, method string, pathF
 	}
 
 	data := extractData(respData)
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs(resource, args[0])}
 	return output.Render(cmd.OutOrStdout(), data, summary, nil, opts)
 }
@@ -272,7 +306,10 @@ func runActionNoBody(cmd *cobra.Command, args []string, resource, method string,
 		return err
 	}
 
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs(resource, args[0])}
 	return output.Render(cmd.OutOrStdout(), extractData(data), summary, nil, opts)
 }
@@ -292,7 +329,10 @@ func runSeedAction(cmd *cobra.Command, resource, path string, summary string,
 		return err
 	}
 
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resource)}
 	return output.Render(cmd.OutOrStdout(), extractData(data), summary, nil, opts)
 }
@@ -310,7 +350,10 @@ func runDelete(cmd *cobra.Command, args []string, resourceLabel, resourceSlug st
 	}
 
 	if dryRun {
-		mode := resolveMode()
+		mode, err := resolveMode()
+		if err != nil {
+			return err
+		}
 		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs(resourceSlug, args[0])}
 		dryRunData := map[string]any{
 			"dry_run":      true,
@@ -330,7 +373,10 @@ func runDelete(cmd *cobra.Command, args []string, resourceLabel, resourceSlug st
 		return err
 	}
 
-	mode := resolveMode()
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
 	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resourceSlug)}
 	return output.Render(cmd.OutOrStdout(), nil, fmt.Sprintf("%s %d deleted.", resourceLabel, id), nil, opts)
 }

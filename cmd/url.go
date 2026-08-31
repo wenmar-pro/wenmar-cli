@@ -30,7 +30,10 @@ var urlParseCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		result := parseWenmarURL(args[0])
-		mode := output.ResolveModeStyled(mdFlag, jsonFlag, agentFlag, quietFlag, idsOnlyFlag, countFlag, jqFlag, htmlFlag, styledFlag)
+		mode, err := resolveMode()
+		if err != nil {
+			return err
+		}
 		opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs("url")}
 		return output.Render(cmd.OutOrStdout(), result, "", nil, opts)
 	},

@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
@@ -136,7 +137,11 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	}
 
 	// Render
-	if jsonFlag {
+	mode, err := resolveMode()
+	if err != nil {
+		return err
+	}
+	if mode == output.ModeJSON {
 		envelope := map[string]any{
 			"ok":     allOK,
 			"checks": results,
