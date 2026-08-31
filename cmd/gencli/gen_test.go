@@ -5,6 +5,41 @@ import (
 	"testing"
 )
 
+func TestEmitCreate_WrapperBody(t *testing.T) {
+	cmd := GenCommand{
+		OperationID:   "create_driver",
+		Resource:      "drivers",
+		Command:       "create",
+		Method:        "post",
+		Path:           "/customers/{customer_id}/drivers",
+		RequestStruct: "CreateDriverRequest",
+		SDKMethod:     "CreateDriver",
+		WrapperKey:    "driver",
+		ResponseField: "JSON201",
+		RequestBody:   &RequestBody{Content: map[string]Media{"application/json": {Schema: Schema{Type: "object"}}}},
+		ExtraPathParams: []Parameter{{Name: "customer_id", In: "path", Schema: Schema{Type: "integer"}}},
+		BodyFields: []BodyField{
+			{JSONName: "full_name", GoName: "FullName", FlagName: "full-name", Type: "string", Required: true, HelpText: "Full name (required)"},
+			{JSONName: "phone", GoName: "Phone", FlagName: "phone", Type: "string", Required: true, HelpText: "Phone (required)"},
+		},
+	}
+	group := CommandGroup{Resource: "drivers", Commands: []GenCommand{cmd}}
+	code, err := emitGroup(group, nil, &Overrides{})
+	if err != nil {
+		t.Fatalf("emitGroup: %v", err)
+	}
+	for _, want := range []string{
+		"Driver: struct {", // wrapper key emitted
+		"FullName: driversFullName",
+		"client.CreateDriver(ctx, driversCustomerId, body.(wenmar.CreateDriverRequest))",
+		"resp.JSON201",
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("emitted code missing %q:\n%s", want, code)
+		}
+	}
+}
+
 func TestResolveSchemaRef(t *testing.T) {
 	spec := &Spec{
 		Paths: map[string]PathItem{},

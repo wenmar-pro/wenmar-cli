@@ -38,6 +38,9 @@ type GenCommand struct {
 	Tab              string   // work order tab name
 	Aliases          []string // command aliases from overrides
 	ActionSummary    string   // past-tense success message for action runners
+	WrapperKey       string   // request-body wrapper object key ("driver", "vehicle", "work_order"); "" = flat
+	ResponseField    string   // "JSON200" or "JSON201"
+	IDParam          string   // name of the path param treated as the positional id (default "id")
 }
 
 // BodyField represents a scalar field from the request body schema
@@ -126,6 +129,14 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 	}
 	cmd.RequestBody = op.RequestBody
 
+	// Response code from the spec's declared responses.
+	cmd.ResponseField = "JSON200"
+	if _, ok := op.Responses["201"]; ok {
+		cmd.ResponseField = "JSON201"
+	}
+	// IDParam default (Task 4 overrides it via id_param).
+	cmd.IDParam = "id"
+
 	// Apply override if present.
 	if ov, ok := overrides.Commands[op.OperationID]; ok {
 		cmd.Resource = ov.Resource
@@ -138,7 +149,7 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 		}
 		if ov.RequestStruct != "" {
 			cmd.RequestStruct = ov.RequestStruct
-			cmd.BodyFields = parseBodyFields(spec, op, ov.RequestStruct, overrides.FlagOverrides[op.OperationID])
+			cmd.BodyFields, cmd.WrapperKey = parseBodyFields(spec, op, ov.RequestStruct, overrides.FlagOverrides[op.OperationID])
 		}
 		if ov.PositionalArg != "" {
 			cmd.PositionalArg = ov.PositionalArg
@@ -605,21 +616,22 @@ func requestPathExpr(cmd GenCommand) jen.Code {
 
 // parseBodyFields extracts scalar fields from the request body schema
 // and maps them to Go struct field names. Array and object fields are
-// skipped (they need hand-written flag logic).
-func parseBodyFields(spec *Spec, op Operation, requestStruct string, flagOverrides map[string]FlagOverride) []BodyField {
+// skipped (they need hand-written flag logic). It returns the fields and
+// the wrapper object key ("" for flat bodies).
+func parseBodyFields(spec *Spec, op Operation, requestStruct string, flagOverrides map[string]FlagOverride) ([]BodyField, string) {
 	if op.RequestBody == nil {
-		return nil
+		return nil, ""
 	}
 	media, ok := op.RequestBody.Content["application/json"]
 	if !ok {
-		return nil
+		return nil, ""
 	}
 	schema := spec.Resolve(media.Schema)
 
 	// Unwrap wrapper object (e.g. { customer: { ... } }).
 	props := schemaProps(schema)
 	if props == nil {
-		return nil
+		return nil, ""
 	}
 
 	// Check if there's a single wrapper property that's an object.
@@ -628,7 +640,7 @@ func parseBodyFields(spec *Spec, op Operation, requestStruct string, flagOverrid
 			if propSchema.Type == "object" {
 				// It's a wrapper — use the inner object's properties, keyed
 				// by their dotted path (e.g. "customer.first_name").
-				return extractScalarFields(spec, propSchema, requestStruct, propName, flagOverrides)
+				return extractScalarFields(spec, propSchema, requestStruct, propName, flagOverrides), propName
 			}
 			// Not a wrapper — flat body.
 			_ = propName
@@ -636,7 +648,7 @@ func parseBodyFields(spec *Spec, op Operation, requestStruct string, flagOverrid
 	}
 
 	// Flat body (e.g. merge_customer: { source_customer_id: int }).
-	return extractScalarFields(spec, schema, requestStruct, "", flagOverrides)
+	return extractScalarFields(spec, schema, requestStruct, "", flagOverrides), ""
 }
 
 // extractScalarFields returns BodyFields for scalar properties of a schema.
@@ -727,9 +739,11 @@ func snakeToPascal(s string) string {
 		if p == "" {
 			continue
 		}
-		// Special cases for Go naming
+		// Special cases for Go naming. The SDK's generated request structs
+		// use "Id" (not "ID") for the id suffix (e.g. CustomerId), so match
+		// that for anonymous-struct assignability.
 		if p == "id" {
-			parts[i] = "ID"
+			parts[i] = "Id"
 		} else {
 			parts[i] = strings.ToUpper(p[:1]) + p[1:]
 		}
@@ -964,6 +978,59 @@ func emitListPaginatedWithParamsHandler(g *jen.Group, cmd GenCommand) {
 	))
 }
 
+// bodyStructFields renders SDK-compatible anonymous struct fields. The
+// SDK's inline structs list fields alphabetically; json tags match the
+// spec's property names. Optional fields are pointer-typed.
+func bodyStructFields(cmd GenCommand) []jen.Code {
+	fields := make([]jen.Code, 0, len(cmd.BodyFields))
+	for _, bf := range cmd.BodyFields {
+		goT := goType(bf.Type)
+		if bf.IsPointer {
+			goT = "*" + goT
+		}
+		fields = append(fields,
+			jen.Id(bf.GoName).Id(goT).Tag(map[string]string{"json": bf.JSONName}),
+		)
+	}
+	return fields
+}
+
+// bodyLiteralDict builds the value dict for the body literal.
+func bodyLiteralDict(cmd GenCommand) jen.Dict {
+	dict := jen.Dict{}
+	for _, bf := range cmd.BodyFields {
+		varName := bodyFieldVarName(cmd.Resource, bf.GoName)
+		if bf.IsPointer {
+			dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
+		} else {
+			dict[jen.Id(bf.GoName)] = jen.Id(varName)
+		}
+	}
+	return dict
+}
+
+// requestBodyExpr renders the full request-struct literal:
+//
+//	flat:    wenmar.MergeCustomerRequest{SourceCustomerId: v}
+//	wrapped: wenmar.CreateDriverRequest{Driver: struct{...}{FullName: v}}
+func requestBodyExpr(cmd GenCommand) jen.Code {
+	if cmd.WrapperKey == "" {
+		return jen.Qual(wenmarPkg, cmd.RequestStruct).Values(bodyLiteralDict(cmd))
+	}
+	return jen.Qual(wenmarPkg, cmd.RequestStruct).Values(jen.Dict{
+		jen.Id(snakeToPascal(cmd.WrapperKey)): jen.Struct(bodyStructFields(cmd)...).Values(bodyLiteralDict(cmd)),
+	})
+}
+
+// responseFieldFor returns the response field to read, defaulting to
+// JSON200 when unset.
+func responseFieldFor(cmd GenCommand) string {
+	if cmd.ResponseField == "" {
+		return "JSON200"
+	}
+	return cmd.ResponseField
+}
+
 func emitCreateHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
 	summary := titleCase(singularize(resource)) + " created."
@@ -974,17 +1041,7 @@ func emitCreateHandler(g *jen.Group, cmd GenCommand) {
 			bg.Return(jen.Nil(), jen.Nil())
 			return
 		}
-		// Construct: req := wenmar.CreateDriverRequest{FullName: driversCreateFullName, Phone: driversCreatePhone}
-		dict := jen.Dict{}
-		for _, bf := range cmd.BodyFields {
-			varName := bodyFieldVarName(cmd.Resource, bf.GoName)
-			if bf.IsPointer {
-				dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
-			} else {
-				dict[jen.Id(bf.GoName)] = jen.Id(varName)
-			}
-		}
-		bg.Id("req").Op(":=").Qual(wenmarPkg, cmd.RequestStruct).Values(dict)
+		bg.Id("req").Op(":=").Add(requestBodyExpr(cmd))
 		bg.Return(jen.Id("req"), jen.Nil())
 	})
 
@@ -1005,7 +1062,7 @@ func emitCreateHandler(g *jen.Group, cmd GenCommand) {
 		bg.If(jen.Id("err").Op("!=").Nil()).Block(
 			jen.Return(jen.Nil(), jen.Id("err")),
 		)
-		bg.Return(jen.Id("resp").Dot("JSON201"), jen.Nil())
+		bg.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil())
 	})
 
 	g.Return(jen.Id("runCreate").Call(
@@ -1028,16 +1085,7 @@ func emitUpdateHandler(g *jen.Group, cmd GenCommand) {
 			bg.Return(jen.Nil(), jen.Nil())
 			return
 		}
-		dict := jen.Dict{}
-		for _, bf := range cmd.BodyFields {
-			varName := bodyFieldVarName(cmd.Resource, bf.GoName)
-			if bf.IsPointer {
-				dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
-			} else {
-				dict[jen.Id(bf.GoName)] = jen.Id(varName)
-			}
-		}
-		bg.Id("req").Op(":=").Qual(wenmarPkg, cmd.RequestStruct).Values(dict)
+		bg.Id("req").Op(":=").Add(requestBodyExpr(cmd))
 		bg.Return(jen.Id("req"), jen.Nil())
 	})
 
@@ -1059,7 +1107,7 @@ func emitUpdateHandler(g *jen.Group, cmd GenCommand) {
 		bg.If(jen.Id("err").Op("!=").Nil()).Block(
 			jen.Return(jen.Nil(), jen.Id("err")),
 		)
-		bg.Return(jen.Id("resp").Dot("JSON200"), jen.Nil())
+		bg.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil())
 	})
 
 	g.Return(jen.Id("runUpdate").Call(
@@ -1099,16 +1147,7 @@ func emitActionCreateHandler(g *jen.Group, cmd GenCommand) {
 			bg.Return(jen.Nil(), jen.Nil())
 			return
 		}
-		dict := jen.Dict{}
-		for _, bf := range cmd.BodyFields {
-			varName := bodyFieldVarName(cmd.Resource, bf.GoName)
-			if bf.IsPointer {
-				dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
-			} else {
-				dict[jen.Id(bf.GoName)] = jen.Id(varName)
-			}
-		}
-		bg.Id("req").Op(":=").Qual(wenmarPkg, cmd.RequestStruct).Values(dict)
+		bg.Id("req").Op(":=").Add(requestBodyExpr(cmd))
 		bg.Return(jen.Id("req"), jen.Nil())
 	})
 
@@ -1125,7 +1164,7 @@ func emitActionCreateHandler(g *jen.Group, cmd GenCommand) {
 		bg.If(jen.Id("err").Op("!=").Nil()).Block(
 			jen.Return(jen.Nil(), jen.Id("err")),
 		)
-		bg.Return(jen.Id("resp").Dot("JSON200"), jen.Nil())
+		bg.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil())
 	})
 
 	g.Return(jen.Id("runAction").Call(
@@ -1279,7 +1318,7 @@ func emitSeedActionHandler(g *jen.Group, cmd GenCommand) {
 			bg.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			)
-			bg.Return(jen.Id("resp").Dot("JSON200"), jen.Nil())
+			bg.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil())
 		}),
 	))
 }
