@@ -46,8 +46,7 @@ func TestMain(m *testing.M) {
 // execute runs the root command with the given args and returns stdout/err.
 func execute(args ...string) (string, error) {
 	// Reset global output flags so prior tests don't leak state.
-	outputFlag, jsonFlag, agentFlag, jqFlag = "", false, false, ""
-	quietFlag = false
+	jsonFlag, agentFlag, jqFlag, idsOnlyFlag, styledFlag = false, false, "", false, false
 	// Cobra lazily adds a --help flag whose "true" value and Changed bit
 	// persist across Execute calls once a test invokes --help; clear it on
 	// every command so a later --agent run isn't hijacked into printing help.
@@ -457,10 +456,11 @@ func TestCustomersCreate_JSON201(t *testing.T) {
 	}
 }
 
-func TestCustomersList_Markdown(t *testing.T) {
+func TestCustomersList_Styled(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
+	defer srv.Close()
 	out, err := execute(
-		"customers", "list", "--output", "md",
+		"customers", "list", "--styled",
 		"--base-url", srv.URL, "--token", "secret-token",
 	)
 	if err != nil {
@@ -706,7 +706,7 @@ func TestLocationsShow_JSON(t *testing.T) {
 func TestCustomersList_Count(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(
-		"customers", "list", "--output", "count",
+		"customers", "list", "--jq", "length",
 		"--base-url", srv.URL, "--token", "secret-token",
 	)
 	if err != nil {
@@ -719,51 +719,56 @@ func TestCustomersList_Count(t *testing.T) {
 }
 
 func TestDroppedOutputFlagsRemoved(t *testing.T) {
-	dropped := []string{"--md", "-m", "--markdown", "--ids-only", "--count", "--html", "--styled"}
+	dropped := []string{"--output", "--md", "-m", "--markdown", "--quiet", "--count", "--html"}
 	for _, flag := range dropped {
 		t.Run(flag, func(t *testing.T) {
-			_, err := execute("customers", "list", flag)
+			args := []string{"customers", "list", flag}
+			// --output takes a value; give it one so the error is the
+			// unknown-flag error, not a missing-argument error.
+			if flag == "--output" {
+				args = append(args, "md")
+			}
+			_, err := execute(args...)
 			if err == nil {
-				t.Errorf("%s was dropped; it must error (see --output)", flag)
+				t.Errorf("%s was dropped; it must error", flag)
 			}
 		})
 	}
 }
 
-func TestOutputModeFlag(t *testing.T) {
+func TestOutputFlags(t *testing.T) {
 	srv := startFakeAPI(t, "tok-out")
 	defer srv.Close()
 	t.Setenv("WENMAR_URL", srv.URL)
 	t.Setenv("WENMAR_TOKEN", "tok-out")
 
-	out, err := execute("customers", "list", "--output", "md")
+	out, err := execute("customers", "list", "--styled")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(out, "|") || !strings.Contains(out, "full_name") {
-		t.Errorf("--output md should render a GFM table, got:\n%s", out)
+	if !strings.Contains(out, "| id |") {
+		t.Errorf("--styled should render the human table, got:\n%s", out)
 	}
 
-	out, err = execute("customers", "list", "--output", "ids-only")
+	out, err = execute("customers", "list", "--ids-only")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	lines := strings.FieldsFunc(out, func(r rune) bool { return r == '\n' })
 	if len(lines) != 2 || lines[0] != "1" || lines[1] != "2" {
-		t.Errorf("--output ids-only should print one ID per line, got %q", out)
+		t.Errorf("--ids-only should print one ID per line, got %q", out)
 	}
 }
 
-func TestOutputModeConflictFailsFast(t *testing.T) {
+func TestOutputFlagConflictFailsFast(t *testing.T) {
 	srv := startFakeAPI(t, "tok-conflict")
 	defer srv.Close()
 	t.Setenv("WENMAR_URL", srv.URL)
 
-	_, err := execute("customers", "list", "--json", "--output", "md")
+	_, err := execute("customers", "list", "--json", "--agent")
 	if err == nil {
-		t.Fatal("conflicting mode flags must error")
+		t.Fatal("conflicting output flags must error")
 	}
-	// Fail-fast means NO API call was made: assert the fake server saw nothing.
 	if n := srvRequestCount(); n != 0 {
 		t.Errorf("conflict validation should run before any API call; saw %d requests", n)
 	}

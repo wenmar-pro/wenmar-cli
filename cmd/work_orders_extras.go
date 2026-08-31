@@ -18,7 +18,7 @@ var workOrdersShowCmd = &cobra.Command{
 	Use:   "show <id>",
 	Short: "Show a single work order by ID",
 	Example: `  wenmar workorders show 100
-  wenmar workorders show 100 --output agent`,
+  wenmar workorders show 100 --agent`,
 	Args: cobra.ExactArgs(1),
 	RunE: runWorkOrdersShow,
 }
