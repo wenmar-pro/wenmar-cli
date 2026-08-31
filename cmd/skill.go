@@ -43,23 +43,32 @@ func init() {
 	rootCmd.AddCommand(skillCmd)
 }
 
+// bundledSkillDirFrom returns the skill directory for the given binary
+// directory. Candidate locations cover the repo layout, the goreleaser
+// archive layout (binary next to skills/), and package installs
+// (/usr/bin + /usr/share/wenmar/skills).
+func bundledSkillDirFrom(binDir string) (string, error) {
+	candidates := []string{
+		filepath.Join(binDir, "skills", "wenmar"),
+		filepath.Join(binDir, "..", "skills", "wenmar"),
+		filepath.Join(binDir, "..", "share", "wenmar", "skills", "wenmar"),
+		filepath.Join(binDir, "..", "..", "share", "wenmar", "skills", "wenmar"),
+		"/usr/share/wenmar/skills/wenmar",
+	}
+	for _, c := range candidates {
+		if _, err := os.Stat(filepath.Join(c, "SKILL.md")); err == nil {
+			return filepath.Clean(c), nil
+		}
+	}
+	return "", fmt.Errorf("bundled skill not found near the wenmar binary (looked in %v)", candidates)
+}
+
 func bundledSkillDir() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
-	// The bundled skill lives at <binary-dir>/../skills/wenmar or
-	// <binary-dir>/skills/wenmar. Fall back to the repo layout for dev.
-	candidates := []string{
-		filepath.Join(filepath.Dir(exe), "skills", "wenmar"),
-		filepath.Join(filepath.Dir(exe), "..", "skills", "wenmar"),
-	}
-	for _, c := range candidates {
-		if _, err := os.Stat(filepath.Join(c, "SKILL.md")); err == nil {
-			return c, nil
-		}
-	}
-	return "", fmt.Errorf("bundled skill not found near the wenmar binary")
+	return bundledSkillDirFrom(filepath.Dir(exe))
 }
 
 func runSkillInstall(cmd *cobra.Command, args []string) error {
