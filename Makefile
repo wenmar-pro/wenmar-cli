@@ -26,7 +26,7 @@ generate:
 
 # Refresh the committed golden fixtures (regen-drift gate).
 golden-update:
-	go run ./cmd/gencli -spec $(SPEC_PATH) -overrides cmd/gen_overrides.yaml -out cmd/golden
+	go run ./cmd/gencli -spec $(SPEC_PATH) -overrides cmd/gen_overrides.yaml -build-tag ignore -out cmd/golden
 
 clean:
 	rm -f wenmar

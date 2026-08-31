@@ -16,7 +16,7 @@ func TestGoldenRegen(t *testing.T) {
 		t.Skip("wenmar-sdk spec not available (sibling checkout required)")
 	}
 	out := t.TempDir()
-	if err := runGenerate(specPath, filepath.Join("..", "gen_overrides.yaml"), out); err != nil {
+	if err := runGenerate(specPath, filepath.Join("..", "gen_overrides.yaml"), out, "ignore"); err != nil {
 		t.Fatalf("generate: %v", err)
 	}
 	goldenDir := filepath.Join("..", "golden")

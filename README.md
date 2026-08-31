@@ -150,6 +150,24 @@ wenmar customers list --help --agent  # structured help for one command
 
 See [`skills/wenmar/SKILL.md`](skills/wenmar/SKILL.md) for the full agent skill file.
 
+## Development
+
+The resource commands are generated from the enriched OpenAPI spec. The
+generator (`cmd/gencli`) reads the spec + `cmd/gen_overrides.yaml` and emits
+the committed `cmd/gen_*.go` files, which call shared runners in
+`cmd/runners.go`. A few non-derivable commands live in companion files
+(`tags.go`, `customers_extras.go`, `vehicles_extras.go`,
+`work_orders_extras.go`).
+
+```bash
+make generate        # regenerate cmd/gen_*.go from the spec
+make golden-update   # refresh the committed golden fixtures
+make surface-snapshot # refresh the command-surface snapshot
+```
+
+Generated output is committed and guarded by golden tests + a CI
+regen-drift gate, so spec/override/generator drift can never land silently.
+
 ## License
 
 MIT

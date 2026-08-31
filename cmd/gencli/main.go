@@ -23,6 +23,7 @@ func main() {
 	specPath := flag.String("spec", "", "path to enriched OpenAPI spec YAML")
 	overridesPath := flag.String("overrides", "cmd/gen_overrides.yaml", "path to gen_overrides.yaml")
 	outDir := flag.String("out", "cmd", "output directory for generated files")
+	buildTag := flag.String("build-tag", "", "optional //go:build constraint to emit (e.g. ignore for golden fixtures)")
 	flag.Parse()
 
 	if *specPath == "" {
@@ -30,15 +31,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := runGenerate(*specPath, *overridesPath, *outDir); err != nil {
+	if err := runGenerate(*specPath, *overridesPath, *outDir, *buildTag); err != nil {
 		fatal("%v", err)
 	}
 }
 
 // runGenerate loads the spec + overrides and emits one file per resource
 // group into outDir. It is the shared entry point for the CLI and the
-// golden regen-drift test.
-func runGenerate(specPath, overridesPath, outDir string) error {
+// golden regen-drift test. When buildTag is non-empty it is emitted as a
+// //go:build constraint (used for golden fixtures so they don't compile).
+func runGenerate(specPath, overridesPath, outDir, buildTag string) error {
 	spec, err := loadSpec(specPath)
 	if err != nil {
 		return fmt.Errorf("loading spec: %w", err)
@@ -55,7 +57,7 @@ func runGenerate(specPath, overridesPath, outDir string) error {
 	// Emit one file per resource group.
 	for _, group := range groups {
 		fileName := filepath.Join(outDir, "gen_"+group.Resource+".go")
-		code, err := emitGroup(group, spec, overrides)
+		code, err := emitGroup(group, spec, overrides, buildTag)
 		if err != nil {
 			return fmt.Errorf("emitting %s: %w", group.Resource, err)
 		}

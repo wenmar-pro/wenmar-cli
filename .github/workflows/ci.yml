@@ -23,6 +23,13 @@ jobs:
         run: |
           git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/Wenmar-Pro/".insteadOf "https://github.com/Wenmar-Pro/"
 
+      - name: Checkout wenmar-sdk (spec for golden gate)
+        uses: actions/checkout@v4
+        with:
+          repository: Wenmar-Pro/wenmar-sdk
+          path: wenmar-sdk
+          token: ${{ secrets.SDK_PAT }}
+
       - name: Check formatting
         run: |
           unformatted=$(gofmt -l cmd/ internal/)
@@ -43,6 +50,9 @@ jobs:
 
       - name: Test
         run: go test -race ./...
+
+      - name: Regen-drift gate (golden fixtures)
+        run: go test ./cmd/gencli/ -run TestGoldenRegen -v
 
       - name: Verify CLI runs
         run: ./wenmar --help

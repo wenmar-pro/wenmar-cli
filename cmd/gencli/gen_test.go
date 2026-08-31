@@ -24,7 +24,7 @@ func TestEmitCreate_WrapperBody(t *testing.T) {
 		},
 	}
 	group := CommandGroup{Resource: "drivers", Commands: []GenCommand{cmd}}
-	code, err := emitGroup(group, nil, &Overrides{})
+	code, err := emitGroup(group, nil, &Overrides{}, "")
 	if err != nil {
 		t.Fatalf("emitGroup: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestEmitActionNoBody_EmptyStructArg(t *testing.T) {
 		RequestBody:    &RequestBody{Content: map[string]Media{"application/json": {Schema: Schema{Type: "object"}}}},
 	}
 	group := CommandGroup{Resource: "servicecategories", Commands: []GenCommand{cmd}}
-	code, err := emitGroup(group, nil, &Overrides{})
+	code, err := emitGroup(group, nil, &Overrides{}, "")
 	if err != nil {
 		t.Fatalf("emitGroup: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestEmitNestedList_PositionalId(t *testing.T) {
 		PathParams:   []Parameter{{Name: "customer_id", In: "path", Schema: Schema{Type: "integer"}}},
 	}
 	group := CommandGroup{Resource: "customers", Commands: []GenCommand{cmd}}
-	code, err := emitGroup(group, nil, &Overrides{})
+	code, err := emitGroup(group, nil, &Overrides{}, "")
 	if err != nil {
 		t.Fatalf("emitGroup: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestGroupOverridesPlumbThrough(t *testing.T) {
 	group := CommandGroup{Resource: "workorders", Commands: []GenCommand{
 		{OperationID: "list_work_orders", Resource: "workorders", Command: "list", Method: "get", IsPaginated: true, SDKMethod: "ListWorkOrders"},
 	}}
-	code, err := emitGroup(group, nil, overrides)
+	code, err := emitGroup(group, nil, overrides, "")
 	if err != nil {
 		t.Fatalf("emitGroup: %v", err)
 	}
@@ -194,7 +194,7 @@ func TestEmitGroup_ServiceCategoryActionsCompile(t *testing.T) {
 		}},
 	}
 	group := CommandGroup{Resource: "servicecategories", Commands: []GenCommand{cmd}}
-	code, err := emitGroup(group, nil, &Overrides{})
+	code, err := emitGroup(group, nil, &Overrides{}, "")
 	if err != nil {
 		t.Fatalf("emitGroup: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestEmitGroup_CustomersListWithFiltersPaginated(t *testing.T) {
 		},
 	}
 	group := CommandGroup{Resource: "customers", Commands: []GenCommand{cmd}}
-	code, err := emitGroup(group, nil, &Overrides{})
+	code, err := emitGroup(group, nil, &Overrides{}, "")
 	if err != nil {
 		t.Fatalf("emitGroup: %v", err)
 	}
