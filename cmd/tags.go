@@ -32,21 +32,21 @@ var tagsCreateCmd = &cobra.Command{
 	Short: "Create a customer or vehicle tag",
 	Example: `  wenmar tags create --name "Fleet A"
   wenmar tags create --type vehicle --name "Priority"`,
-	RunE:  runTagsCreate,
+	RunE: runTagsCreate,
 }
 
 var tagsDeleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete a customer or vehicle tag",
+	Use:     "delete",
+	Short:   "Delete a customer or vehicle tag",
 	Example: `  wenmar tags delete --id 5`,
-	RunE:  runTagsDelete,
+	RunE:    runTagsDelete,
 }
 
 var tagsRenameCmd = &cobra.Command{
-	Use:   "rename",
-	Short: "Rename a customer or vehicle tag",
+	Use:     "rename",
+	Short:   "Rename a customer or vehicle tag",
 	Example: `  wenmar tags rename --id 5 --name "Fleet B"`,
-	RunE:  runTagsRename,
+	RunE:    runTagsRename,
 }
 
 var (

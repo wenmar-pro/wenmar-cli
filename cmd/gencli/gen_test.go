@@ -7,16 +7,16 @@ import (
 
 func TestEmitCreate_WrapperBody(t *testing.T) {
 	cmd := GenCommand{
-		OperationID:   "create_driver",
-		Resource:      "drivers",
-		Command:       "create",
-		Method:        "post",
-		Path:           "/customers/{customer_id}/drivers",
-		RequestStruct: "CreateDriverRequest",
-		SDKMethod:     "CreateDriver",
-		WrapperKey:    "driver",
-		ResponseField: "JSON201",
-		RequestBody:   &RequestBody{Content: map[string]Media{"application/json": {Schema: Schema{Type: "object"}}}},
+		OperationID:     "create_driver",
+		Resource:        "drivers",
+		Command:         "create",
+		Method:          "post",
+		Path:            "/customers/{customer_id}/drivers",
+		RequestStruct:   "CreateDriverRequest",
+		SDKMethod:       "CreateDriver",
+		WrapperKey:      "driver",
+		ResponseField:   "JSON201",
+		RequestBody:     &RequestBody{Content: map[string]Media{"application/json": {Schema: Schema{Type: "object"}}}},
 		ExtraPathParams: []Parameter{{Name: "customer_id", In: "path", Schema: Schema{Type: "integer"}}},
 		BodyFields: []BodyField{
 			{JSONName: "full_name", GoName: "FullName", FlagName: "full-name", Type: "string", Required: true, HelpText: "Full name (required)"},
@@ -42,18 +42,18 @@ func TestEmitCreate_WrapperBody(t *testing.T) {
 
 func TestEmitActionNoBody_EmptyStructArg(t *testing.T) {
 	cmd := GenCommand{
-		OperationID:    "deactivate_service_category",
+		OperationID:   "deactivate_service_category",
 		Resource:      "servicecategories",
 		Command:       "deactivate",
-		Method:         "patch",
-		Path:           "/service_categories/{id}/deactivate",
-		HasIDParam:     true,
-		IDParam:        "id",
-		IDType:         "int",
-		SDKMethod:      "DeactivateServiceCategory",
-		RequestStruct:  "DeactivateServiceCategoryRequest",
-		ActionSummary:  "Service category deactivated.",
-		RequestBody:    &RequestBody{Content: map[string]Media{"application/json": {Schema: Schema{Type: "object"}}}},
+		Method:        "patch",
+		Path:          "/service_categories/{id}/deactivate",
+		HasIDParam:    true,
+		IDParam:       "id",
+		IDType:        "int",
+		SDKMethod:     "DeactivateServiceCategory",
+		RequestStruct: "DeactivateServiceCategoryRequest",
+		ActionSummary: "Service category deactivated.",
+		RequestBody:   &RequestBody{Content: map[string]Media{"application/json": {Schema: Schema{Type: "object"}}}},
 	}
 	group := CommandGroup{Resource: "servicecategories", Commands: []GenCommand{cmd}}
 	code, err := emitGroup(group, nil, &Overrides{}, "")
@@ -74,12 +74,12 @@ func TestEmitNestedList_PositionalId(t *testing.T) {
 		Resource:    "customers",
 		Command:     "vehicles",
 		Method:      "get",
-		Path:         "/customers/{customer_id}/vehicles",
-		IDParam:      "customer_id",
-		HasIDParam:   true,
-		IDType:       "int",
-		SDKMethod:    "ListCustomersVehicles",
-		PathParams:   []Parameter{{Name: "customer_id", In: "path", Schema: Schema{Type: "integer"}}},
+		Path:        "/customers/{customer_id}/vehicles",
+		IDParam:     "customer_id",
+		HasIDParam:  true,
+		IDType:      "int",
+		SDKMethod:   "ListCustomersVehicles",
+		PathParams:  []Parameter{{Name: "customer_id", In: "path", Schema: Schema{Type: "integer"}}},
 	}
 	group := CommandGroup{Resource: "customers", Commands: []GenCommand{cmd}}
 	code, err := emitGroup(group, nil, &Overrides{}, "")
@@ -179,15 +179,15 @@ func TestEmitGroup_ServiceCategoryActionsCompile(t *testing.T) {
 	// Deactivate is PATCH /service_categories/{id}/deactivate with an
 	// empty-object body: the case that ships broken commands today.
 	cmd := GenCommand{
-		OperationID: "deactivate_service_category",
-		Resource:    "servicecategories",
-		Command:     "deactivate",
-		Method:      "patch",
-		Path:        "/service_categories/{id}/deactivate",
-		HasIDParam:  true,
-		IDParam:     "id",
-		Summary:     "Deactivate a service category by ID",
-		SDKMethod:   "DeactivateServiceCategory",
+		OperationID:   "deactivate_service_category",
+		Resource:      "servicecategories",
+		Command:       "deactivate",
+		Method:        "patch",
+		Path:          "/service_categories/{id}/deactivate",
+		HasIDParam:    true,
+		IDParam:       "id",
+		Summary:       "Deactivate a service category by ID",
+		SDKMethod:     "DeactivateServiceCategory",
 		RequestStruct: "DeactivateServiceCategoryRequest",
 		RequestBody: &RequestBody{Content: map[string]Media{
 			"application/json": {Schema: Schema{Type: "object", Properties: map[string]Schema{}}},

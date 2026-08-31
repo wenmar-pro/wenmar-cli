@@ -19,48 +19,48 @@ var workOrdersShowCmd = &cobra.Command{
 	Short: "Show a single work order by ID",
 	Example: `  wenmar workorders show 100
   wenmar workorders show 100 --output agent`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrdersShow,
+	Args: cobra.ExactArgs(1),
+	RunE: runWorkOrdersShow,
 }
 
 var workOrdersEstimateCmd = &cobra.Command{
-	Use:   "estimate <id>",
-	Short: "Show the estimate tab (services) for a work order",
+	Use:     "estimate <id>",
+	Short:   "Show the estimate tab (services) for a work order",
 	Example: `  wenmar workorders estimate 100`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrdersTab("estimate"),
+	Args:    cobra.ExactArgs(1),
+	RunE:    runWorkOrdersTab("estimate"),
 }
 
 var workOrdersWipCmd = &cobra.Command{
-	Use:   "wip <id>",
-	Short: "Show the work-in-progress tab (services) for a work order",
+	Use:     "wip <id>",
+	Short:   "Show the work-in-progress tab (services) for a work order",
 	Example: `  wenmar workorders wip 100`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrdersTab("wip"),
+	Args:    cobra.ExactArgs(1),
+	RunE:    runWorkOrdersTab("wip"),
 }
 
 var workOrdersInspectionCmd = &cobra.Command{
-	Use:   "inspection <id>",
-	Short: "Show the inspection tab (inspection reports) for a work order",
+	Use:     "inspection <id>",
+	Short:   "Show the inspection tab (inspection reports) for a work order",
 	Example: `  wenmar workorders inspection 100`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrdersTab("inspection"),
+	Args:    cobra.ExactArgs(1),
+	RunE:    runWorkOrdersTab("inspection"),
 }
 
 var workOrdersPartsCmd = &cobra.Command{
-	Use:   "parts <id>",
-	Short: "Show the parts tab (services) for a work order",
+	Use:     "parts <id>",
+	Short:   "Show the parts tab (services) for a work order",
 	Example: `  wenmar workorders parts 100`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrdersTab("parts"),
+	Args:    cobra.ExactArgs(1),
+	RunE:    runWorkOrdersTab("parts"),
 }
 
 var workOrdersPaymentsCmd = &cobra.Command{
-	Use:   "payments <id>",
-	Short: "Show the payments tab (payments) for a work order",
+	Use:     "payments <id>",
+	Short:   "Show the payments tab (payments) for a work order",
 	Example: `  wenmar workorders payments 100`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrdersTab("payments"),
+	Args:    cobra.ExactArgs(1),
+	RunE:    runWorkOrdersTab("payments"),
 }
 
 func init() {

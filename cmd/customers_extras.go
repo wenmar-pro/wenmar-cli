@@ -15,18 +15,18 @@ import (
 )
 
 var customersCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create a new customer",
+	Use:     "create",
+	Short:   "Create a new customer",
 	Example: `  wenmar customers create --full-name "Jane Doe" --email "jane@test.com"`,
-	RunE:  runCustomersCreate,
+	RunE:    runCustomersCreate,
 }
 
 var customersUpdateCmd = &cobra.Command{
-	Use:   "update <id>",
-	Short: "Update a customer by ID",
+	Use:     "update <id>",
+	Short:   "Update a customer by ID",
 	Example: `  wenmar customers update 42 --company-name "New Corp"`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersUpdate,
+	Args:    cobra.ExactArgs(1),
+	RunE:    runCustomersUpdate,
 }
 
 var (

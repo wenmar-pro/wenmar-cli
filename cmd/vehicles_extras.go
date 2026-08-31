@@ -26,27 +26,27 @@ var vehiclesUpdateCmd = &cobra.Command{
 }
 
 var (
-	vehicleCreateMake         string
-	vehicleCreateModel        string
-	vehicleCreateYear         int
-	vehicleCreateCustomer     int
-	vehicleUpdateMake         string
-	vehicleVin                string
-	vehicleSubmodel           string
-	vehicleBodyStyle          string
-	vehicleEngine             string
-	vehicleTransmission       string
-	vehicleDrivetrain         string
-	vehicleColor              string
-	vehiclePlate              string
-	vehiclePlateState         string
-	vehicleOdometer           int
-	vehicleOdometerUnit       string
-	vehicleUnitNumber         string
-	vehicleFleetIdentifier    string
-	vehicleProductionDate     string
-	vehicleNotes              string
-	vehicleTagIDs             []int
+	vehicleCreateMake      string
+	vehicleCreateModel     string
+	vehicleCreateYear      int
+	vehicleCreateCustomer  int
+	vehicleUpdateMake      string
+	vehicleVin             string
+	vehicleSubmodel        string
+	vehicleBodyStyle       string
+	vehicleEngine          string
+	vehicleTransmission    string
+	vehicleDrivetrain      string
+	vehicleColor           string
+	vehiclePlate           string
+	vehiclePlateState      string
+	vehicleOdometer        int
+	vehicleOdometerUnit    string
+	vehicleUnitNumber      string
+	vehicleFleetIdentifier string
+	vehicleProductionDate  string
+	vehicleNotes           string
+	vehicleTagIDs          []int
 )
 
 func init() {

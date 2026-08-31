@@ -54,7 +54,7 @@ type BodyField struct {
 	Required  bool
 	IsPointer bool // true if the SDK struct field is a pointer type
 	HelpText  string
-	NoFlag    bool // true if the field appears in the body struct but has no CLI flag (arrays)
+	NoFlag    bool   // true if the field appears in the body struct but has no CLI flag (arrays)
 	Default   string // optional default value for the flag ("" = type zero value)
 	FlagType  string // "intslice" to bind via IntSliceVar (array params)
 }
