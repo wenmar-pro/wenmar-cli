@@ -23,24 +23,29 @@ var tagsListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
 	Short:   "List all customer and vehicle tags",
+	Example: `  wenmar tags list`,
 	RunE:    runTagsList,
 }
 
 var tagsCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a customer or vehicle tag",
+	Example: `  wenmar tags create --name "Fleet A"
+  wenmar tags create --type vehicle --name "Priority"`,
 	RunE:  runTagsCreate,
 }
 
 var tagsDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete a customer or vehicle tag",
+	Example: `  wenmar tags delete --id 5`,
 	RunE:  runTagsDelete,
 }
 
 var tagsRenameCmd = &cobra.Command{
 	Use:   "rename",
 	Short: "Rename a customer or vehicle tag",
+	Example: `  wenmar tags rename --id 5 --name "Fleet B"`,
 	RunE:  runTagsRename,
 }
 

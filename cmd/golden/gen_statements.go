@@ -12,9 +12,10 @@ import (
 
 var statementsCustomerId int
 var statementsListCmd = &cobra.Command{
-	RunE:  runStatementsList,
-	Short: "List statements for a customer, paginated via the Link header",
-	Use:   "list",
+	Example: "wenmar statements list --customer-id 42\n",
+	RunE:    runStatementsList,
+	Short:   "List statements for a customer, paginated via the Link header",
+	Use:     "list",
 }
 
 func runStatementsList(cmd *cobra.Command, args []string) error {
@@ -28,10 +29,11 @@ func runStatementsList(cmd *cobra.Command, args []string) error {
 }
 
 var statementsShowCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runStatementsShow,
-	Short: "Show a single statement by ID",
-	Use:   "show <id>",
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar statements show 9001\n",
+	RunE:    runStatementsShow,
+	Short:   "Show a single statement by ID",
+	Use:     "show <id>",
 }
 
 func runStatementsShow(cmd *cobra.Command, args []string) error {

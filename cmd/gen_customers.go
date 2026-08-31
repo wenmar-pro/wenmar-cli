@@ -45,9 +45,10 @@ func runCustomersDuplicates(cmd *cobra.Command, args []string) error {
 }
 
 var customersListCmd = &cobra.Command{
-	RunE:  runCustomersList,
-	Short: "List all customers, paginated via the Link header",
-	Use:   "list",
+	Example: "wenmar customers list\nwenmar customers list --query \"jane\" --all\nwenmar customers list --output agent | head -20\n",
+	RunE:    runCustomersList,
+	Short:   "List all customers, paginated via the Link header",
+	Use:     "list",
 }
 
 func runCustomersList(cmd *cobra.Command, args []string) error {
@@ -78,10 +79,11 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 }
 
 var customersLookupCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersLookup,
-	Short: "Search customers by name/email/phone",
-	Use:   "lookup <string>",
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar customers lookup \"jane doe\"\n",
+	RunE:    runCustomersLookup,
+	Short:   "Search customers by name/email/phone",
+	Use:     "lookup <string>",
 }
 
 func runCustomersLookup(cmd *cobra.Command, args []string) error {
@@ -118,10 +120,11 @@ func runCustomersMerge(cmd *cobra.Command, args []string) error {
 }
 
 var customersShowCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersShow,
-	Short: "Show a single customer by ID",
-	Use:   "show <id>",
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar customers show 42\n",
+	RunE:    runCustomersShow,
+	Short:   "Show a single customer by ID",
+	Use:     "show <id>",
 }
 
 func runCustomersShow(cmd *cobra.Command, args []string) error {

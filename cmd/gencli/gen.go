@@ -41,6 +41,7 @@ type GenCommand struct {
 	WrapperKey       string   // request-body wrapper object key ("driver", "vehicle", "work_order"); "" = flat
 	ResponseField    string   // "JSON200" or "JSON201"
 	IDParam          string   // name of the path param treated as the positional id (default "id")
+	Example          string   // example usage block for cobra help
 }
 
 // BodyField represents a scalar field from the request body schema
@@ -162,6 +163,9 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 	}
 	if ov.IdParam != "" {
 		cmd.IDParam = ov.IdParam
+	}
+	if ov.Example != "" {
+		cmd.Example = ov.Example
 	}
 
 	// Path-param loop: the param named cmd.IDParam is the positional id.
@@ -359,6 +363,9 @@ func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) {
 			aliasLit = append(aliasLit, jen.Lit(a))
 		}
 		dict[jen.Id("Aliases")] = jen.Index().String().Values(aliasLit...)
+	}
+	if cmd.Example != "" {
+		dict[jen.Id("Example")] = jen.Lit(cmd.Example)
 	}
 
 	f.Var().Id(varName).Op("=").Op("&").Qual("github.com/spf13/cobra", "Command").Values(dict)

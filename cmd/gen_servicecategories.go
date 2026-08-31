@@ -73,9 +73,10 @@ func runServicecategoriesDelete(cmd *cobra.Command, args []string) error {
 }
 
 var servicecategoriesListCmd = &cobra.Command{
-	RunE:  runServicecategoriesList,
-	Short: "List all service categories",
-	Use:   "list",
+	Example: "wenmar servicecategories list\n",
+	RunE:    runServicecategoriesList,
+	Short:   "List all service categories",
+	Use:     "list",
 }
 
 func runServicecategoriesList(cmd *cobra.Command, args []string) error {

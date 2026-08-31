@@ -19,10 +19,11 @@ var vehiclesSourceVehicleId int
 var vehiclesVin string
 var vehiclesYear int
 var vehiclesDecodeVinCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesDecodeVin,
-	Short: "Decode a VIN into make/model",
-	Use:   "decode-vin <string>",
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar vehicles decode-vin 1HGCM82633A004352\n",
+	RunE:    runVehiclesDecodeVin,
+	Short:   "Decode a VIN into make/model",
+	Use:     "decode-vin <string>",
 }
 
 func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
@@ -68,9 +69,10 @@ func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesListCmd = &cobra.Command{
-	RunE:  runVehiclesList,
-	Short: "List all vehicles",
-	Use:   "list",
+	Example: "wenmar vehicles list\nwenmar vehicles list --jq '.[].plate'\n",
+	RunE:    runVehiclesList,
+	Short:   "List all vehicles",
+	Use:     "list",
 }
 
 func runVehiclesList(cmd *cobra.Command, args []string) error {
@@ -148,10 +150,11 @@ func runVehiclesPrefill(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesShowCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesShow,
-	Short: "Show a single vehicle by ID",
-	Use:   "show <id>",
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar vehicles show 5\n",
+	RunE:    runVehiclesShow,
+	Short:   "Show a single vehicle by ID",
+	Use:     "show <id>",
 }
 
 func runVehiclesShow(cmd *cobra.Command, args []string) error {

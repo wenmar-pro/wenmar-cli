@@ -13,9 +13,10 @@ var workordersDeleteDryRun bool
 var workordersIntakeMethod string
 var workordersVehicleId int
 var workordersCreateCmd = &cobra.Command{
-	RunE:  runWorkordersCreate,
-	Short: "Create a new work order",
-	Use:   "create",
+	Example: "wenmar workorders create --customer-id 42 --vehicle-id 5\n",
+	RunE:    runWorkordersCreate,
+	Short:   "Create a new work order",
+	Use:     "create",
 }
 
 func runWorkordersCreate(cmd *cobra.Command, args []string) error {
@@ -38,10 +39,11 @@ func runWorkordersCreate(cmd *cobra.Command, args []string) error {
 }
 
 var workordersDeleteCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkordersDelete,
-	Short: "Delete a work order by ID",
-	Use:   "delete <id>",
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar workorders delete 100 --dry-run\n",
+	RunE:    runWorkordersDelete,
+	Short:   "Delete a work order by ID",
+	Use:     "delete <id>",
 }
 
 func runWorkordersDelete(cmd *cobra.Command, args []string) error {
@@ -51,9 +53,10 @@ func runWorkordersDelete(cmd *cobra.Command, args []string) error {
 }
 
 var workordersListCmd = &cobra.Command{
-	RunE:  runWorkordersList,
-	Short: "List all work orders, paginated via the Link header",
-	Use:   "list",
+	Example: "wenmar workorders list\nwenmar workorders list --jq '.[].number'\nwenmar workorders list --output count\n",
+	RunE:    runWorkordersList,
+	Short:   "List all work orders, paginated via the Link header",
+	Use:     "list",
 }
 
 func runWorkordersList(cmd *cobra.Command, args []string) error {
@@ -67,10 +70,11 @@ func runWorkordersList(cmd *cobra.Command, args []string) error {
 }
 
 var workordersUpdateCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkordersUpdate,
-	Short: "Update a work order by ID",
-	Use:   "update <id>",
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar workorders update 100 --intake-method drop_off\n",
+	RunE:    runWorkordersUpdate,
+	Short:   "Update a work order by ID",
+	Use:     "update <id>",
 }
 
 func runWorkordersUpdate(cmd *cobra.Command, args []string) error {

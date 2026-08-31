@@ -17,6 +17,8 @@ import (
 var workOrdersShowCmd = &cobra.Command{
 	Use:   "show <id>",
 	Short: "Show a single work order by ID",
+	Example: `  wenmar workorders show 100
+  wenmar workorders show 100 --output agent`,
 	Args:  cobra.ExactArgs(1),
 	RunE:  runWorkOrdersShow,
 }
@@ -24,6 +26,7 @@ var workOrdersShowCmd = &cobra.Command{
 var workOrdersEstimateCmd = &cobra.Command{
 	Use:   "estimate <id>",
 	Short: "Show the estimate tab (services) for a work order",
+	Example: `  wenmar workorders estimate 100`,
 	Args:  cobra.ExactArgs(1),
 	RunE:  runWorkOrdersTab("estimate"),
 }
@@ -31,6 +34,7 @@ var workOrdersEstimateCmd = &cobra.Command{
 var workOrdersWipCmd = &cobra.Command{
 	Use:   "wip <id>",
 	Short: "Show the work-in-progress tab (services) for a work order",
+	Example: `  wenmar workorders wip 100`,
 	Args:  cobra.ExactArgs(1),
 	RunE:  runWorkOrdersTab("wip"),
 }
@@ -38,6 +42,7 @@ var workOrdersWipCmd = &cobra.Command{
 var workOrdersInspectionCmd = &cobra.Command{
 	Use:   "inspection <id>",
 	Short: "Show the inspection tab (inspection reports) for a work order",
+	Example: `  wenmar workorders inspection 100`,
 	Args:  cobra.ExactArgs(1),
 	RunE:  runWorkOrdersTab("inspection"),
 }
@@ -45,6 +50,7 @@ var workOrdersInspectionCmd = &cobra.Command{
 var workOrdersPartsCmd = &cobra.Command{
 	Use:   "parts <id>",
 	Short: "Show the parts tab (services) for a work order",
+	Example: `  wenmar workorders parts 100`,
 	Args:  cobra.ExactArgs(1),
 	RunE:  runWorkOrdersTab("parts"),
 }
@@ -52,6 +58,7 @@ var workOrdersPartsCmd = &cobra.Command{
 var workOrdersPaymentsCmd = &cobra.Command{
 	Use:   "payments <id>",
 	Short: "Show the payments tab (payments) for a work order",
+	Example: `  wenmar workorders payments 100`,
 	Args:  cobra.ExactArgs(1),
 	RunE:  runWorkOrdersTab("payments"),
 }

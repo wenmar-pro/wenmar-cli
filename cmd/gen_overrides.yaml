@@ -86,6 +86,8 @@ commands:
     command: show
     summary: Show account details
     method: ListAccount
+    example: |
+      wenmar account show
 
   # vendors
   list_vendors:
@@ -93,11 +95,15 @@ commands:
     command: list
     summary: List all vendors, paginated via the Link header
     method: ListVendors
+    example: |
+      wenmar vendors list
   show_vendor:
     resource: vendors
     command: show
     summary: Show a single vendor by ID
     method: ShowVendor
+    example: |
+      wenmar vendors show 7
 
   # locations
   show_location:
@@ -105,6 +111,8 @@ commands:
     command: show
     summary: Show a location by ID
     method: ShowLocation
+    example: |
+      wenmar locations show main
 
   # statements — flag-based list (Decision A: customers statements <id> dropped)
   show_statement:
@@ -112,11 +120,15 @@ commands:
     command: show
     summary: Show a single statement by ID
     method: ShowStatement
+    example: |
+      wenmar statements show 9001
   list_customers_statements:
     resource: statements
     command: list
     summary: List statements for a customer, paginated via the Link header
     method: ListCustomersStatements
+    example: |
+      wenmar statements list --customer-id 42
 
   # drivers — Decision B: --customer-id flag on all commands, no id_param
   list_customers_drivers:
@@ -124,6 +136,8 @@ commands:
     command: list
     summary: List drivers for a customer, paginated via the Link header
     method: ListCustomersDrivers
+    example: |
+      wenmar drivers list --customer-id 42
   show_driver:
     resource: drivers
     command: show
@@ -154,11 +168,17 @@ commands:
     summary: List all customers, paginated via the Link header
     method: ListCustomers
     query_param_struct: ListCustomersParams
+    example: |
+      wenmar customers list
+      wenmar customers list --query "jane" --all
+      wenmar customers list --output agent | head -20
   show_customer:
     resource: customers
     command: show
     summary: Show a single customer by ID
     method: ShowCustomer
+    example: |
+      wenmar customers show 42
   merge_customer:
     resource: customers
     command: merge
@@ -172,6 +192,8 @@ commands:
     method: LookupCustomer
     positional_arg: string
     query_param_struct: LookupCustomerParams
+    example: |
+      wenmar customers lookup "jane doe"
   check_customer_duplicate:
     resource: customers
     command: duplicates
@@ -200,11 +222,16 @@ commands:
     method: ListVehicles
     paginated: false
     query_param_struct: ListVehiclesParams
+    example: |
+      wenmar vehicles list
+      wenmar vehicles list --jq '.[].plate'
   show_vehicle:
     resource: vehicles
     command: show
     summary: Show a single vehicle by ID
     method: ShowVehicle
+    example: |
+      wenmar vehicles show 5
   update_vehicle:
     resource: vehicles
     command: update
@@ -223,6 +250,8 @@ commands:
     method: DecodeVin
     positional_arg: string
     query_param_struct: DecodeVinParams
+    example: |
+      wenmar vehicles decode-vin 1HGCM82633A004352
   check_vehicle_duplicate:
     resource: vehicles
     command: duplicates
@@ -269,23 +298,33 @@ commands:
     command: list
     summary: List all work orders, paginated via the Link header
     method: ListWorkOrders
+    example: |
+      wenmar workorders list
+      wenmar workorders list --jq '.[].number'
+      wenmar workorders list --output count
   create_work_order:
     resource: workorders
     command: create
     summary: Create a new work order
     method: CreateWorkOrder
     request_struct: CreateWorkOrderRequest
+    example: |
+      wenmar workorders create --customer-id 42 --vehicle-id 5
   update_work_order:
     resource: workorders
     command: update
     summary: Update a work order by ID
     method: UpdateWorkOrder
     request_struct: UpdateWorkOrderRequest
+    example: |
+      wenmar workorders update 100 --intake-method drop_off
   delete_work_order:
     resource: workorders
     command: delete
     summary: Delete a work order by ID
     method: DeleteWorkOrder
+    example: |
+      wenmar workorders delete 100 --dry-run
 
   # service categories (resource renamed per D2)
   list_service_categories:
@@ -293,6 +332,8 @@ commands:
     command: list
     summary: List all service categories
     method: ListServiceCategories
+    example: |
+      wenmar servicecategories list
   create_service_category:
     resource: servicecategories
     command: create

@@ -181,6 +181,7 @@ type CommandOverride struct {
 	Aliases          []string `yaml:"aliases"`
 	Short            string   `yaml:"short"`
 	IdParam          string   `yaml:"id_param"`
+	Example          string   `yaml:"example"`
 }
 
 type FlagOverride struct {

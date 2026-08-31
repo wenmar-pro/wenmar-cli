@@ -54,9 +54,10 @@ func runDriversDelete(cmd *cobra.Command, args []string) error {
 }
 
 var driversListCmd = &cobra.Command{
-	RunE:  runDriversList,
-	Short: "List drivers for a customer, paginated via the Link header",
-	Use:   "list",
+	Example: "wenmar drivers list --customer-id 42\n",
+	RunE:    runDriversList,
+	Short:   "List drivers for a customer, paginated via the Link header",
+	Use:     "list",
 }
 
 func runDriversList(cmd *cobra.Command, args []string) error {

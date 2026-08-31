@@ -9,9 +9,10 @@ import (
 )
 
 var vendorsListCmd = &cobra.Command{
-	RunE:  runVendorsList,
-	Short: "List all vendors, paginated via the Link header",
-	Use:   "list",
+	Example: "wenmar vendors list\n",
+	RunE:    runVendorsList,
+	Short:   "List all vendors, paginated via the Link header",
+	Use:     "list",
 }
 
 func runVendorsList(cmd *cobra.Command, args []string) error {
@@ -25,10 +26,11 @@ func runVendorsList(cmd *cobra.Command, args []string) error {
 }
 
 var vendorsShowCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVendorsShow,
-	Short: "Show a single vendor by ID",
-	Use:   "show <id>",
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar vendors show 7\n",
+	RunE:    runVendorsShow,
+	Short:   "Show a single vendor by ID",
+	Use:     "show <id>",
 }
 
 func runVendorsShow(cmd *cobra.Command, args []string) error {
