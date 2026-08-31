@@ -18,22 +18,38 @@ type helpTopic struct {
 var helpTopics = []helpTopic{
 	{
 		name:  "output",
-		title: "Output Formats",
-		content: `Wenmar CLI supports several output modes:
+		title: "Output Modes",
+		content: `The canonical flag is --output <mode>:
 
-  --json       Full JSON envelope: {ok, data, summary, meta, breadcrumbs}
-  --agent      Raw JSON data (no envelope)
-  --quiet      Raw JSON output, no envelope, no agent discovery
-  --md / -m    GitHub-flavored markdown table
-  --html       HTML document
-  --jq <expr>  Apply a jq filter (implies --json)
-  --ids-only   Print one ID per line (for shell loops)
-  --count      Print the count of results (bare integer)
-  --styled     Force human tables even when piped
+  table     Human-readable table (default on a terminal)
+  md        GitHub-flavored markdown table
+  json      Full JSON envelope {ok, data, summary, meta, breadcrumbs}
+  agent     Raw JSON data (no envelope)
+  quiet     Raw JSON output, no envelope (default when piped)
+  ids-only  One ID per line (for shell loops)
+  count     Bare integer count
+  html      HTML document
+  styled    Force the table even when piped
 
-Auto-switch: when stdout is not a TTY (e.g. piped to another command) and no
-explicit output mode is set, wenmar emits raw JSON so the output is
-machine-readable. Use --styled to force human tables in a pipe.
+Quick flags (equivalents, hidden from subcommand help):
+  --json          Same as --output json
+  --agent         Same as --output agent (also makes --help emit JSON)
+  --quiet         Same as --output quiet
+  --jq <expr>     jq filter over the data (implies --output json)
+
+Combining --output with a quick flag (or two quick flags together) is an
+error — pick one.
+
+Auto-switch: when stdout is not a TTY (e.g. piped to another command) and
+no explicit mode is set, wenmar emits raw JSON (quiet) so output is
+machine-readable. Use --output styled to force tables in a pipe.
+
+Migration from pre-release flags:
+  --md / -m / --markdown   -> --output md
+  --ids-only               -> --output ids-only
+  --count                  -> --output count
+  --html                   -> --output html
+  --styled                 -> --output styled
 
 Envelope structure:
   {"ok": true, "data": [...], "summary": "5 customers",
