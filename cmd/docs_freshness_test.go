@@ -12,11 +12,11 @@ import (
 
 // docInvocation is one wenmar command line extracted from documentation.
 type docInvocation struct {
-	Source  string // "SKILL.md" | "README.md"
-	Line    int
-	Raw     string
-	Path    []string // command path tokens (canonical or alias)
-	Flags   []string // flag names used (without --)
+	Source string // "SKILL.md" | "README.md"
+	Line   int
+	Raw    string
+	Path   []string // command path tokens (canonical or alias)
+	Flags  []string // flag names used (without --)
 }
 
 var wenmarLineRe = regexp.MustCompile(`(?m)^\s*(?:\$ )?wenmar\s+([^` + "`" + `\n]+)`)
