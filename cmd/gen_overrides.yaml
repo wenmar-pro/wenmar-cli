@@ -267,6 +267,56 @@ commands:
     summary: Create a payment against a work order
     method: CreateWorkOrderPayment
 
+  # service categories
+  list_service_categories:
+    resource: servicecategories
+    command: list
+    summary: List all service categories
+    method: ListServiceCategories
+  create_service_category:
+    resource: servicecategories
+    command: create
+    summary: Create a new service category
+    method: CreateServiceCategory
+    request_struct: CreateServiceCategoryRequest
+  update_service_category:
+    resource: servicecategories
+    command: update
+    summary: Update a service category by ID
+    method: UpdateServiceCategory
+    request_struct: UpdateServiceCategoryRequest
+  delete_service_category:
+    resource: servicecategories
+    command: delete
+    summary: Delete a service category by ID
+    method: DeleteServiceCategory
+  deactivate_service_category:
+    resource: servicecategories
+    command: deactivate
+    summary: Deactivate a service category by ID
+    method: DeactivateServiceCategory
+  reactivate_service_category:
+    resource: servicecategories
+    command: reactivate
+    summary: Reactivate a service category by ID
+    method: ReactivateServiceCategory
+  move_up_service_category:
+    resource: servicecategories
+    command: move-up
+    summary: Move a service category up one position
+    method: MoveUpServiceCategory
+  move_down_service_category:
+    resource: servicecategories
+    command: move-down
+    summary: Move a service category down one position
+    method: MoveDownServiceCategory
+  seed_defaults_service_categories:
+    resource: servicecategories
+    command: seed-defaults
+    summary: Seed default service categories for the account
+    method: SeedDefaultsServiceCategories
+    action_summary: Default service categories seeded.
+
   # tags
   list_tags:
     resource: tags

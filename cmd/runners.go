@@ -251,6 +251,52 @@ func runAction(cmd *cobra.Command, args []string, resource, method string, pathF
 	return output.Render(cmd.OutOrStdout(), data, summary, nil, opts)
 }
 
+// runActionNoBody is the shared skeleton for id-scoped action commands whose
+// request body has no scalar fields (service category deactivate/reactivate/
+// move-up/move-down). It parses the id, calls the SDK, renders the response.
+func runActionNoBody(cmd *cobra.Command, args []string, resource, method string, pathFn func(args []string) string, summary string,
+	action func(ctx context.Context, client *wenmar.Client, id int) (any, error)) error {
+	id, err := parseInt(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := newScopedClient(context.Background())
+	if err != nil {
+		return err
+	}
+	setRequest(method, pathFn(args))
+
+	data, err := action(context.Background(), client, id)
+	if err != nil {
+		return err
+	}
+
+	mode := resolveMode()
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: showBreadcrumbs(resource, args[0])}
+	return output.Render(cmd.OutOrStdout(), extractData(data), summary, nil, opts)
+}
+
+// runSeedAction is the skeleton for POST-collection actions with empty
+// bodies (e.g. service categories seed-defaults): no id, call, render.
+func runSeedAction(cmd *cobra.Command, resource, path string, summary string,
+	action func(ctx context.Context, client *wenmar.Client) (any, error)) error {
+	client, err := newScopedClient(context.Background())
+	if err != nil {
+		return err
+	}
+	setRequest("POST", path)
+
+	data, err := action(context.Background(), client)
+	if err != nil {
+		return err
+	}
+
+	mode := resolveMode()
+	opts := output.Options{Mode: mode, JQFilter: jqFlag, Breadcrumbs: listBreadcrumbs(resource)}
+	return output.Render(cmd.OutOrStdout(), extractData(data), summary, nil, opts)
+}
+
 // runDelete is the shared skeleton for "delete <id>" commands, including
 // the dry-run block. resourceLabel is the display name (e.g. "Driver",
 // "Work order"); resourceSlug is the slug for breadcrumbs (e.g. "drivers",

@@ -307,7 +307,7 @@ func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) {
 
 func needsExactArgs(cmdType string) bool {
 	switch cmdType {
-	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate", "tab":
+	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate", "actionNoBody", "tab":
 		return true
 	default:
 		return false
@@ -339,8 +339,14 @@ func classifyCommand(cmd GenCommand) string {
 		}
 		return "list"
 	case "post":
-		if cmd.HasIDParam && cmd.RequestBody != nil && isSubAction(cmd) {
+		if cmd.HasIDParam && cmd.RequestBody != nil && isSubAction(cmd) && len(cmd.BodyFields) > 0 {
 			return "actionCreate" // e.g. merge — POST to /resource/{id}/action
+		}
+		if cmd.HasIDParam && cmd.RequestBody != nil && isSubAction(cmd) {
+			return "actionNoBody" // POST sub-action with empty body
+		}
+		if cmd.RequestBody != nil && len(cmd.BodyFields) == 0 && !cmd.HasIDParam {
+			return "seedAction" // e.g. seed_defaults_service_categories
 		}
 		if cmd.RequestBody != nil {
 			return "create"
@@ -348,6 +354,9 @@ func classifyCommand(cmd GenCommand) string {
 		return "action"
 	case "patch":
 		if cmd.HasIDParam && cmd.RequestBody != nil && isSubAction(cmd) {
+			if len(cmd.BodyFields) == 0 {
+				return "actionNoBody" // e.g. service category deactivate/reactivate/move_up/move_down
+			}
 			return "actionUpdate" // e.g. transfer — PATCH to /resource/{id}/action
 		}
 		if cmd.RequestBody != nil {
@@ -363,7 +372,7 @@ func classifyCommand(cmd GenCommand) string {
 
 func useArgsSuffix(cmdType string, cmd GenCommand) string {
 	switch cmdType {
-	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate", "tab":
+	case "show", "showStr", "update", "delete", "actionCreate", "actionUpdate", "actionNoBody", "tab":
 		return " <id>"
 	default:
 		return ""
@@ -512,6 +521,10 @@ func emitHandler(f *jen.File, cmd GenCommand, cmdType string, overrides *Overrid
 			emitActionCreateHandler(g, cmd)
 		case "actionUpdate":
 			emitActionUpdateHandler(g, cmd)
+		case "actionNoBody":
+			emitActionNoBodyHandler(g, cmd)
+		case "seedAction":
+			emitSeedActionHandler(g, cmd)
 		case "positionalArg":
 			emitPositionalArgHandler(g, cmd)
 		case "queryParam":
@@ -732,11 +745,17 @@ func extractQueryFields(op Operation, queryParamStruct string) []BodyField {
 // that the runners expect.
 func pathFnForRunner(cmd GenCommand) jen.Code {
 	if len(cmd.ExtraPathParams) == 0 {
-		// Simple case: constant prefix, use idPath helper.
 		path := cmd.Path
 		idPos := strings.Index(path, "{id}")
 		if idPos < 0 {
 			return jen.Id("idPath").Call(jen.Lit(path))
+		}
+		// If {id} is not the last segment (e.g. /service_categories/{id}/deactivate),
+		// build a func that splices args[0] into the middle of the path.
+		if idPos+len("{id}") < len(path) {
+			return jen.Func().Params(jen.Id("a").Index().Id("string")).Id("string").Block(
+				jen.Return(pathWithIDExpr(cmd)),
+			)
 		}
 		return jen.Id("idPath").Call(jen.Lit(path[:idPos]))
 	}
@@ -1108,6 +1127,61 @@ func emitActionHandler(g *jen.Group, cmd GenCommand) {
 	// Actions without body (merge, transfer) — treat as list for now.
 	g.Comment("TODO: implement action handler for " + cmd.OperationID)
 	g.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("action %s not yet generated"), jen.Lit(cmd.OperationID)))
+}
+
+// actionSummary returns the past-tense success message for an action command.
+// It prefers the ActionSummary override and falls back to a derived message.
+func actionSummary(cmd GenCommand) string {
+	if cmd.ActionSummary != "" {
+		return cmd.ActionSummary
+	}
+	return titleCase(singularize(cmd.Resource)) + " " + cmd.Command + "."
+}
+
+// emitActionNoBodyHandler emits the handler for id-scoped actions whose
+// body carries no scalar fields (e.g. service category deactivate). Mirrors
+// the hand-written runServiceCategoryAction: parse id, call (ctx, id), render.
+func emitActionNoBodyHandler(g *jen.Group, cmd GenCommand) {
+	resource := cmd.Resource
+	g.Return(jen.Id("runActionNoBody").Call(
+		jen.Id("cmd"), jen.Id("args"),
+		jen.Lit(resource),
+		jen.Lit(strings.ToUpper(cmd.Method)),
+		pathFnForRunner(cmd),
+		jen.Lit(actionSummary(cmd)),
+		jen.Func().Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+			jen.Id("id").Id("int"),
+		).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
+			callArgs := sdkCallArgs(cmd, true)
+			bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(callArgs...)
+			bg.If(jen.Id("err").Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Id("err")),
+			)
+			bg.Return(jen.Id("resp").Dot("JSON200"), jen.Nil())
+		}),
+	))
+}
+
+// emitSeedActionHandler emits POST-collection actions with empty bodies.
+func emitSeedActionHandler(g *jen.Group, cmd GenCommand) {
+	g.Return(jen.Id("runSeedAction").Call(
+		jen.Id("cmd"),
+		jen.Lit(cmd.Resource),
+		jen.Lit(cmd.Path),
+		jen.Lit(actionSummary(cmd)),
+		jen.Func().Params(
+			jen.Id("ctx").Qual("context", "Context"),
+			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
+		).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
+			bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(jen.Id("ctx"))
+			bg.If(jen.Id("err").Op("!=").Nil()).Block(
+				jen.Return(jen.Nil(), jen.Id("err")),
+			)
+			bg.Return(jen.Id("resp").Dot("JSON200"), jen.Nil())
+		}),
+	))
 }
 
 const wenmarPkg = "github.com/wenmar-pro/wenmar-sdk/go/wenmar"

@@ -49,3 +49,38 @@ func TestGroupOverridesPlumbThrough(t *testing.T) {
 		t.Errorf("parent Args validation not emitted:\n%s", code)
 	}
 }
+
+func TestEmitGroup_ServiceCategoryActionsCompile(t *testing.T) {
+	// Deactivate is PATCH /service_categories/{id}/deactivate with an
+	// empty-object body: the case that ships broken commands today.
+	cmd := GenCommand{
+		OperationID: "deactivate_service_category",
+		Resource:    "servicecategories",
+		Command:     "deactivate",
+		Method:      "patch",
+		Path:        "/service_categories/{id}/deactivate",
+		HasIDParam:  true,
+		Summary:     "Deactivate a service category by ID",
+		SDKMethod:   "DeactivateServiceCategory",
+		RequestBody: &RequestBody{Content: map[string]Media{
+			"application/json": {Schema: Schema{Type: "object", Properties: map[string]Schema{}}},
+		}},
+	}
+	group := CommandGroup{Resource: "servicecategories", Commands: []GenCommand{cmd}}
+	code, err := emitGroup(group, nil, &Overrides{})
+	if err != nil {
+		t.Fatalf("emitGroup: %v", err)
+	}
+	for _, want := range []string{
+		"runServicecategoriesDeactivate",
+		"client.DeactivateServiceCategory(ctx, id)",
+		"cobra.ExactArgs(1)",
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("emitted code missing %q:\n%s", want, code)
+		}
+	}
+	if strings.Contains(code, "not yet generated") {
+		t.Error("action stub still emitted")
+	}
+}
