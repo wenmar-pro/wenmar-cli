@@ -119,10 +119,7 @@ func fetchCustomerDetail(client *wenmar.Client, locationID string, id int) tea.C
 		var resp *wenmar.ShowCustomerResponse
 		var err error
 		if locationID != "" {
-			lc, lerr := client.ForLocation(ctx, locationID)
-			if lerr != nil {
-				return customerDetailResultMsg{err: lerr}
-			}
+			lc := client.ForLocation(locationID)
 			resp, err = lc.ShowCustomer(ctx, id)
 		} else {
 			resp, err = client.ShowCustomer(ctx, id)

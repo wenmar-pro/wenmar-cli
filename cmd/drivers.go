@@ -84,7 +84,7 @@ func init() {
 
 func runDriversList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "drivers", fmt.Sprintf("/customers/%d/drivers", driversCustomerID), func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListDrivers(ctx, driversCustomerID)
+		resp, err := client.ListCustomersDrivers(ctx, driversCustomerID)
 		if err != nil {
 			return nil, err
 		}
@@ -105,8 +105,13 @@ func runDriversShow(cmd *cobra.Command, args []string) error {
 func runDriversCreate(cmd *cobra.Command, args []string) error {
 	return runCreate(cmd, "drivers", fmt.Sprintf("/customers/%d/drivers", driversCustomerID), "Driver created.", func() (any, error) {
 		return wenmar.CreateDriverRequest{
-			FullName: driverCreateFullName,
-			Phone:    driverCreatePhone,
+			Driver: struct {
+				FullName string `json:"full_name"`
+				Phone    string `json:"phone"`
+			}{
+				FullName: driverCreateFullName,
+				Phone:    driverCreatePhone,
+			},
 		}, nil
 	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
 		resp, err := client.CreateDriver(ctx, driversCustomerID, body.(wenmar.CreateDriverRequest))
@@ -120,7 +125,11 @@ func runDriversCreate(cmd *cobra.Command, args []string) error {
 func runDriversUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "drivers", func(a []string) string { return fmt.Sprintf("/customers/%d/drivers/%s", driversCustomerID, a[0]) }, "Driver updated.", func(id int) (any, error) {
 		return wenmar.UpdateDriverRequest{
-			FullName: driverUpdateFullName,
+			Driver: struct {
+				FullName string `json:"full_name"`
+			}{
+				FullName: driverUpdateFullName,
+			},
 		}, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
 		resp, err := client.UpdateDriver(ctx, driversCustomerID, id, body.(wenmar.UpdateDriverRequest))

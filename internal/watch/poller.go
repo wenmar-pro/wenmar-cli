@@ -105,11 +105,7 @@ func (p *Poller) scopedClient(ctx context.Context) (*wenmar.Client, error) {
 	if p.LocationID == "" {
 		return p.Client, nil
 	}
-	lc, err := p.Client.ForLocation(ctx, p.LocationID)
-	if err != nil {
-		return nil, err
-	}
-	return lc.Client, nil
+	return p.Client.ForLocation(p.LocationID), nil
 }
 
 func isAuthError(err error) bool {
@@ -174,13 +170,13 @@ func (p *Poller) fetch(ctx context.Context, client *wenmar.Client) (map[string]m
 	var err error
 	switch p.Resource {
 	case "customers":
-		resp, ferr := client.ListCustomers(ctx)
+		resp, ferr := client.ListCustomers(ctx, nil)
 		if ferr != nil {
 			return nil, ferr
 		}
 		items, err = decodeList(resp.JSON200)
 	case "vehicles":
-		resp, ferr := client.ListVehicles(ctx)
+		resp, ferr := client.ListVehicles(ctx, nil)
 		if ferr != nil {
 			return nil, ferr
 		}

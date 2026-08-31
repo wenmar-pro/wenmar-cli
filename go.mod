@@ -17,7 +17,7 @@ require (
 
 // Temporary local resolution until go/v0.4.0 is pushed to the private repo.
 // Remove this once the tag is available over the network (see Task 1).
-replace github.com/wenmar-pro/wenmar-sdk/go => ../wenmar-sdk/go
+replace github.com/wenmar-pro/wenmar-sdk/go => ../wenmar-sdk/.worktrees/sdk-0.4.1-production-readiness/go
 
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect

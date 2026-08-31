@@ -128,9 +128,15 @@ func runServiceCategoriesList(cmd *cobra.Command, args []string) error {
 func runServiceCategoriesCreate(cmd *cobra.Command, args []string) error {
 	return runCreate(cmd, "service_categories", "/service_categories", "Service category created.", func() (any, error) {
 		return wenmar.CreateServiceCategoryRequest{
-			Name:        serviceCategoryCreateName,
-			ServiceType: serviceCategoryCreateServiceType,
-			Icon:        serviceCategoryCreateIcon,
+			ServiceCategory: struct {
+				Icon        string `json:"icon"`
+				Name        string `json:"name"`
+				ServiceType string `json:"service_type"`
+			}{
+				Name:        serviceCategoryCreateName,
+				ServiceType: serviceCategoryCreateServiceType,
+				Icon:        serviceCategoryCreateIcon,
+			},
 		}, nil
 	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
 		resp, err := client.CreateServiceCategory(ctx, body.(wenmar.CreateServiceCategoryRequest))
@@ -143,7 +149,11 @@ func runServiceCategoriesCreate(cmd *cobra.Command, args []string) error {
 
 func runServiceCategoriesUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "service_categories", idPath("/service_categories/"), "Service category updated.", func(id int) (any, error) {
-		return wenmar.UpdateServiceCategoryRequest{Name: serviceCategoryUpdateName}, nil
+		return wenmar.UpdateServiceCategoryRequest{
+			ServiceCategory: struct {
+				Name string `json:"name"`
+			}{Name: serviceCategoryUpdateName},
+		}, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
 		resp, err := client.UpdateServiceCategory(ctx, id, body.(wenmar.UpdateServiceCategoryRequest))
 		if err != nil {
@@ -165,7 +175,7 @@ func runServiceCategoriesDelete(cmd *cobra.Command, args []string) error {
 
 func runServiceCategoriesDeactivate(cmd *cobra.Command, args []string) error {
 	return runServiceCategoryAction(cmd, args, "PATCH", func(a []string) string { return "/service_categories/" + a[0] + "/deactivate" }, "Service category deactivated.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.DeactivateServiceCategory(ctx, id)
+		resp, err := client.DeactivateServiceCategory(ctx, id, wenmar.DeactivateServiceCategoryRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -175,7 +185,7 @@ func runServiceCategoriesDeactivate(cmd *cobra.Command, args []string) error {
 
 func runServiceCategoriesReactivate(cmd *cobra.Command, args []string) error {
 	return runServiceCategoryAction(cmd, args, "PATCH", func(a []string) string { return "/service_categories/" + a[0] + "/reactivate" }, "Service category reactivated.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ReactivateServiceCategory(ctx, id)
+		resp, err := client.ReactivateServiceCategory(ctx, id, wenmar.ReactivateServiceCategoryRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -185,7 +195,7 @@ func runServiceCategoriesReactivate(cmd *cobra.Command, args []string) error {
 
 func runServiceCategoriesMoveUp(cmd *cobra.Command, args []string) error {
 	return runServiceCategoryAction(cmd, args, "PATCH", func(a []string) string { return "/service_categories/" + a[0] + "/move_up" }, "Service category moved up.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.MoveUpServiceCategory(ctx, id)
+		resp, err := client.MoveUpServiceCategory(ctx, id, wenmar.MoveUpServiceCategoryRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -195,7 +205,7 @@ func runServiceCategoriesMoveUp(cmd *cobra.Command, args []string) error {
 
 func runServiceCategoriesMoveDown(cmd *cobra.Command, args []string) error {
 	return runServiceCategoryAction(cmd, args, "PATCH", func(a []string) string { return "/service_categories/" + a[0] + "/move_down" }, "Service category moved down.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.MoveDownServiceCategory(ctx, id)
+		resp, err := client.MoveDownServiceCategory(ctx, id, wenmar.MoveDownServiceCategoryRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -210,7 +220,7 @@ func runServiceCategoriesSeedDefaults(cmd *cobra.Command, args []string) error {
 	}
 	setRequest("POST", "/service_categories/seed_defaults")
 
-	resp, err := client.SeedDefaultsServiceCategories(context.Background())
+	resp, err := client.SeedDefaultsServiceCategories(context.Background(), wenmar.SeedDefaultsServiceCategoriesRequest{})
 	if err != nil {
 		return err
 	}

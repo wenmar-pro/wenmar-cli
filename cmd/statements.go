@@ -45,7 +45,7 @@ func init() {
 
 func runStatementsList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "statements", fmt.Sprintf("/customers/%d/statements", statementsCustomerID), func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListStatements(ctx, statementsCustomerID)
+		resp, err := client.ListCustomersStatements(ctx, statementsCustomerID)
 		if err != nil {
 			return nil, err
 		}

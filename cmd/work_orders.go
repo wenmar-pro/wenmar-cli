@@ -113,11 +113,11 @@ func init() {
 
 func runWorkOrdersList(cmd *cobra.Command, args []string) error {
 	return runListPaginated(cmd, "work_orders", "/work_orders", func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
-		resp, paginator, err := client.ListWorkOrdersWithPagination(ctx)
+		resp, err := client.ListWorkOrders(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
-		return resp.JSON200, paginator, nil
+		return resp.JSON200, client.PaginatorFromResponse(resp.HTTPResponse), nil
 	})
 }
 
@@ -152,8 +152,13 @@ func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
 func runWorkOrdersCreate(cmd *cobra.Command, args []string) error {
 	return runCreate(cmd, "work_orders", "/work_orders", "Work order created.", func() (any, error) {
 		return wenmar.CreateWorkOrderRequest{
-			CustomerID: workOrderCreateCustomer,
-			VehicleID:  workOrderCreateVehicle,
+			WorkOrder: struct {
+				CustomerId int `json:"customer_id"`
+				VehicleId  int `json:"vehicle_id"`
+			}{
+				CustomerId: workOrderCreateCustomer,
+				VehicleId:  workOrderCreateVehicle,
+			},
 		}, nil
 	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
 		resp, err := client.CreateWorkOrder(ctx, body.(wenmar.CreateWorkOrderRequest))
@@ -167,7 +172,9 @@ func runWorkOrdersCreate(cmd *cobra.Command, args []string) error {
 func runWorkOrdersUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "work_orders", idPath("/work_orders/"), "Work order updated.", func(id int) (any, error) {
 		return wenmar.UpdateWorkOrderRequest{
-			IntakeMethod: workOrderUpdateIntakeMethod,
+			WorkOrder: struct {
+				IntakeMethod string `json:"intake_method"`
+			}{IntakeMethod: workOrderUpdateIntakeMethod},
 		}, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
 		resp, err := client.UpdateWorkOrder(ctx, id, body.(wenmar.UpdateWorkOrderRequest))

@@ -107,10 +107,18 @@ func runTagsDelete(cmd *cobra.Command, args []string) error {
 		req := wenmar.UpdateTagsRequest{}
 		destroy := "1"
 		if tagsType == "vehicle" {
-			vt := []wenmar.VehicleTagUpdate{{UnderscoreDestroy: destroy, Id: tagsID}}
+			vt := []struct {
+				UnderscoreDestroy string `json:"_destroy"`
+				Id                int    `json:"id"`
+			}{{UnderscoreDestroy: destroy, Id: tagsID}}
 			req.VehicleTags = &vt
 		} else {
-			req.CustomerTags = []wenmar.CustomerTagUpdate{{UnderscoreDestroy: &destroy, Id: tagsID}}
+			ct := []struct {
+				UnderscoreDestroy *string `json:"_destroy,omitempty"`
+				Id                int     `json:"id"`
+				Name              *string `json:"name,omitempty"`
+			}{{UnderscoreDestroy: &destroy, Id: tagsID}}
+			req.CustomerTags = &ct
 		}
 		return req
 	})
@@ -121,10 +129,18 @@ func runTagsRename(cmd *cobra.Command, args []string) error {
 		req := wenmar.UpdateTagsRequest{}
 		name := tagsName
 		if tagsType == "vehicle" {
-			vt := []wenmar.VehicleTagUpdate{{Id: tagsID}}
+			vt := []struct {
+				UnderscoreDestroy string `json:"_destroy"`
+				Id                int    `json:"id"`
+			}{{Id: tagsID}}
 			req.VehicleTags = &vt
 		} else {
-			req.CustomerTags = []wenmar.CustomerTagUpdate{{Id: tagsID, Name: &name}}
+			ct := []struct {
+				UnderscoreDestroy *string `json:"_destroy,omitempty"`
+				Id                int     `json:"id"`
+				Name              *string `json:"name,omitempty"`
+			}{{Id: tagsID, Name: &name}}
+			req.CustomerTags = &ct
 		}
 		return req
 	})
