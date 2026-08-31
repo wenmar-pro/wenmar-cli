@@ -49,11 +49,11 @@ These rules MUST be followed without exception:
 3. **Preview destructive ops** with `--dry-run` where offered
    (vehicles/drivers/workorders/servicecategories delete). There is no
    `--force` flag; a delete without `--dry-run` executes immediately.
-4. **Set an explicit output mode** for anything parsed: `--output agent`
-   (or the `--agent` shorthand). Default piped output is raw JSON, but
-   explicit beats implicit.
-5. **Never combine output flags**: `--output` alone, or exactly one of
-   `--json`/`--agent`/`--quiet`/`--jq`. Mixing them errors.
+4. **Set an explicit output mode** for anything parsed: `--agent` (raw JSON,
+   no envelope). Default piped output is raw JSON, but explicit beats
+   implicit.
+5. **Never combine output flags**: exactly one of `--json`/`--agent`/
+   `--jq`/`--ids-only`/`--count`/`--styled`. Mixing them errors.
 6. **Never pipe to external `jq`** — use `--jq 'expr'` (built-in).
 7. **Use `wenmar commands`** when unsure what exists — it lists canonical
    paths plus aliases (`canonical: false` entries).
@@ -66,23 +66,20 @@ These rules MUST be followed without exception:
 
 ## Output modes
 
-`--output <mode>` is canonical:
+One flag, one mode — combining them is an error:
 
-| Mode | What you get |
+| Flag | What you get |
 |------|--------------|
-| `table` | Human table (terminal default) |
-| `md` | GFM table |
-| `json` | Full envelope `{ok, data, summary, meta, breadcrumbs}` |
-| `agent` | Raw JSON data, no envelope |
-| `quiet` | Raw JSON; the default when piped |
-| `ids-only` | One ID per line (shell loops) |
-| `count` | Bare integer count |
-| `html` | HTML document |
-| `styled` | Force tables even when piped |
+| (default) | Human table on a terminal; raw JSON when piped |
+| `--json` | Full envelope `{ok, data, summary, meta, breadcrumbs}` |
+| `--agent` | Raw JSON data, no envelope |
+| `--jq 'expr'` | Filter output with a jq expression (implies raw JSON) |
+| `--ids-only` | One ID per line (shell loops) |
+| `--count` | Bare integer count (monitoring) |
+| `--styled` | Force the human table even when piped |
 
-Shorthands (hidden from subcommand help, still work): `--json`, `--agent`
-(also makes `--help` emit JSON), `--quiet`, `--jq 'expr'` (implies json).
-Piped stdout with no explicit mode → `quiet`. Conflicts error out.
+`--agent` also makes `--help` emit structured JSON. Piped stdout with no
+explicit mode → raw JSON. Conflicts error out.
 
 ## Exit codes
 
@@ -107,7 +104,7 @@ Piped stdout with no explicit mode → `quiet`. Conflicts error out.
 ```bash
 wenmar customers list
 wenmar customers list --query "jane" --all          # full-text + all pages
-wenmar customers list --output ids-only
+wenmar customers list --ids-only
 wenmar customers show 42
 wenmar customers show 42 --jq '.emails[]?.address'
 wenmar customers create --full-name "Jane Doe" --email "jane@test.com"
@@ -122,7 +119,7 @@ wenmar customers workorders 42
 
 ```bash
 wenmar workorders list
-wenmar workorders list --output count
+wenmar workorders list --count
 wenmar workorders show 100
 wenmar workorders show 100 --jq '.vehicle.make'
 wenmar workorders create --customer-id 42 --vehicle-id 5
@@ -177,7 +174,7 @@ wenmar help location                         # full topic
 
 Lists paginate via the Link header. `customers list` supports `--page N`,
 `--per-page N`, and `--all` (follow every page). When `meta.has_next` is
-true in `--output json`, more pages exist.
+true in `--json`, more pages exist.
 
 ### Truncated responses
 
@@ -217,7 +214,7 @@ Every command with path, description, aliases, args, and flags (with
 ## Gotchas
 
 - **Pagination is Link-header based** — no page numbers in response bodies.
-- **Nested objects truncate in tables** — use `--output json` or `--jq`
+- **Nested objects truncate in tables** — use `--json` or `--jq`
   for full detail.
 - **`customers update` cannot change emails/addresses/tags** — the update
   API only accepts phone changes (with `--remove-phone` by ID) and scalar
