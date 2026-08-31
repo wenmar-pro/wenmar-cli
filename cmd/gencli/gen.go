@@ -35,7 +35,9 @@ type GenCommand struct {
 	PositionalArg    string
 	QueryParamStruct string
 	QueryFields      []BodyField
-	Tab              string // work order tab name
+	Tab              string   // work order tab name
+	Aliases          []string // command aliases from overrides
+	ActionSummary    string   // past-tense success message for action runners
 }
 
 // BodyField represents a scalar field from the request body schema
@@ -151,6 +153,12 @@ func buildCommand(op Operation, method, path string, overrides *Overrides) *GenC
 		if ov.Tab != "" {
 			cmd.Tab = ov.Tab
 		}
+		if len(ov.Aliases) > 0 {
+			cmd.Aliases = ov.Aliases
+		}
+		if ov.ActionSummary != "" {
+			cmd.ActionSummary = ov.ActionSummary
+		}
 		return cmd
 	}
 
@@ -230,10 +238,32 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides) (string, er
 			return
 		}
 		parentVar := group.Resource + "Cmd"
-		g.Id(parentVar).Op(":=").Op("&").Qual("github.com/spf13/cobra", "Command").Values(jen.Dict{
-			jen.Id("Use"):   jen.Lit(group.Resource),
-			jen.Id("Short"): jen.Lit(titleCase(group.Resource) + " commands"),
-		})
+		parentDict := jen.Dict{
+			jen.Id("Use"): jen.Lit(group.Resource),
+		}
+		short := group.Resource + " commands"
+		if ov, ok := overrides.Groups[group.Resource]; ok {
+			if ov.Short != "" {
+				short = ov.Short
+			}
+			if len(ov.Aliases) > 0 {
+				aliasLit := make([]jen.Code, 0, len(ov.Aliases))
+				for _, a := range ov.Aliases {
+					aliasLit = append(aliasLit, jen.Lit(a))
+				}
+				parentDict[jen.Id("Aliases")] = jen.Values(aliasLit...)
+			}
+		}
+		parentDict[jen.Id("Short")] = jen.Lit(short)
+		// Phase 1 Task 7 parity: typo'd subcommands must fail, bare parents show help.
+		parentDict[jen.Id("Args")] = jen.Qual("github.com/spf13/cobra", "NoArgs")
+		parentDict[jen.Id("RunE")] = jen.Func().Params(
+			jen.Id("cmd").Op("*").Qual("github.com/spf13/cobra", "Command"),
+			jen.Id("args").Index().Id("string"),
+		).Id("error").Block(
+			jen.Return(jen.Id("cmd").Dot("Help").Call()),
+		)
+		g.Id(parentVar).Op(":=").Op("&").Qual("github.com/spf13/cobra", "Command").Values(parentDict)
 		// Register flags for each command.
 		for _, cmd := range group.Commands {
 			emitFlagRegistration(g, cmd)
@@ -261,6 +291,13 @@ func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) {
 	}
 	if needsExactArgs(cmdType) {
 		dict[jen.Id("Args")] = jen.Qual("github.com/spf13/cobra", "ExactArgs").Call(jen.Lit(1))
+	}
+	if len(cmd.Aliases) > 0 {
+		aliasLit := make([]jen.Code, 0, len(cmd.Aliases))
+		for _, a := range cmd.Aliases {
+			aliasLit = append(aliasLit, jen.Lit(a))
+		}
+		dict[jen.Id("Aliases")] = jen.Values(aliasLit...)
 	}
 
 	f.Var().Id(varName).Op("=").Op("&").Qual("github.com/spf13/cobra", "Command").Values(dict)

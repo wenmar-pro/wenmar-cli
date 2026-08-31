@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestSdkMethodNameFor(t *testing.T) {
 	tests := []struct {
@@ -19,5 +22,30 @@ func TestSdkMethodNameFor(t *testing.T) {
 				t.Errorf("sdkMethodNameFor() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestGroupOverridesPlumbThrough(t *testing.T) {
+	overrides := &Overrides{
+		Groups: map[string]GroupOverride{
+			"workorders": {Aliases: []string{"work_orders", "wo"}, Short: "Manage work orders"},
+		},
+		Commands: map[string]CommandOverride{},
+	}
+	group := CommandGroup{Resource: "workorders", Commands: []GenCommand{
+		{OperationID: "list_work_orders", Resource: "workorders", Command: "list", Method: "get", IsPaginated: true, SDKMethod: "ListWorkOrders"},
+	}}
+	code, err := emitGroup(group, nil, overrides)
+	if err != nil {
+		t.Fatalf("emitGroup: %v", err)
+	}
+	if !strings.Contains(code, `Aliases: {"work_orders", "wo"}`) {
+		t.Errorf("parent aliases not emitted:\n%s", code)
+	}
+	if !strings.Contains(code, `Short: "Manage work orders"`) {
+		t.Errorf("parent short not emitted:\n%s", code)
+	}
+	if !strings.Contains(code, "cobra.NoArgs") {
+		t.Errorf("parent Args validation not emitted:\n%s", code)
 	}
 }

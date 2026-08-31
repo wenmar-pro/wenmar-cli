@@ -124,18 +124,28 @@ type Overrides struct {
 	Commands      map[string]CommandOverride         `yaml:"commands"`
 	FlagOverrides map[string]map[string]FlagOverride `yaml:"flag_overrides"`
 	Exclude       []string                           `yaml:"exclude"`
+	Groups        map[string]GroupOverride           `yaml:"groups"`
+}
+
+// GroupOverride shapes a resource parent command.
+type GroupOverride struct {
+	Aliases []string `yaml:"aliases"`
+	Short   string   `yaml:"short"`
 }
 
 type CommandOverride struct {
-	Resource         string `yaml:"resource"`
-	Command          string `yaml:"command"`
-	Summary          string `yaml:"summary"`
-	Method           string `yaml:"method"`
-	RequestStruct    string `yaml:"request_struct"`
-	PositionalArg    string `yaml:"positional_arg"`
-	QueryParamStruct string `yaml:"query_param_struct"`
-	Paginated        *bool  `yaml:"paginated"`
-	Tab              string `yaml:"tab"`
+	Resource         string   `yaml:"resource"`
+	Command          string   `yaml:"command"`
+	Summary          string   `yaml:"summary"`
+	ActionSummary    string   `yaml:"action_summary"`
+	Method           string   `yaml:"method"`
+	RequestStruct    string   `yaml:"request_struct"`
+	PositionalArg    string   `yaml:"positional_arg"`
+	QueryParamStruct string   `yaml:"query_param_struct"`
+	Paginated        *bool    `yaml:"paginated"`
+	Tab              string   `yaml:"tab"`
+	Aliases          []string `yaml:"aliases"`
+	Short            string   `yaml:"short"`
 }
 
 type FlagOverride struct {
