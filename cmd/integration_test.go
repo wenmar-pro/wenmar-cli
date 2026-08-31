@@ -46,8 +46,8 @@ func TestMain(m *testing.M) {
 // execute runs the root command with the given args and returns stdout/err.
 func execute(args ...string) (string, error) {
 	// Reset global output flags so prior tests don't leak state.
-	mdFlag, jsonFlag, agentFlag, jqFlag = false, false, false, ""
-	idsOnlyFlag, countFlag, htmlFlag, styledFlag, quietFlag = false, false, false, false, false
+	outputFlag, jsonFlag, agentFlag, jqFlag = "", false, false, ""
+	quietFlag = false
 	// Cobra lazily adds a --help flag whose "true" value and Changed bit
 	// persist across Execute calls once a test invokes --help; clear it on
 	// every command so a later --agent run isn't hijacked into printing help.
@@ -84,6 +84,8 @@ func resetHelpFlag(c *cobra.Command) {
 // envelope for the endpoints the CLI calls.
 func startFakeAPI(t *testing.T, token string) *httptest.Server {
 	t.Helper()
+
+	fakeAPIRequests.Store(0)
 
 	mux := http.NewServeMux()
 
@@ -279,9 +281,20 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		writeJSON(w, http.StatusOK, map[string]any{"id": 1, "name": "Bay 1"})
 	})
 
-	srv := httptest.NewServer(mux)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fakeAPIRequests.Add(1)
+		mux.ServeHTTP(w, r)
+	}))
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+// fakeAPIRequests counts requests seen by the fake API, so tests can assert
+// that validation fails before any API call is made.
+var fakeAPIRequests atomic.Int32
+
+func srvRequestCount() int {
+	return int(fakeAPIRequests.Load())
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -447,7 +460,7 @@ func TestCustomersCreate_JSON201(t *testing.T) {
 func TestCustomersList_Markdown(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(
-		"customers", "list", "--md",
+		"customers", "list", "--output", "md",
 		"--base-url", srv.URL, "--token", "secret-token",
 	)
 	if err != nil {
@@ -693,7 +706,7 @@ func TestLocationsShow_JSON(t *testing.T) {
 func TestCustomersList_Count(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(
-		"customers", "list", "--count",
+		"customers", "list", "--output", "count",
 		"--base-url", srv.URL, "--token", "secret-token",
 	)
 	if err != nil {
@@ -705,17 +718,54 @@ func TestCustomersList_Count(t *testing.T) {
 	}
 }
 
-func TestCustomersList_MarkdownAlias(t *testing.T) {
-	srv := startFakeAPI(t, "secret-token")
-	out, err := execute(
-		"customers", "list", "--markdown",
-		"--base-url", srv.URL, "--token", "secret-token",
-	)
+func TestDroppedOutputFlagsRemoved(t *testing.T) {
+	dropped := []string{"--md", "-m", "--markdown", "--ids-only", "--count", "--html", "--styled"}
+	for _, flag := range dropped {
+		t.Run(flag, func(t *testing.T) {
+			_, err := execute("customers", "list", flag)
+			if err == nil {
+				t.Errorf("%s was dropped; it must error (see --output)", flag)
+			}
+		})
+	}
+}
+
+func TestOutputModeFlag(t *testing.T) {
+	srv := startFakeAPI(t, "tok-out")
+	defer srv.Close()
+	t.Setenv("WENMAR_URL", srv.URL)
+	t.Setenv("WENMAR_TOKEN", "tok-out")
+
+	out, err := execute("customers", "list", "--output", "md")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(out, "| id |") {
-		t.Errorf("expected GFM table header, got: %s", out)
+	if !strings.Contains(out, "|") || !strings.Contains(out, "full_name") {
+		t.Errorf("--output md should render a GFM table, got:\n%s", out)
+	}
+
+	out, err = execute("customers", "list", "--output", "ids-only")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	lines := strings.FieldsFunc(out, func(r rune) bool { return r == '\n' })
+	if len(lines) != 2 || lines[0] != "1" || lines[1] != "2" {
+		t.Errorf("--output ids-only should print one ID per line, got %q", out)
+	}
+}
+
+func TestOutputModeConflictFailsFast(t *testing.T) {
+	srv := startFakeAPI(t, "tok-conflict")
+	defer srv.Close()
+	t.Setenv("WENMAR_URL", srv.URL)
+
+	_, err := execute("customers", "list", "--json", "--output", "md")
+	if err == nil {
+		t.Fatal("conflicting mode flags must error")
+	}
+	// Fail-fast means NO API call was made: assert the fake server saw nothing.
+	if n := srvRequestCount(); n != 0 {
+		t.Errorf("conflict validation should run before any API call; saw %d requests", n)
 	}
 }
 
