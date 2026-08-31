@@ -39,16 +39,11 @@ Download the latest release from [GitHub Releases](https://github.com/wenmar-pro
 
 ```bash
 # Homebrew (macOS / Linux)
-brew install wenmar-pro/tap/wenmar
+brew install --cask wenmar-pro/tap/wenmar
 
 # Scoop (Windows)
+scoop bucket add wenmar https://github.com/wenmar-pro/scoop-bucket
 scoop install wenmar
-
-# AUR (Arch Linux)
-yay -S wenmar-cli
-
-# mise
-mise use -g github:wenmar-pro/wenmar-cli
 
 # deb / rpm / apk
 # Available as release assets (wenmar_<version>_<os>_<arch>.deb / .rpm / .apk)

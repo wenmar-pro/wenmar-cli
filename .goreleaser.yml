@@ -67,6 +67,34 @@ signs:
     artifacts: checksum
     output: true
 
+homebrew_casks:
+  - name: wenmar
+    repository:
+      owner: wenmar-pro
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/wenmar-pro/wenmar-cli
+    description: Wenmar Pro automotive shop management CLI
+    license: MIT
+    binaries:
+      - wenmar
+    commit_author:
+      name: wenmar-release-bot
+      email: support@wenmarpro.com
+
+scoops:
+  - name: wenmar
+    repository:
+      owner: wenmar-pro
+      name: scoop-bucket
+      token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
+    homepage: https://github.com/wenmar-pro/wenmar-cli
+    description: Wenmar Pro automotive shop management CLI
+    license: MIT
+    commit_author:
+      name: wenmar-release-bot
+      email: support@wenmarpro.com
+
 release:
   draft: true
 
