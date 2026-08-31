@@ -2,10 +2,6 @@ version: 2
 
 project_name: wenmar
 
-before:
-  hooks:
-    - go mod tidy
-
 builds:
   - id: wenmar
     main: ./cmd/wenmar
@@ -29,6 +25,16 @@ archives:
       - goos: windows
         formats: [zip]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    # Bundle the agent skill with every archive so `wenmar skill install`
+    # works from installed binaries (was broken: the binary looked for
+    # skills/wenmar/SKILL.md next to itself and released archives never
+    # shipped it).
+    files:
+      - skills/wenmar/SKILL.md
+
+sboms:
+  - id: default
+    artifacts: archive
 
 nfpms:
   - id: packages
@@ -42,6 +48,9 @@ nfpms:
     description: Wenmar Pro automotive shop management CLI
     maintainer: Wenmar Pro <support@wenmarpro.com>
     license: MIT
+    contents:
+      - src: skills/wenmar/SKILL.md
+        dst: /usr/share/wenmar/skills/wenmar/SKILL.md
 
 checksum:
   name_template: "checksums.txt"
