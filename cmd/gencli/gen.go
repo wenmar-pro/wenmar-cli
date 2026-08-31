@@ -111,12 +111,62 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 		Summary:     op.Summary,
 		IDType:      "int",
 		IsPaginated: op.XPaginated,
+		IDParam:     "id",
 	}
 
+	// Response code from the spec's declared responses.
+	cmd.ResponseField = "JSON200"
+	if _, ok := op.Responses["201"]; ok {
+		cmd.ResponseField = "JSON201"
+	}
+
+	// Apply override fields (merge-style, no early return) so cmd.IDParam
+	// is known before the path-param loop below.
+	ov := overrides.Commands[op.OperationID] // zero value if absent
+	if ov.Resource != "" {
+		cmd.Resource = ov.Resource
+	}
+	if ov.Command != "" {
+		cmd.Command = ov.Command
+	}
+	if ov.Summary != "" {
+		cmd.Summary = ov.Summary
+	}
+	if ov.Method != "" {
+		cmd.SDKMethod = ov.Method
+	}
+	if ov.RequestStruct != "" {
+		cmd.RequestStruct = ov.RequestStruct
+		cmd.BodyFields, cmd.WrapperKey = parseBodyFields(spec, op, ov.RequestStruct, overrides.FlagOverrides[op.OperationID])
+	}
+	if ov.PositionalArg != "" {
+		cmd.PositionalArg = ov.PositionalArg
+	}
+	if ov.QueryParamStruct != "" {
+		cmd.QueryParamStruct = ov.QueryParamStruct
+		cmd.QueryFields = extractQueryFields(op, ov.QueryParamStruct)
+	}
+	if ov.Paginated != nil {
+		cmd.IsPaginated = *ov.Paginated
+	}
+	if ov.Tab != "" {
+		cmd.Tab = ov.Tab
+	}
+	if len(ov.Aliases) > 0 {
+		cmd.Aliases = ov.Aliases
+	}
+	if ov.ActionSummary != "" {
+		cmd.ActionSummary = ov.ActionSummary
+	}
+	if ov.IdParam != "" {
+		cmd.IDParam = ov.IdParam
+	}
+
+	// Path-param loop: the param named cmd.IDParam is the positional id.
 	for _, p := range op.Parameters {
 		if p.In == "path" {
 			cmd.PathParams = append(cmd.PathParams, p)
-			if p.Name == "id" {
+			if p.Name == cmd.IDParam {
 				cmd.HasIDParam = true
 				if p.Schema.Type == "string" {
 					cmd.IDType = "string"
@@ -130,53 +180,18 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 	}
 	cmd.RequestBody = op.RequestBody
 
-	// Response code from the spec's declared responses.
-	cmd.ResponseField = "JSON200"
-	if _, ok := op.Responses["201"]; ok {
-		cmd.ResponseField = "JSON201"
-	}
-	// IDParam default (Task 4 overrides it via id_param).
-	cmd.IDParam = "id"
-
-	// Apply override if present.
-	if ov, ok := overrides.Commands[op.OperationID]; ok {
-		cmd.Resource = ov.Resource
-		cmd.Command = ov.Command
-		if ov.Summary != "" {
-			cmd.Summary = ov.Summary
+	// Auto-derive resource/command only when no override provided one.
+	if cmd.Resource == "" || cmd.Command == "" {
+		resource, command := autoDerive(method, path)
+		if cmd.Resource == "" {
+			cmd.Resource = resource
 		}
-		if ov.Method != "" {
-			cmd.SDKMethod = ov.Method
+		if cmd.Command == "" {
+			cmd.Command = command
 		}
-		if ov.RequestStruct != "" {
-			cmd.RequestStruct = ov.RequestStruct
-			cmd.BodyFields, cmd.WrapperKey = parseBodyFields(spec, op, ov.RequestStruct, overrides.FlagOverrides[op.OperationID])
+		if cmd.Resource == "" {
+			return nil
 		}
-		if ov.PositionalArg != "" {
-			cmd.PositionalArg = ov.PositionalArg
-		}
-		if ov.QueryParamStruct != "" {
-			cmd.QueryParamStruct = ov.QueryParamStruct
-			cmd.QueryFields = extractQueryFields(op, ov.QueryParamStruct)
-		}
-		if ov.Paginated != nil {
-			cmd.IsPaginated = *ov.Paginated
-		}
-		if ov.Tab != "" {
-			cmd.Tab = ov.Tab
-		}
-		if len(ov.Aliases) > 0 {
-			cmd.Aliases = ov.Aliases
-		}
-		if ov.ActionSummary != "" {
-			cmd.ActionSummary = ov.ActionSummary
-		}
-		return cmd
-	}
-
-	cmd.Resource, cmd.Command = autoDerive(method, path)
-	if cmd.Resource == "" {
-		return nil
 	}
 	return cmd
 }
@@ -412,11 +427,11 @@ func useArgsSuffix(cmdType string, cmd GenCommand) string {
 // (e.g. /vehicles/{id}/transfer, /customers/{id}/merge).
 func isSubAction(cmd GenCommand) bool {
 	path := cmd.Path
-	idPos := strings.Index(path, "{id}")
+	idPos := strings.Index(path, "{"+cmd.IDParam+"}")
 	if idPos < 0 {
 		return false
 	}
-	afterID := path[idPos+len("{id}"):]
+	afterID := path[idPos+len("{"+cmd.IDParam+"}"):]
 	return strings.Contains(afterID, "/")
 }
 
@@ -604,8 +619,8 @@ func requestPathExpr(cmd GenCommand) jen.Code {
 	args := []jen.Code{}
 	for _, p := range cmd.PathParams {
 		placeholder := "{" + p.Name + "}"
-		if p.Name == "id" {
-			// {id} is the positional arg, replaced by args[0]
+		if p.Name == cmd.IDParam {
+			// The id is the positional arg, replaced by args[0]
 			fmtPath = strings.ReplaceAll(fmtPath, placeholder, "%s")
 			args = append(args, jen.Id("args").Index(jen.Lit(0)))
 		} else {
@@ -811,20 +826,20 @@ func extractQueryFields(op Operation, queryParamStruct string) []BodyField {
 func pathFnForRunner(cmd GenCommand) jen.Code {
 	if len(cmd.ExtraPathParams) == 0 {
 		path := cmd.Path
-		idPos := strings.Index(path, "{id}")
+		idPos := strings.Index(path, "{"+cmd.IDParam+"}")
 		if idPos < 0 {
 			return jen.Id("idPath").Call(jen.Lit(path))
 		}
-		// If {id} is not the last segment (e.g. /service_categories/{id}/deactivate),
+		// If the id is not the last segment (e.g. /service_categories/{id}/deactivate),
 		// build a func that splices args[0] into the middle of the path.
-		if idPos+len("{id}") < len(path) {
+		if idPos+len("{"+cmd.IDParam+"}") < len(path) {
 			return jen.Func().Params(jen.Id("a").Index().Id("string")).Id("string").Block(
 				jen.Return(pathWithIDExpr(cmd)),
 			)
 		}
 		return jen.Id("idPath").Call(jen.Lit(path[:idPos]))
 	}
-	// Complex case: prefix includes flag vars and args[0] for {id}.
+	// Complex case: prefix includes flag vars and args[0] for the id.
 	// Build: func(a []string) string { return fmt.Sprintf("/customers/%d/drivers/%s", driversCustomerID, a[0]) }
 	return jen.Func().Params(jen.Id("a").Index().Id("string")).Id("string").Block(
 		jen.Return(pathWithIDExpr(cmd)),
@@ -832,14 +847,14 @@ func pathFnForRunner(cmd GenCommand) jen.Code {
 }
 
 // pathWithIDExpr builds the Sprintf expression for a path that includes
-// both extra path params (flags) and the {id} positional arg.
+// both extra path params (flags) and the id positional arg.
 func pathWithIDExpr(cmd GenCommand) jen.Code {
 	path := cmd.Path
 	fmtStr := path
 	args := []jen.Code{}
 	for _, p := range cmd.PathParams {
 		placeholder := "{" + p.Name + "}"
-		if p.Name == "id" {
+		if p.Name == cmd.IDParam {
 			fmtStr = strings.ReplaceAll(fmtStr, placeholder, "%s")
 			args = append(args, jen.Id("a").Index(jen.Lit(0)))
 		} else {

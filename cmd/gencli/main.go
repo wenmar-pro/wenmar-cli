@@ -168,6 +168,7 @@ type CommandOverride struct {
 	Tab              string   `yaml:"tab"`
 	Aliases          []string `yaml:"aliases"`
 	Short            string   `yaml:"short"`
+	IdParam          string   `yaml:"id_param"`
 }
 
 type FlagOverride struct {

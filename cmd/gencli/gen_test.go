@@ -68,6 +68,36 @@ func TestEmitActionNoBody_EmptyStructArg(t *testing.T) {
 	}
 }
 
+func TestEmitNestedList_PositionalId(t *testing.T) {
+	cmd := GenCommand{
+		OperationID: "list_customers_vehicles",
+		Resource:    "customers",
+		Command:     "vehicles",
+		Method:      "get",
+		Path:         "/customers/{customer_id}/vehicles",
+		IDParam:      "customer_id",
+		HasIDParam:   true,
+		IDType:       "int",
+		SDKMethod:    "ListCustomersVehicles",
+		PathParams:   []Parameter{{Name: "customer_id", In: "path", Schema: Schema{Type: "integer"}}},
+	}
+	group := CommandGroup{Resource: "customers", Commands: []GenCommand{cmd}}
+	code, err := emitGroup(group, nil, &Overrides{})
+	if err != nil {
+		t.Fatalf("emitGroup: %v", err)
+	}
+	for _, want := range []string{
+		`Use:   "vehicles <id>"`,
+		"runShow(cmd, args, \"customers\", \"GET\"",
+		"ListCustomersVehicles(ctx, id)",
+		`fmt.Sprintf("/customers/%s/vehicles", a[0])`,
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("emitted code missing %q:\n%s", want, code)
+		}
+	}
+}
+
 func TestResolveSchemaRef(t *testing.T) {
 	spec := &Spec{
 		Paths: map[string]PathItem{},
@@ -155,8 +185,10 @@ func TestEmitGroup_ServiceCategoryActionsCompile(t *testing.T) {
 		Method:      "patch",
 		Path:        "/service_categories/{id}/deactivate",
 		HasIDParam:  true,
+		IDParam:     "id",
 		Summary:     "Deactivate a service category by ID",
 		SDKMethod:   "DeactivateServiceCategory",
+		RequestStruct: "DeactivateServiceCategoryRequest",
 		RequestBody: &RequestBody{Content: map[string]Media{
 			"application/json": {Schema: Schema{Type: "object", Properties: map[string]Schema{}}},
 		}},
@@ -168,7 +200,7 @@ func TestEmitGroup_ServiceCategoryActionsCompile(t *testing.T) {
 	}
 	for _, want := range []string{
 		"runServicecategoriesDeactivate",
-		"client.DeactivateServiceCategory(ctx, id)",
+		"client.DeactivateServiceCategory(ctx, id, wenmar.DeactivateServiceCategoryRequest{})",
 		"cobra.ExactArgs(1)",
 	} {
 		if !strings.Contains(code, want) {
