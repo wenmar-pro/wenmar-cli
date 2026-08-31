@@ -30,14 +30,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	spec, err := loadSpec(*specPath)
+	if err := runGenerate(*specPath, *overridesPath, *outDir); err != nil {
+		fatal("%v", err)
+	}
+}
+
+// runGenerate loads the spec + overrides and emits one file per resource
+// group into outDir. It is the shared entry point for the CLI and the
+// golden regen-drift test.
+func runGenerate(specPath, overridesPath, outDir string) error {
+	spec, err := loadSpec(specPath)
 	if err != nil {
-		fatal("loading spec: %v", err)
+		return fmt.Errorf("loading spec: %w", err)
 	}
 
-	overrides, err := loadOverrides(*overridesPath)
+	overrides, err := loadOverrides(overridesPath)
 	if err != nil {
-		fatal("loading overrides: %v", err)
+		return fmt.Errorf("loading overrides: %w", err)
 	}
 
 	// Group operations by CLI resource.
@@ -45,16 +54,17 @@ func main() {
 
 	// Emit one file per resource group.
 	for _, group := range groups {
-		fileName := filepath.Join(*outDir, "gen_"+group.Resource+".go")
+		fileName := filepath.Join(outDir, "gen_"+group.Resource+".go")
 		code, err := emitGroup(group, spec, overrides)
 		if err != nil {
-			fatal("emitting %s: %v", group.Resource, err)
+			return fmt.Errorf("emitting %s: %w", group.Resource, err)
 		}
 		if err := os.WriteFile(fileName, []byte(code), 0644); err != nil {
-			fatal("writing %s: %v", fileName, err)
+			return fmt.Errorf("writing %s: %w", fileName, err)
 		}
 		fmt.Printf("  generated %s\n", fileName)
 	}
+	return nil
 }
 
 func fatal(format string, args ...any) {
