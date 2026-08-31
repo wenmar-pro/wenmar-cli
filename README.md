@@ -137,6 +137,10 @@ Use `--styled` to force human tables in a pipe.
 | 9 | Truncated response without `--allow-partial` |
 | 10 | Network unreachable |
 
+When the server sends an unrecognized error `code`, the exit code falls
+back to the HTTP status class (401→2, 404→3, 422→4, 429→5, 403→8,
+409→7, 5xx→6), so the contract holds even for new error codes.
+
 ## Agent discovery
 
 ```bash

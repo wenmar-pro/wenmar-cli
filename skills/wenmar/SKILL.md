@@ -45,25 +45,22 @@ These rules MUST be followed without exception:
    assume a VIN format or try to decode it yourself.
 2. **Work order and resource IDs are positional**, not flags:
    `wenmar work_orders show 12345`, not `--id 12345`.
-3. **Destructive operations require `--dry-run` first** unless `--force`
-   is passed. Run `wenmar vehicles delete 42 --dry-run` to preview
-   before executing.
+3. **Destructive operations require `--dry-run` first.** Run
+   `wenmar vehicles delete 42 --dry-run` to preview before executing.
 4. **`--base-url` selects the shop instance**; omitting it uses the
    config default (`~/.config/wenmar/config`).
-5. **Bulk operations need explicit `--force`** — no implicit batch
-   deletes or updates.
-6. **Check `wenmar commands`** for the full command catalog when unsure
+5. **Check `wenmar commands`** for the full command catalog when unsure
    what's available.
-7. **Choose the right output mode:**
+6. **Choose the right output mode:**
    - `--jq` to filter/extract specific fields
    - `--json` for full envelope `{ok, data, summary, meta}`
    - `--md` for human-readable GFM tables
    - `--ids-only` for shell loops (`| xargs`)
    - `--count` for bare integer counts (monitoring)
    - `--agent` for headless agent workflows (raw JSON, no envelope)
-8. **Never pipe to external `jq`** — use `--jq` instead (built-in,
+7. **Never pipe to external `jq`** — use `--jq` instead (built-in,
    no external dependency).
-9. **Parse URLs first** with `wenmar url parse "<url>"` to extract the
+8. **Parse URLs first** with `wenmar url parse "<url>"` to extract the
    resource type and ID before calling `show`/`update`/`delete`.
 
 ## Decision trees
@@ -73,9 +70,9 @@ These rules MUST be followed without exception:
 ```
 Need to find a work order?
 ├── Have the WO number? → wenmar work_orders show <number>
-├── Have the VIN? → wenmar vehicles decode-vin <vin> → find vehicle → wenmar work_orders list --vehicle-id=<id>
-├── My active jobs? → wenmar work_orders list --status active
-├── Overdue jobs? → wenmar work_orders list --overdue
+├── Have the VIN? → wenmar vehicles decode-vin <vin> → find vehicle → wenmar work_orders list --jq '.[] | select(.vehicle.id == <id>)'
+├── My active jobs? → wenmar work_orders list --jq '.[] | select(.status == "in_progress")'
+├── Overdue jobs? → wenmar work_orders list --jq '.[] | select(.status == "overdue")'
 └── Have a URL? → wenmar url parse "<url>" → use extracted id
 ```
 
@@ -84,7 +81,7 @@ Need to find a work order?
 ```
 Need to find a vehicle?
 ├── Have the VIN? → wenmar vehicles decode-vin <vin>
-├── Have a plate? → wenmar vehicles list --plate <plate> --state <state>
+├── Have a plate? → wenmar vehicles lookup "<plate>"
 ├── Know the customer? → wenmar customers show <id> → follow vehicles_url
 └── Have a URL? → wenmar url parse "<url>" → use extracted id
 ```
@@ -123,8 +120,9 @@ Want to change something?
 - `--ids-only`: One ID per line — for shell loops
 - `--count`: Bare integer count — for monitoring
 
-Always pass an explicit flag for scripts and agents. Auto-detection is
-not used — explicit flags are predictable.
+Always pass an explicit flag for scripts and agents. When stdout is not a
+TTY (e.g. piped) and no mode flag is set, wenmar emits raw JSON so the
+output is machine-readable; `--styled` forces human tables in a pipe.
 
 ## Common workflows
 
@@ -155,7 +153,7 @@ wenmar customers create --full-name "Jane Doe" --email "jane@test.com" --json
 
 ```bash
 wenmar work_orders list --md
-wenmar work_orders list --page 2 --json
+wenmar work_orders list --json
 wenmar work_orders show 100 --md
 wenmar work_orders show 100 --jq '.vehicle.make'
 wenmar work_orders create --customer-id 1 --vehicle-id 1 --json
@@ -196,13 +194,22 @@ wenmar completion fish > ~/.config/fish/completions/wenmar.fish
 | 4 | Validation error |
 | 5 | Rate limited |
 | 6 | Server error |
+| 7 | Conflict (e.g. duplicate VIN) |
+| 8 | Forbidden (403) |
+| 9 | Truncated response without `--allow-partial` |
+| 10 | Network unreachable |
+
+When the server sends an unrecognized error `code`, the exit code falls
+back to the HTTP status class (401→2, 404→3, 422→4, 429→5, 403→8,
+409→7, 5xx→6), so the contract holds even for new error codes.
 
 Scripts can branch on failure class without parsing stderr.
 
 ## Gotchas
 
 - **Pagination is via the Link header**, not a body field. The SDK
-  follows `rel="next"` automatically. Use `--page N` to jump to a page.
+  follows `rel="next"` automatically. `customers list` supports `--page N`;
+  `work_orders list` does not (it follows the Link header only).
 - **Work orders have nested customer/vehicle** — the `--md` table
   truncates nested objects. Use `--json` or `--jq` for full detail.
 - **The API is additive-only** — no versioned URLs. New fields may
