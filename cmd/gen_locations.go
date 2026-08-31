@@ -26,7 +26,8 @@ func runLocationsShow(cmd *cobra.Command, args []string) error {
 }
 
 var locationsCmd = &cobra.Command{
-	Args: cobra.NoArgs,
+	Args:    cobra.NoArgs,
+	GroupID: "resources",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},

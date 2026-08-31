@@ -10,9 +10,10 @@ import (
 )
 
 var tagsCmd = &cobra.Command{
-	Use:   "tags",
-	Short: "Manage customer and vehicle tags",
-	Args:  cobra.NoArgs,
+	Use:     "tags",
+	Short:   "Manage customer and vehicle tags",
+	GroupID: "resources",
+	Args:    cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},

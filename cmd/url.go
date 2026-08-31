@@ -20,8 +20,9 @@ type ParseResult struct {
 }
 
 var urlCmd = &cobra.Command{
-	Use:   "url",
-	Short: "URL utilities",
+	Use:     "url",
+	Short:   "URL utilities",
+	GroupID: "agents",
 }
 
 var urlParseCmd = &cobra.Command{

@@ -5,8 +5,9 @@ import (
 )
 
 var completionCmd = &cobra.Command{
-	Use:   "completion [shell]",
-	Short: "Generate shell completion script",
+	Use:     "completion [shell]",
+	Short:   "Generate shell completion script",
+	GroupID: "platform",
 	Long: `Generate shell autocompletion script for wenmar.
 
 Supported shells: bash, zsh, fish, powershell.

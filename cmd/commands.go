@@ -10,8 +10,9 @@ import (
 )
 
 var commandsCmd = &cobra.Command{
-	Use:   "commands",
-	Short: "List all commands as JSON (for agent discovery)",
+	Use:     "commands",
+	Short:   "List all commands as JSON (for agent discovery)",
+	GroupID: "agents",
 	Run: func(cmd *cobra.Command, args []string) {
 		catalog := agent.BuildCatalog(rootCmd)
 		for _, t := range helpTopics {

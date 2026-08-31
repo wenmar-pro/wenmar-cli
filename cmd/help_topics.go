@@ -142,10 +142,11 @@ produces both, so they always agree.`,
 }
 
 var helpCmd = &cobra.Command{
-	Use:   "help [command|topic]",
-	Short: "Help about any command or topic",
-	Args:  cobra.ArbitraryArgs,
-	RunE:  runHelp,
+	Use:     "help [command|topic]",
+	Short:   "Help about any command or topic",
+	Args:    cobra.ArbitraryArgs,
+	GroupID: "agents",
+	RunE:    runHelp,
 }
 
 func init() {

@@ -17,8 +17,9 @@ import (
 )
 
 var authCmd = &cobra.Command{
-	Use:   "auth",
-	Short: "Manage authentication",
+	Use:     "auth",
+	Short:   "Manage authentication",
+	GroupID: "session",
 }
 
 var authLoginCmd = &cobra.Command{

@@ -26,10 +26,11 @@ var (
 )
 
 var upgradeCmd = &cobra.Command{
-	Use:   "upgrade [version]",
-	Short: "Upgrade wenmar to the latest (or a pinned) version",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  runUpgrade,
+	Use:     "upgrade [version]",
+	Short:   "Upgrade wenmar to the latest (or a pinned) version",
+	Args:    cobra.MaximumNArgs(1),
+	GroupID: "session",
+	RunE:    runUpgrade,
 }
 
 func init() {

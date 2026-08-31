@@ -10,8 +10,9 @@ import (
 )
 
 var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "Manage CLI configuration",
+	Use:     "config",
+	Short:   "Manage CLI configuration",
+	GroupID: "session",
 }
 
 var configGetCmd = &cobra.Command{

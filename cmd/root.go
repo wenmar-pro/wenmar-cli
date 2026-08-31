@@ -31,10 +31,36 @@ var (
 // error handler can print useful diagnostics on failure.
 var currentDebugInfo *errors.DebugInfo
 
+var (
+	groupResources = &cobra.Group{ID: "resources", Title: "Resources"}
+	groupSession   = &cobra.Group{ID: "session", Title: "Session & Config"}
+	groupAgents    = &cobra.Group{ID: "agents", Title: "Agents & Discovery"}
+	groupPlatform  = &cobra.Group{ID: "platform", Title: "Platform"}
+)
+
 var rootCmd = &cobra.Command{
-	Use:                        "wenmar",
-	Short:                      "Wenmar Pro API CLI",
-	Long:                       "A command-line interface for the Wenmar Pro automotive shop management API.",
+	Use:   "wenmar",
+	Short: "Wenmar Pro API CLI",
+	Long: `A command-line interface for the Wenmar Pro automotive shop
+management API.
+
+Getting started:
+  wenmar setup        Configure your API token (or export WENMAR_TOKEN)
+
+Output:
+  --output <mode>    table | md | json | agent | quiet | ids-only |
+                      count | html | styled  (default: table on a
+                      terminal, quiet when piped)
+  Quick flags: --json --agent --quiet --jq   (see 'wenmar help output')
+
+Topics:
+  wenmar help output      All output modes and the envelope format
+  wenmar help exit-codes  The stable 0-10 exit-code contract
+  wenmar help auth        Token sources and auth methods
+  wenmar help location    Location scoping
+  wenmar help environment Environment variables
+  wenmar help watch       The watch command
+  wenmar help agent-help  Structured --agent --help for AI agents`,
 	Version:                    version,
 	SilenceUsage:               true,
 	SilenceErrors:              true,
@@ -67,6 +93,7 @@ func Execute() {
 func RootCmd() *cobra.Command { return rootCmd }
 
 func init() {
+	rootCmd.AddGroup(groupResources, groupSession, groupAgents, groupPlatform)
 	rootCmd.SetVersionTemplate(versionString() + "\n")
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "API bearer token (or set WENMAR_TOKEN env)")
 	rootCmd.PersistentFlags().StringVar(&baseURLFlag, "base-url", "", "API base URL (default: https://app.wenmarpro.com)")

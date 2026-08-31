@@ -19,9 +19,10 @@ var (
 )
 
 var tuiCmd = &cobra.Command{
-	Use:   "tui",
-	Short: "Launch the TUI dispatch board",
-	RunE:  runTUI,
+	Use:     "tui",
+	Short:   "Launch the TUI dispatch board",
+	GroupID: "platform",
+	RunE:    runTUI,
 }
 
 func init() {

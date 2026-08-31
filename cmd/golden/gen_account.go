@@ -26,7 +26,8 @@ func runAccountShow(cmd *cobra.Command, args []string) error {
 }
 
 var accountCmd = &cobra.Command{
-	Args: cobra.NoArgs,
+	Args:    cobra.NoArgs,
+	GroupID: "resources",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},

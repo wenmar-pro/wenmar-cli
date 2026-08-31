@@ -14,8 +14,9 @@ var (
 )
 
 var skillCmd = &cobra.Command{
-	Use:   "skill",
-	Short: "Manage the wenmar agent skill",
+	Use:     "skill",
+	Short:   "Manage the wenmar agent skill",
+	GroupID: "agents",
 }
 
 var skillInstallCmd = &cobra.Command{

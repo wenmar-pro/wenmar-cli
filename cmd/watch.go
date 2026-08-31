@@ -29,8 +29,9 @@ var (
 )
 
 var watchCmd = &cobra.Command{
-	Use:   "watch",
-	Short: "Watch for changes on a list endpoint (polling-based)",
+	Use:     "watch",
+	Short:   "Watch for changes on a list endpoint (polling-based)",
+	GroupID: "platform",
 	Long: `Poll a list endpoint on an interval and emit events when items
 are added, changed, or removed. Events are emitted as JSON to stdout.
 

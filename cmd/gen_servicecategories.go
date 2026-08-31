@@ -186,6 +186,7 @@ func runServicecategoriesUpdate(cmd *cobra.Command, args []string) error {
 var servicecategoriesCmd = &cobra.Command{
 	Aliases: []string{"service-categories", "sc"},
 	Args:    cobra.NoArgs,
+	GroupID: "resources",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},

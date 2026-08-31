@@ -114,7 +114,8 @@ func runDriversUpdate(cmd *cobra.Command, args []string) error {
 }
 
 var driversCmd = &cobra.Command{
-	Args: cobra.NoArgs,
+	Args:    cobra.NoArgs,
+	GroupID: "resources",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},

@@ -23,10 +23,11 @@ var (
 )
 
 var setupCmd = &cobra.Command{
-	Use:   "setup [claude|codex]",
-	Short: "Configure the Wenmar CLI with your API token",
-	Long:  "Interactive setup wizard. Prompts for your API token, tests it, and saves configuration. Optionally installs agent skills.",
-	Args:  cobra.MaximumNArgs(1),
+	Use:     "setup [claude|codex]",
+	Short:   "Configure the Wenmar CLI with your API token",
+	Long:    "Interactive setup wizard. Prompts for your API token, tests it, and saves configuration. Optionally installs agent skills.",
+	Args:    cobra.MaximumNArgs(1),
+	GroupID: "session",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
 			switch args[0] {

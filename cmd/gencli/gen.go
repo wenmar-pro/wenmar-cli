@@ -293,7 +293,8 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides, buildTag st
 	// (e.g. customers_extras.go) can register extra subcommands against it.
 	parentVar := group.Resource + "Cmd"
 	parentDict := jen.Dict{
-		jen.Id("Use"): jen.Lit(group.Resource),
+		jen.Id("Use"):     jen.Lit(group.Resource),
+		jen.Id("GroupID"): jen.Lit("resources"),
 	}
 	short := group.Resource + " commands"
 	if ov, ok := overrides.Groups[group.Resource]; ok {

@@ -211,7 +211,8 @@ func runVehiclesWorkorders(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesCmd = &cobra.Command{
-	Args: cobra.NoArgs,
+	Args:    cobra.NoArgs,
+	GroupID: "resources",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},

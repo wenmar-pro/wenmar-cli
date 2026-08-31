@@ -15,9 +15,10 @@ import (
 )
 
 var doctorCmd = &cobra.Command{
-	Use:   "doctor",
-	Short: "Run diagnostics: auth, connectivity, config, completion, skill",
-	RunE:  runDoctor,
+	Use:     "doctor",
+	Short:   "Run diagnostics: auth, connectivity, config, completion, skill",
+	GroupID: "session",
+	RunE:    runDoctor,
 }
 
 func init() {

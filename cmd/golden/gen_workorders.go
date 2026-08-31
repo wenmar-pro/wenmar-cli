@@ -92,6 +92,7 @@ func runWorkordersUpdate(cmd *cobra.Command, args []string) error {
 var workordersCmd = &cobra.Command{
 	Aliases: []string{"work_orders", "wo"},
 	Args:    cobra.NoArgs,
+	GroupID: "resources",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},
