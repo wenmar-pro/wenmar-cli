@@ -19,37 +19,33 @@ var helpTopics = []helpTopic{
 	{
 		name:  "output",
 		title: "Output Modes",
-		content: `The canonical flag is --output <mode>:
+		content: `One flag, one mode — combining them is an error:
 
-  table     Human-readable table (default on a terminal)
-  md        GitHub-flavored markdown table
-  json      Full JSON envelope {ok, data, summary, meta, breadcrumbs}
-  agent     Raw JSON data (no envelope)
-  quiet     Raw JSON output, no envelope (default when piped)
-  ids-only  One ID per line (for shell loops)
-  count     Bare integer count
-  html      HTML document
-  styled    Force the table even when piped
+  --json           Full JSON envelope {ok, data, summary, meta, breadcrumbs}
+  --agent          Raw JSON data, no envelope
+  --jq <expr>      Filter output with a jq expression (e.g. --jq 'length'
+                   for a bare count, --jq '.[].full_name' for one field)
+  --ids-only       One ID per line (for shell loops: | xargs)
+  --styled         Force the human table even when piped
 
-Quick flags (equivalents, hidden from subcommand help):
-  --json          Same as --output json
-  --agent         Same as --output agent (also makes --help emit JSON)
-  --quiet         Same as --output quiet
-  --jq <expr>     jq filter over the data (implies --output json)
+Default: a human-readable table on a terminal; raw JSON (--agent shape)
+when piped, so piped output is always machine-readable. --styled overrides
+the pipe default.
 
-Combining --output with a quick flag (or two quick flags together) is an
-error — pick one.
+Counts: there is no --count flag; use --jq 'length'.
+GFM tables: there is no --md flag; the default table IS markdown. Use
+--styled to force it when piped.
 
-Auto-switch: when stdout is not a TTY (e.g. piped to another command) and
-no explicit mode is set, wenmar emits raw JSON (quiet) so output is
-machine-readable. Use --output styled to force tables in a pipe.
-
-Migration from pre-release flags:
-  --md / -m / --markdown   -> --output md
-  --ids-only               -> --output ids-only
-  --count                  -> --output count
-  --html                   -> --output html
-  --styled                 -> --output styled
+Migration from the pre-release --output interface:
+  --output json     -> --json
+  --output agent    -> --agent
+  --output quiet    -> --agent (or nothing: piping already does this)
+  --output md       -> default renderer, or --styled when piped
+  --output table    -> default renderer
+  --output styled   -> --styled
+  --output ids-only -> --ids-only
+  --output count    -> --jq 'length'
+  --output html     -> (removed)
 
 Envelope structure:
   {"ok": true, "data": [...], "summary": "5 customers",
