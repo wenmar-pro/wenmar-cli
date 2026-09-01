@@ -43,7 +43,6 @@ exclude:
   - reopen_work_order
   - return_work_order_to_board
   - save_work_order_for_later
-  - stage_transition_work_order
   - decline_all_work_order_services
   - show_work_order_declined_services
   - show_work_order_service_history
@@ -55,6 +54,97 @@ exclude:
   - list_team
   - get_customers_vehicle_history
 
+  # New 2026-08-31 API surface — no CLI commands yet. Add per-resource
+  # commands in follow-up plans; excluded so gencli emits nothing for them.
+  - add_work_order_service_line_item_to_inventory
+  - close_work_order_zero
+  - create_conversation
+  - create_counter_sale
+  - create_expense
+  - create_notification
+  - create_package
+  - create_sublet_package
+  - create_tire
+  - create_tire_storage_slot
+  - create_vendor
+  - delete_expense
+  - delete_sublet_package
+  - delete_tire
+  - delete_vendor
+  - delete_work_orders_hard_delete
+  - delete_work_orders_label
+  - delete_work_orders_service
+  - delete_work_orders_service_line_items
+  - duplicate_work_order_service_line_item
+  - get_conversations_message
+  - get_vendors_purchase_order
+  - get_work_orders_concern
+  - get_work_orders_service_adjust_time
+  - list_conversations
+  - list_counter_sales
+  - list_courtesy_cars
+  - list_expenses
+  - list_fleets
+  - list_notifications
+  - list_packages
+  - list_sublet_packages
+  - list_tire_storage_slots
+  - list_tires
+  - patch_work_orders_post_to_account
+  - patch_work_orders_send_estimate
+  - patch_work_orders_send_invoice_summary
+  - patch_work_orders_send_reminder
+  - patch_work_orders_service
+  - patch_work_orders_service_acknowledge_parts
+  - patch_work_orders_service_adjust_time
+  - patch_work_orders_service_apply_discount
+  - patch_work_orders_service_complete_service
+  - patch_work_orders_service_line_items
+  - patch_work_orders_service_pause
+  - patch_work_orders_service_publish
+  - patch_work_orders_service_reset_completion
+  - patch_work_orders_service_revive
+  - patch_work_orders_service_start
+  - patch_work_orders_service_toggle_labor_completion
+  - patch_work_orders_service_toggle_labor_tax
+  - patch_work_orders_service_update_category
+  - patch_work_orders_service_update_pricing_mode
+  - patch_work_orders_service_update_service_technician
+  - patch_work_orders_toggle_waiting_for_customer
+  - post_conversations_customer_link
+  - post_conversations_ignore
+  - post_conversations_message
+  - post_conversations_message_resends
+  - post_packages_duplicate
+  - post_tire_storage_slots_check_out
+  - post_work_orders_courtesy_car_assignment
+  - post_work_orders_label
+  - post_work_orders_service
+  - post_work_orders_service_add_line_item
+  - post_work_orders_service_add_package
+  - post_work_orders_service_duplicate
+  - post_work_orders_service_line_items
+  - post_work_orders_service_unauthorize
+  - pull_work_order_service_line_item
+  - refresh_work_order_service_line_item_price
+  - reverse_work_order_payment_ar
+  - send_work_order_payment_to_ar
+  - show_conversation
+  - show_counter_sale
+  - show_notification
+  - show_tire
+  - show_tire_storage_slot
+  - undo_pull_work_order_service_line_item
+  - undo_return_work_order_service_line_item
+  - update_conversation
+  - update_counter_sale
+  - update_expense
+  - update_notification
+  - update_package
+  - update_sublet_package
+  - update_tire
+  - update_vendor
+  - update_work_order_service_line_item_part_status
 groups:
   workorders:
     short: Manage work orders
@@ -351,30 +441,6 @@ commands:
     command: delete
     summary: Delete a service category by ID
     method: DeleteServiceCategory
-  deactivate_service_category:
-    resource: servicecategories
-    command: deactivate
-    summary: Deactivate a service category by ID
-    method: DeactivateServiceCategory
-    request_struct: DeactivateServiceCategoryRequest
-  reactivate_service_category:
-    resource: servicecategories
-    command: reactivate
-    summary: Reactivate a service category by ID
-    method: ReactivateServiceCategory
-    request_struct: ReactivateServiceCategoryRequest
-  move_up_service_category:
-    resource: servicecategories
-    command: move-up
-    summary: Move a service category up one position
-    method: MoveUpServiceCategory
-    request_struct: MoveUpServiceCategoryRequest
-  move_down_service_category:
-    resource: servicecategories
-    command: move-down
-    summary: Move a service category down one position
-    method: MoveDownServiceCategory
-    request_struct: MoveDownServiceCategoryRequest
   seed_defaults_service_categories:
     resource: servicecategories
     command: seed-defaults

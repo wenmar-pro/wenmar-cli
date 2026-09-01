@@ -4,14 +4,15 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	cobra "github.com/spf13/cobra"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
+var servicecategoriesActive bool
 var servicecategoriesDeleteDryRun bool
 var servicecategoriesIcon string
 var servicecategoriesName string
+var servicecategoriesPosition int
 var servicecategoriesServiceType string
 var servicecategoriesCreateCmd = &cobra.Command{
 	RunE:  runServicecategoriesCreate,
@@ -37,25 +38,6 @@ func runServicecategoriesCreate(cmd *cobra.Command, args []string) error {
 			return nil, err
 		}
 		return resp.JSON201, nil
-	})
-}
-
-var servicecategoriesDeactivateCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesDeactivate,
-	Short: "Deactivate a service category by ID",
-	Use:   "deactivate <id>",
-}
-
-func runServicecategoriesDeactivate(cmd *cobra.Command, args []string) error {
-	return runActionNoBody(cmd, args, "servicecategories", "PATCH", func(a []string) string {
-		return fmt.Sprintf("/service_categories/%s/deactivate", a[0])
-	}, "Servicecategory deactivate.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.DeactivateServiceCategory(ctx, id, wenmar.DeactivateServiceCategoryRequest{})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
 	})
 }
 
@@ -89,63 +71,6 @@ func runServicecategoriesList(cmd *cobra.Command, args []string) error {
 	})
 }
 
-var servicecategoriesMoveDownCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesMoveDown,
-	Short: "Move a service category down one position",
-	Use:   "move-down <id>",
-}
-
-func runServicecategoriesMoveDown(cmd *cobra.Command, args []string) error {
-	return runActionNoBody(cmd, args, "servicecategories", "PATCH", func(a []string) string {
-		return fmt.Sprintf("/service_categories/%s/move_down", a[0])
-	}, "Servicecategory move-down.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.MoveDownServiceCategory(ctx, id, wenmar.MoveDownServiceCategoryRequest{})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-var servicecategoriesMoveUpCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesMoveUp,
-	Short: "Move a service category up one position",
-	Use:   "move-up <id>",
-}
-
-func runServicecategoriesMoveUp(cmd *cobra.Command, args []string) error {
-	return runActionNoBody(cmd, args, "servicecategories", "PATCH", func(a []string) string {
-		return fmt.Sprintf("/service_categories/%s/move_up", a[0])
-	}, "Servicecategory move-up.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.MoveUpServiceCategory(ctx, id, wenmar.MoveUpServiceCategoryRequest{})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-var servicecategoriesReactivateCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesReactivate,
-	Short: "Reactivate a service category by ID",
-	Use:   "reactivate <id>",
-}
-
-func runServicecategoriesReactivate(cmd *cobra.Command, args []string) error {
-	return runActionNoBody(cmd, args, "servicecategories", "PATCH", func(a []string) string {
-		return fmt.Sprintf("/service_categories/%s/reactivate", a[0])
-	}, "Servicecategory reactivate.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ReactivateServiceCategory(ctx, id, wenmar.ReactivateServiceCategoryRequest{})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
 var servicecategoriesSeedDefaultsCmd = &cobra.Command{
 	RunE:  runServicecategoriesSeedDefaults,
 	Short: "Seed default service categories for the account",
@@ -172,8 +97,14 @@ var servicecategoriesUpdateCmd = &cobra.Command{
 func runServicecategoriesUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "servicecategories", idPath("/service_categories/"), "Servicecategory updated.", func(id int) (any, error) {
 		req := wenmar.UpdateServiceCategoryRequest{ServiceCategory: struct {
-			Name string `json:"name"`
-		}{Name: servicecategoriesName}}
+			Active   *bool   `json:"active,omitempty"`
+			Name     *string `json:"name,omitempty"`
+			Position *int    `json:"position,omitempty"`
+		}{
+			Active:   boolPtr(servicecategoriesActive),
+			Name:     strPtr(servicecategoriesName),
+			Position: intPtr(servicecategoriesPosition),
+		}}
 		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
 		resp, err := client.UpdateServiceCategory(ctx, id, body.(wenmar.UpdateServiceCategoryRequest))
@@ -201,8 +132,9 @@ func init() {
 	servicecategoriesCreateCmd.MarkFlagRequired("name")
 	servicecategoriesCreateCmd.Flags().StringVar(&servicecategoriesServiceType, "service-type", "maintenance", "Service type (maintenance, repair, diagnostic, recall, sublet)")
 	servicecategoriesDeleteCmd.Flags().BoolVar(&servicecategoriesDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
-	servicecategoriesUpdateCmd.Flags().StringVar(&servicecategoriesName, "name", "", "Name (required)")
-	servicecategoriesUpdateCmd.MarkFlagRequired("name")
-	servicecategoriesCmd.AddCommand(servicecategoriesCreateCmd, servicecategoriesDeactivateCmd, servicecategoriesDeleteCmd, servicecategoriesListCmd, servicecategoriesMoveDownCmd, servicecategoriesMoveUpCmd, servicecategoriesReactivateCmd, servicecategoriesSeedDefaultsCmd, servicecategoriesUpdateCmd)
+	servicecategoriesUpdateCmd.Flags().BoolVar(&servicecategoriesActive, "active", false, "Active")
+	servicecategoriesUpdateCmd.Flags().StringVar(&servicecategoriesName, "name", "", "Name")
+	servicecategoriesUpdateCmd.Flags().IntVar(&servicecategoriesPosition, "position", 0, "Position")
+	servicecategoriesCmd.AddCommand(servicecategoriesCreateCmd, servicecategoriesDeleteCmd, servicecategoriesListCmd, servicecategoriesSeedDefaultsCmd, servicecategoriesUpdateCmd)
 	rootCmd.AddCommand(servicecategoriesCmd)
 }

@@ -12,6 +12,9 @@ import (
 var workordersCustomerId int
 var workordersDeleteDryRun bool
 var workordersIntakeMethod string
+var workordersPayerCustomerId int
+var workordersSubStatusTypeId int
+var workordersVehicleArrivedAt string
 var workordersVehicleId int
 var workordersCreateCmd = &cobra.Command{
 	Example: "wenmar workorders create --customer-id 42 --vehicle-id 5\n",
@@ -81,8 +84,16 @@ var workordersUpdateCmd = &cobra.Command{
 func runWorkordersUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "workorders", idPath("/work_orders/"), "Work order updated.", func(id int) (any, error) {
 		req := wenmar.UpdateWorkOrderRequest{WorkOrder: struct {
-			IntakeMethod string `json:"intake_method"`
-		}{IntakeMethod: workordersIntakeMethod}}
+			IntakeMethod     *string `json:"intake_method,omitempty"`
+			PayerCustomerId  *int    `json:"payer_customer_id,omitempty"`
+			SubStatusTypeId  *int    `json:"sub_status_type_id,omitempty"`
+			VehicleArrivedAt *string `json:"vehicle_arrived_at,omitempty"`
+		}{
+			IntakeMethod:     strPtr(workordersIntakeMethod),
+			PayerCustomerId:  intPtr(workordersPayerCustomerId),
+			SubStatusTypeId:  intPtr(workordersSubStatusTypeId),
+			VehicleArrivedAt: strPtr(workordersVehicleArrivedAt),
+		}}
 		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
 		resp, err := client.UpdateWorkOrder(ctx, id, body.(wenmar.UpdateWorkOrderRequest))
@@ -111,6 +122,9 @@ func init() {
 	workordersCreateCmd.MarkFlagRequired("vehicle-id")
 	workordersDeleteCmd.Flags().BoolVar(&workordersDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
 	workordersUpdateCmd.Flags().StringVar(&workordersIntakeMethod, "intake-method", "", "Intake method (e.g. drop_off, walk_in)")
+	workordersUpdateCmd.Flags().IntVar(&workordersPayerCustomerId, "payer-customer-id", 0, "Payer Customer ID")
+	workordersUpdateCmd.Flags().IntVar(&workordersSubStatusTypeId, "sub-status-type-id", 0, "Sub Status Type ID")
+	workordersUpdateCmd.Flags().StringVar(&workordersVehicleArrivedAt, "vehicle-arrived-at", "", "Vehicle Arrived At")
 	workordersCmd.AddCommand(workordersCreateCmd, workordersDeleteCmd, workordersListCmd, workordersUpdateCmd)
 	rootCmd.AddCommand(workordersCmd)
 }

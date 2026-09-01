@@ -772,7 +772,10 @@ func extractScalarFields(spec *Spec, schema Schema, requestStruct, wrapper strin
 			}
 			if ov.Required != nil {
 				f.Required = *ov.Required
-				f.IsPointer = !*ov.Required
+				// IsPointer stays spec-driven: the SDK's generated struct
+				// types pointer fields by schema optionality, not by CLI
+				// flag requirements. Only the flag's required-marking follows
+				// the override.
 				if *ov.Required && !strings.HasSuffix(f.HelpText, ")") {
 					f.HelpText += " (required)"
 				}
@@ -877,7 +880,10 @@ func extractQueryFields(op Operation, queryParamStruct string, flagOverrides map
 			}
 			if ov.Required != nil {
 				f.Required = *ov.Required
-				f.IsPointer = !*ov.Required
+				// IsPointer stays spec-driven: the SDK's generated struct
+				// types pointer fields by schema optionality, not by CLI
+				// flag requirements. Only the flag's required-marking follows
+				// the override.
 				if *ov.Required && !strings.HasSuffix(f.HelpText, ")") {
 					f.HelpText += " (required)"
 				}
@@ -1096,8 +1102,17 @@ func emitListPaginatedWithParamsHandler(g *jen.Group, cmd GenCommand) {
 func bodyStructFields(cmd GenCommand) []jen.Code {
 	fields := make([]jen.Code, 0, len(cmd.BodyFields))
 	for _, bf := range cmd.BodyFields {
+		fieldType := jen.Id(goType(bf.Type))
+		jsonTag := bf.JSONName
+		if bf.IsPointer {
+			// Optional fields are pointers with omitempty in the generated
+			// SDK structs — the anonymous literal must match exactly for
+			// assignability (Go requires identical tags).
+			fieldType = jen.Op("*").Id(goType(bf.Type))
+			jsonTag = bf.JSONName + ",omitempty"
+		}
 		fields = append(fields,
-			jen.Id(bf.GoName).Id(goType(bf.Type)).Tag(map[string]string{"json": bf.JSONName}),
+			jen.Id(bf.GoName).Add(fieldType).Tag(map[string]string{"json": jsonTag}),
 		)
 	}
 	return fields
@@ -1112,7 +1127,11 @@ func bodyLiteralDict(cmd GenCommand) jen.Dict {
 			continue
 		}
 		varName := bodyFieldVarName(cmd.Resource, bf.GoName)
-		dict[jen.Id(bf.GoName)] = jen.Id(varName)
+		if bf.IsPointer {
+			dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
+		} else {
+			dict[jen.Id(bf.GoName)] = jen.Id(varName)
+		}
 	}
 	return dict
 }

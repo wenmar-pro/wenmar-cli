@@ -500,12 +500,6 @@
           ]
         },
         {
-          "path": "wenmar servicecategories deactivate \u003cid\u003e",
-          "use": "deactivate \u003cid\u003e",
-          "short": "Deactivate a service category by ID",
-          "flags": null
-        },
-        {
           "path": "wenmar servicecategories delete \u003cid\u003e",
           "use": "delete \u003cid\u003e",
           "short": "Delete a service category by ID",
@@ -523,24 +517,6 @@
           "flags": null
         },
         {
-          "path": "wenmar servicecategories move-down \u003cid\u003e",
-          "use": "move-down \u003cid\u003e",
-          "short": "Move a service category down one position",
-          "flags": null
-        },
-        {
-          "path": "wenmar servicecategories move-up \u003cid\u003e",
-          "use": "move-up \u003cid\u003e",
-          "short": "Move a service category up one position",
-          "flags": null
-        },
-        {
-          "path": "wenmar servicecategories reactivate \u003cid\u003e",
-          "use": "reactivate \u003cid\u003e",
-          "short": "Reactivate a service category by ID",
-          "flags": null
-        },
-        {
           "path": "wenmar servicecategories seed-defaults",
           "use": "seed-defaults",
           "short": "Seed default service categories for the account",
@@ -552,8 +528,15 @@
           "short": "Update a service category by ID",
           "flags": [
             {
-              "name": "name",
-              "required": true
+              "name": "active",
+              "default": "false"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "position",
+              "default": "0"
             }
           ]
         }
@@ -1118,6 +1101,17 @@
           "flags": [
             {
               "name": "intake-method"
+            },
+            {
+              "name": "payer-customer-id",
+              "default": "0"
+            },
+            {
+              "name": "sub-status-type-id",
+              "default": "0"
+            },
+            {
+              "name": "vehicle-arrived-at"
             }
           ]
         },

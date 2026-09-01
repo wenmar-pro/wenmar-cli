@@ -106,7 +106,7 @@ var customersMergeCmd = &cobra.Command{
 
 func runCustomersMerge(cmd *cobra.Command, args []string) error {
 	return runAction(cmd, args, "customers", "POST", func(a []string) string {
-		return fmt.Sprintf("/customers/%s/merge", a[0])
+		return fmt.Sprintf("/customers/%s/merges", a[0])
 	}, "Customer action completed.", func(id int) (any, error) {
 		req := wenmar.MergeCustomerRequest{SourceCustomerId: customersSourceCustomerId}
 		return req, nil

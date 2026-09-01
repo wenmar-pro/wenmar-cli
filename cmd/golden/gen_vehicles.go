@@ -116,7 +116,7 @@ var vehiclesMergeCmd = &cobra.Command{
 
 func runVehiclesMerge(cmd *cobra.Command, args []string) error {
 	return runAction(cmd, args, "vehicles", "POST", func(a []string) string {
-		return fmt.Sprintf("/vehicles/%s/merge", a[0])
+		return fmt.Sprintf("/vehicles/%s/merges", a[0])
 	}, "Vehicle action completed.", func(id int) (any, error) {
 		req := wenmar.MergeVehicleRequest{SourceVehicleId: vehiclesSourceVehicleId}
 		return req, nil
@@ -176,8 +176,8 @@ var vehiclesTransferCmd = &cobra.Command{
 }
 
 func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
-	return runAction(cmd, args, "vehicles", "PATCH", func(a []string) string {
-		return fmt.Sprintf("/vehicles/%s/transfer", a[0])
+	return runAction(cmd, args, "vehicles", "POST", func(a []string) string {
+		return fmt.Sprintf("/vehicles/%s/transfers", a[0])
 	}, "Vehicle action completed.", func(id int) (any, error) {
 		req := wenmar.TransferVehicleRequest{
 			CustomerId: vehiclesCustomerId,
@@ -189,7 +189,7 @@ func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return nil, err
 		}
-		return resp.JSON200, nil
+		return resp.JSON201, nil
 	})
 }
 
