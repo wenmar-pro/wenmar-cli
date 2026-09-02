@@ -70,8 +70,23 @@ func groupOperations(spec *Spec, overrides *Overrides) []CommandGroup {
 	// Track seen command var names to detect duplicates within a resource.
 	seenVarNames := make(map[string][]string) // resource -> list of var names
 
-	for path, item := range spec.Paths {
-		for method, op := range item {
+	// Iterate paths and methods deterministically so the "first wins" dedup
+	// below is stable across runs (Go map iteration order is random).
+	paths := make([]string, 0, len(spec.Paths))
+	for path := range spec.Paths {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+
+	for _, path := range paths {
+		item := spec.Paths[path]
+		methods := make([]string, 0, len(item))
+		for method := range item {
+			methods = append(methods, method)
+		}
+		sort.Strings(methods)
+		for _, method := range methods {
+			op := item[method]
 			if op.OperationID == "" || excluded[op.OperationID] {
 				continue
 			}
@@ -992,7 +1007,7 @@ func emitShowStrHandler(g *jen.Group, cmd GenCommand) {
 func emitListHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
 	callArgs := sdkCallArgs(cmd, false)
-	if cmd.QueryParamStruct != "" {
+	if len(cmd.QueryParams) > 0 {
 		// SDK list methods that take a params struct accept nil for unfiltered.
 		callArgs = append(callArgs, jen.Nil())
 	}
@@ -1015,6 +1030,11 @@ func emitListHandler(g *jen.Group, cmd GenCommand) {
 
 func emitListPaginatedHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
+	callArgs := sdkCallArgs(cmd, false)
+	if len(cmd.QueryParams) > 0 {
+		// SDK list methods that take a params struct accept nil for unfiltered.
+		callArgs = append(callArgs, jen.Nil())
+	}
 	g.Return(jen.Id("runListPaginated").Call(
 		jen.Id("cmd"),
 		jen.Lit(resource),
@@ -1023,7 +1043,7 @@ func emitListPaginatedHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Op("*").Qual(wenmarPkg, "Paginator"), jen.Error()).Block(
-			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(sdkCallArgs(cmd, false)...),
+			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(callArgs...),
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 			),

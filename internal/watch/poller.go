@@ -182,7 +182,7 @@ func (p *Poller) fetch(ctx context.Context, client *wenmar.Client) (map[string]m
 		}
 		items, err = decodeList(resp.JSON200)
 	default: // work_orders
-		resp, ferr := client.ListWorkOrders(ctx)
+		resp, ferr := client.ListWorkOrders(ctx, nil)
 		if ferr != nil {
 			return nil, ferr
 		}

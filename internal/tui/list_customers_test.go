@@ -55,7 +55,7 @@ func TestCustomerList_FetchesCustomers(t *testing.T) {
 func TestCustomerList_FetchWithQuerySendsRequestParam(t *testing.T) {
 	var capturedQuery string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		capturedQuery = r.URL.Query().Get("query")
+		capturedQuery = r.URL.Query().Get("q")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`[{"id":7,"full_name":"Jane Doe","type":"individual","vehicles_count":0,"outstanding_balance_cents":0,"updated_at":"2026-01-02T00:00:00Z"}]`))
@@ -64,7 +64,7 @@ func TestCustomerList_FetchWithQuerySendsRequestParam(t *testing.T) {
 
 	client := newTestClient(t, srv.URL, "test")
 	params := wenmar.ListCustomersParams{
-		Query: strPtr("jane"),
+		Q: strPtr("jane"),
 	}
 	msg := fetchCustomersWithParams(client, "", params)()
 

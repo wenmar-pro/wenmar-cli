@@ -20,10 +20,26 @@ var customersListAll bool
 var customersPage int
 var customersPerPage int
 var customersPhone int
-var customersQuery string
+var customersQ string
 var customersSourceCustomerId int
 var customersTagIds []int
 var customersType string
+var customersCreateCmd = &cobra.Command{
+	RunE:  runCustomersCreate,
+	Short: "create",
+	Use:   "create",
+}
+
+func runCustomersCreate(cmd *cobra.Command, args []string) error {
+	return runSeedAction(cmd, "customers", "/customers/export", "Customer create.", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.CreateCustomersExport(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var customersDuplicatesCmd = &cobra.Command{
 	RunE:  runCustomersDuplicates,
 	Short: "Check for duplicate customers",
@@ -61,7 +77,7 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 				LastVisitMonths: intPtr(customersLastVisitMonths),
 				Page:            intPtr(customersPage),
 				PerPage:         intPtr(customersPerPage),
-				Query:           strPtr(customersQuery),
+				Q:               strPtr(customersQ),
 				TagIds:          intSliceToStrPtr(customersTagIds),
 				Type:            strPtr(customersType),
 			})
@@ -121,16 +137,17 @@ func runCustomersMerge(cmd *cobra.Command, args []string) error {
 }
 
 var customersShowCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar customers show 42\n",
-	RunE:    runCustomersShow,
-	Short:   "Show a single customer by ID",
-	Use:     "show <id>",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersShow,
+	Short: "download",
+	Use:   "show <id>",
 }
 
 func runCustomersShow(cmd *cobra.Command, args []string) error {
-	return runShow(cmd, args, "customers", "GET", idPath("/customers/"), func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ShowCustomer(ctx, id)
+	return runShow(cmd, args, "customers", "GET", func(a []string) string {
+		return fmt.Sprintf("/customers/export/%s/download", a[0])
+	}, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ListCustomersExportDownload(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -192,7 +209,7 @@ func customersListHasFilters() bool {
 	if customersPerPage > 0 {
 		return true
 	}
-	if customersQuery != "" {
+	if customersQ != "" {
 		return true
 	}
 	if customersType != "" {
@@ -221,12 +238,12 @@ func init() {
 	customersListCmd.Flags().IntVar(&customersLastVisitMonths, "last-visit-months", 0, "Last Visit Months")
 	customersListCmd.Flags().IntVar(&customersPage, "page", 0, "Page")
 	customersListCmd.Flags().IntVar(&customersPerPage, "per-page", 0, "Per Page")
-	customersListCmd.Flags().StringVar(&customersQuery, "query", "", "Query")
+	customersListCmd.Flags().StringVar(&customersQ, "q", "", "Q")
 	customersListCmd.Flags().IntSliceVar(&customersTagIds, "tag-ids", nil, "Filter by customer tag IDs (comma-separated)")
 	customersListCmd.Flags().StringVar(&customersType, "type", "", "Type")
 	customersListCmd.Flags().BoolVar(&customersListAll, "all", false, "Fetch all pages by following pagination links")
 	customersMergeCmd.Flags().IntVar(&customersSourceCustomerId, "source-id", 0, "Source customer ID to merge into keeper (required)")
 	customersMergeCmd.MarkFlagRequired("source-id")
-	customersCmd.AddCommand(customersDuplicatesCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersShowCmd, customersVehiclesCmd, customersWorkordersCmd)
+	customersCmd.AddCommand(customersCreateCmd, customersDuplicatesCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersShowCmd, customersVehiclesCmd, customersWorkordersCmd)
 	rootCmd.AddCommand(customersCmd)
 }

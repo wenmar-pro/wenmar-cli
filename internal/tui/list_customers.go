@@ -138,19 +138,19 @@ func fetchCustomersWithParams(client *wenmar.Client, locationID string, params w
 	}
 }
 
-// SetSearchQuery updates the params.Query field and triggers a refetch.
+// SetSearchQuery updates the params.Q field and triggers a refetch.
 func (m *CustomerList) SetSearchQuery(query string) {
 	if query == "" {
-		m.params.Query = nil
+		m.params.Q = nil
 	} else {
-		m.params.Query = &query
+		m.params.Q = &query
 	}
 }
 
 // SearchQuery returns the current search query.
 func (m CustomerList) SearchQuery() string {
-	if m.params.Query == nil {
+	if m.params.Q == nil {
 		return ""
 	}
-	return *m.params.Query
+	return *m.params.Q
 }

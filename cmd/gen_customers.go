@@ -60,8 +60,8 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 				LastVisitMonths: intPtr(customersLastVisitMonths),
 				Page:            intPtr(customersPage),
 				PerPage:         intPtr(customersPerPage),
-				Query:           strPtr(customersQuery),
-				TagIds:          intSliceToStrPtr(customersTagIds),
+				Q:              strPtr(customersQuery),
+				TagIds:         intSliceToStrPtr(customersTagIds),
 				Type:            strPtr(customersType),
 			})
 			if err != nil {

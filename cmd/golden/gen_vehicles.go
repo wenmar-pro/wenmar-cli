@@ -16,6 +16,7 @@ var vehiclesMake string
 var vehiclesMode string
 var vehiclesModel string
 var vehiclesPage int
+var vehiclesPerPage int
 var vehiclesSourceVehicleId int
 var vehiclesVin string
 var vehiclesYear int
@@ -81,6 +82,7 @@ func runVehiclesList(cmd *cobra.Command, args []string) error {
 		resp, err := client.ListVehicles(ctx, &wenmar.ListVehiclesParams{
 			CustomerId: intPtr(vehiclesCustomerId),
 			Page:       intPtr(vehiclesPage),
+			PerPage:    intPtr(vehiclesPerPage),
 		})
 		if err != nil {
 			return nil, err
@@ -227,6 +229,7 @@ func init() {
 	vehiclesDeleteCmd.Flags().BoolVar(&vehiclesDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
 	vehiclesListCmd.Flags().IntVar(&vehiclesCustomerId, "customer-id", 0, "Customer ID")
 	vehiclesListCmd.Flags().IntVar(&vehiclesPage, "page", 0, "Page")
+	vehiclesListCmd.Flags().IntVar(&vehiclesPerPage, "per-page", 0, "Per Page")
 	vehiclesMergeCmd.Flags().IntVar(&vehiclesSourceVehicleId, "source-id", 0, "Source vehicle ID (required)")
 	vehiclesMergeCmd.MarkFlagRequired("source-id")
 	vehiclesPrefillCmd.Flags().StringVar(&vehiclesMake, "make", "", "Make")
