@@ -19,10 +19,46 @@ var customersListAll bool
 var customersPage int
 var customersPerPage int
 var customersPhone int
-var customersQuery string
+var customersQ string
 var customersSourceCustomerId int
+var customersStatus string
 var customersTagIds []int
 var customersType string
+var customersArchiveCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersArchive,
+	Short: "Archive a customer (hidden from active lists, retained for history)",
+	Use:   "archive <id>",
+}
+
+func runCustomersArchive(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "customers", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/customers/%s/archive", a[0])
+	}, "Customer archive.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ArchiveCustomer(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
+var customersCreateCmd = &cobra.Command{
+	RunE:  runCustomersCreate,
+	Short: "create",
+	Use:   "create",
+}
+
+func runCustomersCreate(cmd *cobra.Command, args []string) error {
+	return runSeedAction(cmd, "customers", "/customers/export", "Customer create.", func(ctx context.Context, client *wenmar.Client) (any, error) {
+		resp, err := client.CreateCustomersExport(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var customersDuplicatesCmd = &cobra.Command{
 	RunE:  runCustomersDuplicates,
 	Short: "Check for duplicate customers",
@@ -60,8 +96,9 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 				LastVisitMonths: intPtr(customersLastVisitMonths),
 				Page:            intPtr(customersPage),
 				PerPage:         intPtr(customersPerPage),
-				Q:              strPtr(customersQuery),
-				TagIds:         intSliceToStrPtr(customersTagIds),
+				Q:               strPtr(customersQ),
+				Status:          strPtr(customersStatus),
+				TagIds:          intSliceToStrPtr(customersTagIds),
 				Type:            strPtr(customersType),
 			})
 			if err != nil {
@@ -119,17 +156,56 @@ func runCustomersMerge(cmd *cobra.Command, args []string) error {
 	})
 }
 
+var customersRestoreCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersRestore,
+	Short: "Restore a customer to active (from trashed or archived)",
+	Use:   "restore <id>",
+}
+
+func runCustomersRestore(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "customers", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/customers/%s/restore", a[0])
+	}, "Customer restore.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.RestoreCustomer(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var customersShowCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar customers show 42\n",
-	RunE:    runCustomersShow,
-	Short:   "Show a single customer by ID",
-	Use:     "show <id>",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersShow,
+	Short: "download",
+	Use:   "show <id>",
 }
 
 func runCustomersShow(cmd *cobra.Command, args []string) error {
-	return runShow(cmd, args, "customers", "GET", idPath("/customers/"), func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ShowCustomer(ctx, id)
+	return runShow(cmd, args, "customers", "GET", func(a []string) string {
+		return fmt.Sprintf("/customers/export/%s/download", a[0])
+	}, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ListCustomersExportDownload(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
+var customersTrashCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersTrash,
+	Short: "Soft-delete a customer (status: trashed, purgeable after 30 days)",
+	Use:   "trash <id>",
+}
+
+func runCustomersTrash(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "customers", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/customers/%s/trash", a[0])
+	}, "Customer trash.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.TrashCustomer(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +267,10 @@ func customersListHasFilters() bool {
 	if customersPerPage > 0 {
 		return true
 	}
-	if customersQuery != "" {
+	if customersQ != "" {
+		return true
+	}
+	if customersStatus != "" {
 		return true
 	}
 	if customersType != "" {
@@ -220,12 +299,13 @@ func init() {
 	customersListCmd.Flags().IntVar(&customersLastVisitMonths, "last-visit-months", 0, "Last Visit Months")
 	customersListCmd.Flags().IntVar(&customersPage, "page", 0, "Page")
 	customersListCmd.Flags().IntVar(&customersPerPage, "per-page", 0, "Per Page")
-	customersListCmd.Flags().StringVar(&customersQuery, "query", "", "Query")
+	customersListCmd.Flags().StringVar(&customersQ, "q", "", "Q")
+	customersListCmd.Flags().StringVar(&customersStatus, "status", "", "Status")
 	customersListCmd.Flags().IntSliceVar(&customersTagIds, "tag-ids", nil, "Filter by customer tag IDs (comma-separated)")
 	customersListCmd.Flags().StringVar(&customersType, "type", "", "Type")
 	customersListCmd.Flags().BoolVar(&customersListAll, "all", false, "Fetch all pages by following pagination links")
 	customersMergeCmd.Flags().IntVar(&customersSourceCustomerId, "source-id", 0, "Source customer ID to merge into keeper (required)")
 	customersMergeCmd.MarkFlagRequired("source-id")
-	customersCmd.AddCommand(customersDuplicatesCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersShowCmd, customersVehiclesCmd, customersWorkordersCmd)
+	customersCmd.AddCommand(customersArchiveCmd, customersCreateCmd, customersDuplicatesCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersRestoreCmd, customersShowCmd, customersTrashCmd, customersVehiclesCmd, customersWorkordersCmd)
 	rootCmd.AddCommand(customersCmd)
 }

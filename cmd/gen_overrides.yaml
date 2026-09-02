@@ -51,6 +51,7 @@ exclude:
   - create_work_order_payment
   # not exposed by the CLI
   - delete_customer
+  - delete_vehicle
   - list_team
   - get_customers_vehicle_history
 
@@ -194,6 +195,21 @@ commands:
     method: ShowVendor
     example: |
       wenmar vendors show 7
+  trash_vendor:
+    resource: vendors
+    command: trash
+    summary: "Soft-delete a vendor (status: trashed, purgeable after 30 days)"
+    method: TrashVendor
+  archive_vendor:
+    resource: vendors
+    command: archive
+    summary: Archive a vendor (hidden from active lists, retained for history)
+    method: ArchiveVendor
+  restore_vendor:
+    resource: vendors
+    command: restore
+    summary: Restore a vendor to active (from trashed or archived)
+    method: RestoreVendor
 
   # locations
   show_location:
@@ -290,6 +306,21 @@ commands:
     summary: Check for duplicate customers
     method: CheckCustomerDuplicate
     query_param_struct: CheckCustomerDuplicateParams
+  trash_customer:
+    resource: customers
+    command: trash
+    summary: "Soft-delete a customer (status: trashed, purgeable after 30 days)"
+    method: TrashCustomer
+  archive_customer:
+    resource: customers
+    command: archive
+    summary: Archive a customer (hidden from active lists, retained for history)
+    method: ArchiveCustomer
+  restore_customer:
+    resource: customers
+    command: restore
+    summary: Restore a customer to active (from trashed or archived)
+    method: RestoreCustomer
   list_customers_vehicles:
     resource: customers
     command: vehicles
@@ -328,11 +359,21 @@ commands:
     summary: Update a vehicle by ID
     method: UpdateVehicle
     request_struct: UpdateVehicleRequest
-  delete_vehicle:
+  trash_vehicle:
     resource: vehicles
-    command: delete
-    summary: Delete a vehicle by ID
-    method: DeleteVehicle
+    command: trash
+    summary: "Soft-delete a vehicle (status: trashed, purgeable after 30 days)"
+    method: TrashVehicle
+  archive_vehicle:
+    resource: vehicles
+    command: archive
+    summary: Archive a vehicle (hidden from active lists, retained for history)
+    method: ArchiveVehicle
+  restore_vehicle:
+    resource: vehicles
+    command: restore
+    summary: Restore a vehicle to active (from trashed or archived)
+    method: RestoreVehicle
   decode_vin:
     resource: vehicles
     command: decode-vin

@@ -11,7 +11,7 @@ import (
 )
 
 var vehiclesCustomerId int
-var vehiclesDeleteDryRun bool
+var vehiclesFilters [status]string
 var vehiclesMake string
 var vehiclesMode string
 var vehiclesModel string
@@ -20,6 +20,25 @@ var vehiclesPerPage int
 var vehiclesSourceVehicleId int
 var vehiclesVin string
 var vehiclesYear int
+var vehiclesArchiveCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runVehiclesArchive,
+	Short: "Archive a vehicle (hidden from active lists, retained for history)",
+	Use:   "archive <id>",
+}
+
+func runVehiclesArchive(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "vehicles", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/vehicles/%s/archive", a[0])
+	}, "Vehicle archive.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ArchiveVehicle(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var vehiclesDecodeVinCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Example: "wenmar vehicles decode-vin 1HGCM82633A004352\n",
@@ -36,19 +55,6 @@ func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
 			return nil, err
 		}
 		return resp.JSON200, nil
-	})
-}
-
-var vehiclesDeleteCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesDelete,
-	Short: "Delete a vehicle by ID",
-	Use:   "delete <id>",
-}
-
-func runVehiclesDelete(cmd *cobra.Command, args []string) error {
-	return runDelete(cmd, args, "Vehicle", "vehicles", idPath("/vehicles/"), vehiclesDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		return client.DeleteVehicle(ctx, id)
 	})
 }
 
@@ -80,9 +86,10 @@ var vehiclesListCmd = &cobra.Command{
 func runVehiclesList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "vehicles", "/vehicles", func(ctx context.Context, client *wenmar.Client) (any, error) {
 		resp, err := client.ListVehicles(ctx, &wenmar.ListVehiclesParams{
-			CustomerId: intPtr(vehiclesCustomerId),
-			Page:       intPtr(vehiclesPage),
-			PerPage:    intPtr(vehiclesPerPage),
+			CustomerId:      intPtr(vehiclesCustomerId),
+			Filters[status]: strPtr(vehiclesFilters[status]),
+			Page:            intPtr(vehiclesPage),
+			PerPage:         intPtr(vehiclesPerPage),
 		})
 		if err != nil {
 			return nil, err
@@ -152,6 +159,25 @@ func runVehiclesPrefill(cmd *cobra.Command, args []string) error {
 	})
 }
 
+var vehiclesRestoreCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runVehiclesRestore,
+	Short: "Restore a vehicle to active (from trashed or archived)",
+	Use:   "restore <id>",
+}
+
+func runVehiclesRestore(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "vehicles", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/vehicles/%s/restore", a[0])
+	}, "Vehicle restore.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.RestoreVehicle(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var vehiclesShowCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Example: "wenmar vehicles show 5\n",
@@ -195,6 +221,25 @@ func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
 	})
 }
 
+var vehiclesTrashCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runVehiclesTrash,
+	Short: "Soft-delete a vehicle (status: trashed, purgeable after 30 days)",
+	Use:   "trash <id>",
+}
+
+func runVehiclesTrash(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "vehicles", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/vehicles/%s/trash", a[0])
+	}, "Vehicle trash.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.TrashVehicle(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var vehiclesWorkordersCmd = &cobra.Command{
 	Aliases: []string{"work-orders"},
 	Args:    cobra.ExactArgs(1),
@@ -226,8 +271,8 @@ var vehiclesCmd = &cobra.Command{
 }
 
 func init() {
-	vehiclesDeleteCmd.Flags().BoolVar(&vehiclesDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
 	vehiclesListCmd.Flags().IntVar(&vehiclesCustomerId, "customer-id", 0, "Customer ID")
+	vehiclesListCmd.Flags().StringVar(&vehiclesFilters[status], "filters[status]", "", "Filters[status]")
 	vehiclesListCmd.Flags().IntVar(&vehiclesPage, "page", 0, "Page")
 	vehiclesListCmd.Flags().IntVar(&vehiclesPerPage, "per-page", 0, "Per Page")
 	vehiclesMergeCmd.Flags().IntVar(&vehiclesSourceVehicleId, "source-id", 0, "Source vehicle ID (required)")
@@ -239,6 +284,6 @@ func init() {
 	vehiclesTransferCmd.Flags().IntVar(&vehiclesCustomerId, "customer-id", 0, "Customer ID (required)")
 	vehiclesTransferCmd.MarkFlagRequired("customer-id")
 	vehiclesTransferCmd.Flags().StringVar(&vehiclesMode, "mode", "vehicle_only", "Transfer mode (vehicle_only, vehicle_and_history, everything)")
-	vehiclesCmd.AddCommand(vehiclesDecodeVinCmd, vehiclesDeleteCmd, vehiclesDuplicatesCmd, vehiclesListCmd, vehiclesLookupCmd, vehiclesMergeCmd, vehiclesPrefillCmd, vehiclesShowCmd, vehiclesTransferCmd, vehiclesWorkordersCmd)
+	vehiclesCmd.AddCommand(vehiclesArchiveCmd, vehiclesDecodeVinCmd, vehiclesDuplicatesCmd, vehiclesListCmd, vehiclesLookupCmd, vehiclesMergeCmd, vehiclesPrefillCmd, vehiclesRestoreCmd, vehiclesShowCmd, vehiclesTransferCmd, vehiclesTrashCmd, vehiclesWorkordersCmd)
 	rootCmd.AddCommand(vehiclesCmd)
 }

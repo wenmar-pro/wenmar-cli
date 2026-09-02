@@ -22,8 +22,28 @@ var customersPerPage int
 var customersPhone int
 var customersQ string
 var customersSourceCustomerId int
+var customersStatus string
 var customersTagIds []int
 var customersType string
+var customersArchiveCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersArchive,
+	Short: "Archive a customer (hidden from active lists, retained for history)",
+	Use:   "archive <id>",
+}
+
+func runCustomersArchive(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "customers", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/customers/%s/archive", a[0])
+	}, "Customer archive.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ArchiveCustomer(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var customersCreateCmd = &cobra.Command{
 	RunE:  runCustomersCreate,
 	Short: "create",
@@ -78,6 +98,7 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 				Page:            intPtr(customersPage),
 				PerPage:         intPtr(customersPerPage),
 				Q:               strPtr(customersQ),
+				Status:          strPtr(customersStatus),
 				TagIds:          intSliceToStrPtr(customersTagIds),
 				Type:            strPtr(customersType),
 			})
@@ -136,6 +157,25 @@ func runCustomersMerge(cmd *cobra.Command, args []string) error {
 	})
 }
 
+var customersRestoreCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersRestore,
+	Short: "Restore a customer to active (from trashed or archived)",
+	Use:   "restore <id>",
+}
+
+func runCustomersRestore(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "customers", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/customers/%s/restore", a[0])
+	}, "Customer restore.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.RestoreCustomer(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var customersShowCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE:  runCustomersShow,
@@ -148,6 +188,25 @@ func runCustomersShow(cmd *cobra.Command, args []string) error {
 		return fmt.Sprintf("/customers/export/%s/download", a[0])
 	}, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
 		resp, err := client.ListCustomersExportDownload(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
+var customersTrashCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runCustomersTrash,
+	Short: "Soft-delete a customer (status: trashed, purgeable after 30 days)",
+	Use:   "trash <id>",
+}
+
+func runCustomersTrash(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "customers", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/customers/%s/trash", a[0])
+	}, "Customer trash.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.TrashCustomer(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -212,6 +271,9 @@ func customersListHasFilters() bool {
 	if customersQ != "" {
 		return true
 	}
+	if customersStatus != "" {
+		return true
+	}
 	if customersType != "" {
 		return true
 	}
@@ -239,11 +301,12 @@ func init() {
 	customersListCmd.Flags().IntVar(&customersPage, "page", 0, "Page")
 	customersListCmd.Flags().IntVar(&customersPerPage, "per-page", 0, "Per Page")
 	customersListCmd.Flags().StringVar(&customersQ, "q", "", "Q")
+	customersListCmd.Flags().StringVar(&customersStatus, "status", "", "Status")
 	customersListCmd.Flags().IntSliceVar(&customersTagIds, "tag-ids", nil, "Filter by customer tag IDs (comma-separated)")
 	customersListCmd.Flags().StringVar(&customersType, "type", "", "Type")
 	customersListCmd.Flags().BoolVar(&customersListAll, "all", false, "Fetch all pages by following pagination links")
 	customersMergeCmd.Flags().IntVar(&customersSourceCustomerId, "source-id", 0, "Source customer ID to merge into keeper (required)")
 	customersMergeCmd.MarkFlagRequired("source-id")
-	customersCmd.AddCommand(customersCreateCmd, customersDuplicatesCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersShowCmd, customersVehiclesCmd, customersWorkordersCmd)
+	customersCmd.AddCommand(customersArchiveCmd, customersCreateCmd, customersDuplicatesCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersRestoreCmd, customersShowCmd, customersTrashCmd, customersVehiclesCmd, customersWorkordersCmd)
 	rootCmd.AddCommand(customersCmd)
 }

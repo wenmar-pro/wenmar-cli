@@ -4,9 +4,29 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	cobra "github.com/spf13/cobra"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
+
+var vendorsArchiveCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runVendorsArchive,
+	Short: "Archive a vendor (hidden from active lists, retained for history)",
+	Use:   "archive <id>",
+}
+
+func runVendorsArchive(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "vendors", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/vendors/%s/archive", a[0])
+	}, "Vendor archive.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ArchiveVendor(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
 
 var vendorsListCmd = &cobra.Command{
 	Example: "wenmar vendors list\n",
@@ -18,6 +38,25 @@ var vendorsListCmd = &cobra.Command{
 func runVendorsList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "vendors", "/vendors", func(ctx context.Context, client *wenmar.Client) (any, error) {
 		resp, err := client.ListVendors(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
+var vendorsRestoreCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runVendorsRestore,
+	Short: "Restore a vendor to active (from trashed or archived)",
+	Use:   "restore <id>",
+}
+
+func runVendorsRestore(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "vendors", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/vendors/%s/restore", a[0])
+	}, "Vendor restore.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.RestoreVendor(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -43,6 +82,25 @@ func runVendorsShow(cmd *cobra.Command, args []string) error {
 	})
 }
 
+var vendorsTrashCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runVendorsTrash,
+	Short: "Soft-delete a vendor (status: trashed, purgeable after 30 days)",
+	Use:   "trash <id>",
+}
+
+func runVendorsTrash(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "vendors", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/vendors/%s/trash", a[0])
+	}, "Vendor trash.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.TrashVendor(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var vendorsCmd = &cobra.Command{
 	Args:    cobra.NoArgs,
 	GroupID: "resources",
@@ -54,6 +112,6 @@ var vendorsCmd = &cobra.Command{
 }
 
 func init() {
-	vendorsCmd.AddCommand(vendorsListCmd, vendorsShowCmd)
+	vendorsCmd.AddCommand(vendorsArchiveCmd, vendorsListCmd, vendorsRestoreCmd, vendorsShowCmd, vendorsTrashCmd)
 	rootCmd.AddCommand(vendorsCmd)
 }
