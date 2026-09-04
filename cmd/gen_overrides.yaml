@@ -1,6 +1,6 @@
 # gen_overrides.yaml maps OpenAPI operations to CLI command names.
 # Hand-maintained — the generator reads it to produce ergonomic command
-# names and groupings. Verified against wenmar-sdk go/v0.4.1 (method
+# names and groupings. Verified against wenmar-sdk go/v0.4.0 (method
 # signatures in wenmar/operations.gen.go).
 #
 # Exclusion taxonomy:
@@ -334,6 +334,17 @@ commands:
     method: ListCustomersWorkOrders
     id_param: customer_id
     aliases: [work-orders]
+  create_customers_export:
+    resource: customers
+    command: export
+    summary: Request a customer export
+    method: CreateCustomersExport
+    request_struct: CreateCustomersExportRequest
+  list_customers_export_download:
+    resource: customers
+    command: download
+    summary: Download a customer export by ID
+    method: ListCustomersExportDownload
 
   # vehicles
   list_vehicles:
@@ -509,10 +520,9 @@ commands:
 # `suppress: true` hides a field from the CLI surface.
 flag_overrides:
   list_customers:
-    tag_ids:
-      flag: tag-ids
-      flag_type: intslice
-      help: Filter by customer tag IDs (comma-separated)
+    customer_tag_id:
+      flag: tag-id
+      help: Filter by customer tag ID
   merge_customer:
     source_customer_id:
       flag: source-id
