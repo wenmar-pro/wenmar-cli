@@ -477,11 +477,21 @@ commands:
     summary: Update a service category by ID
     method: UpdateServiceCategory
     request_struct: UpdateServiceCategoryRequest
-  delete_service_category:
+  trash_service_category:
     resource: servicecategories
-    command: delete
-    summary: Delete a service category by ID
-    method: DeleteServiceCategory
+    command: trash
+    summary: "Soft-delete a service category (status: trashed, purgeable after 30 days)"
+    method: TrashServiceCategory
+  archive_service_category:
+    resource: servicecategories
+    command: archive
+    summary: Archive a service category (hidden from active lists, retained for history)
+    method: ArchiveServiceCategory
+  restore_service_category:
+    resource: servicecategories
+    command: restore
+    summary: Restore a service category to active (from trashed or archived)
+    method: RestoreServiceCategory
   seed_defaults_service_categories:
     resource: servicecategories
     command: seed-defaults
