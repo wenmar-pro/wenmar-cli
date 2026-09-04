@@ -103,13 +103,14 @@ func (s *Spec) Resolve(sc Schema) Schema {
 type PathItem map[string]Operation // keyed by HTTP method (get, post, patch, delete, put)
 
 type Operation struct {
-	OperationID string              `yaml:"operationId"`
-	Summary     string              `yaml:"summary"`
-	Tags        []string            `yaml:"tags"`
-	Parameters  []Parameter         `yaml:"parameters"`
-	RequestBody *RequestBody        `yaml:"requestBody"`
-	Responses   map[string]Response `yaml:"responses"`
-	XPaginated  bool                `yaml:"x-paginated"`
+	OperationID          string              `yaml:"operationId"`
+	Summary              string              `yaml:"summary"`
+	Tags                 []string            `yaml:"tags"`
+	Parameters           []Parameter         `yaml:"parameters"`
+	RequestBody          *RequestBody        `yaml:"requestBody"`
+	Responses            map[string]Response `yaml:"responses"`
+	XPaginated           bool                `yaml:"x-paginated"`
+	XWenmarRequestSchema string              `yaml:"x-wenmar-request-schema"`
 }
 
 type Parameter struct {
