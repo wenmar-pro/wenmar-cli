@@ -156,6 +156,9 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 	if ov.RequestStruct != "" {
 		cmd.RequestStruct = ov.RequestStruct
 		cmd.BodyFields, cmd.WrapperKey = parseBodyFields(spec, op, ov.RequestStruct, overrides.FlagOverrides[op.OperationID])
+	} else if op.XWenmarRequestSchema != "" {
+		cmd.RequestStruct = op.XWenmarRequestSchema
+		cmd.BodyFields, cmd.WrapperKey = parseBodyFields(spec, op, op.XWenmarRequestSchema, overrides.FlagOverrides[op.OperationID])
 	}
 	if ov.PositionalArg != "" {
 		cmd.PositionalArg = ov.PositionalArg
