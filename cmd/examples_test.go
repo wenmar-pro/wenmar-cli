@@ -12,7 +12,8 @@ func TestExamplesOnKeyCommands(t *testing.T) {
 		{"workorders", "list"},
 		{"workorders", "show"},
 		{"vehicles", "list"},
-		{"tags", "list"},
+		{"customertags", "list"},
+		{"workordertags", "list"},
 		{"servicecategories", "list"},
 		{"account", "show"},
 	} {

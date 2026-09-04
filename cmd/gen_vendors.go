@@ -20,7 +20,7 @@ func runVendorsArchive(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "vendors", "PATCH", func(a []string) string {
 		return fmt.Sprintf("/vendors/%s/archive", a[0])
 	}, "Vendor archive.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ArchiveVendor(ctx, id)
+		resp, err := client.ArchiveVendor(ctx, id, wenmar.ArchiveVendorRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +56,7 @@ func runVendorsRestore(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "vendors", "PATCH", func(a []string) string {
 		return fmt.Sprintf("/vendors/%s/restore", a[0])
 	}, "Vendor restore.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.RestoreVendor(ctx, id)
+		resp, err := client.RestoreVendor(ctx, id, wenmar.RestoreVendorRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func runVendorsTrash(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "vendors", "PATCH", func(a []string) string {
 		return fmt.Sprintf("/vendors/%s/trash", a[0])
 	}, "Vendor trash.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.TrashVendor(ctx, id)
+		resp, err := client.TrashVendor(ctx, id, wenmar.TrashVendorRequest{})
 		if err != nil {
 			return nil, err
 		}

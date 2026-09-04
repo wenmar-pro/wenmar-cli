@@ -19,17 +19,6 @@ exclude:
   # companions — vehicles (pointer-typed wrapper bodies with omitempty)
   - create_vehicle
   - update_vehicle
-  # companions — tags (all tag ops live in cmd/tags.go)
-  - create_customer_tag
-  - create_vehicle_tag
-  - update_tags
-  - list_tags
-  - list_customer_tags
-  - list_vehicle_tags
-  - delete_customer_tag
-  - delete_vehicle_tag
-  - update_customer_tag
-  - update_vehicle_tag
   # companions — work orders show/tabs
   - show_work_order
   - show_work_order_estimate
@@ -202,7 +191,6 @@ exclude:
   - create_users_send_confirmation
   - create_users_send_password_reset
   - create_users_unlock
-  - create_work_order_tag
   - create_work_orders_account_posting
   - create_work_orders_authorization
   - create_work_orders_authorization_decision
@@ -314,7 +302,6 @@ exclude:
   - list_vehicles_autocomplete
   - list_vehicles_customer_vehicles
   - list_vendors_purchase_orders
-  - list_work_order_tags
   - list_work_orders_concerns
   - list_work_orders_services_adjust_time
   - list_work_orders_summary_activity
@@ -335,7 +322,6 @@ exclude:
   - set_default_inspection
   - show_appointment
   - show_campaign
-  - show_customer_tag
   - show_inspection
   - show_inspection_report
   - show_inspection_report_group
@@ -355,9 +341,6 @@ exclude:
   - update_cash_drawer_banner
   - update_core_tax_rule
   - update_current_location
-  - update_customer_tags_archive
-  - update_customer_tags_restore
-  - update_customer_tags_trash
   - update_inspection
   - update_inventory_level
   - update_inventory_levels_stock
@@ -381,8 +364,6 @@ exclude:
   - update_sub_statuse
   - update_sublet_packages_deactivate
   - update_user
-  - update_work_order_tag
-  - update_work_order_tags_archive
   - update_work_orders_close_as_declined
   - update_work_orders_close_as_voided
   - update_work_orders_courtesy_car_assignment
@@ -416,8 +397,10 @@ groups:
     short: Show location details
   account:
     short: Show the current account
-  tags:
-    short: Manage tags
+  customertags:
+    short: Manage customer tags
+  workordertags:
+    short: Manage work order tags
 
 commands:
   # account
@@ -594,6 +577,7 @@ commands:
     command: download
     summary: Download a customer export by ID
     method: ListCustomersExportDownload
+    response_field: Body
 
   # vehicles
   list_vehicles:
@@ -759,6 +743,82 @@ commands:
     method: SeedDefaultsServiceCategories
     request_struct: SeedDefaultsServiceCategoriesRequest
     action_summary: Default service categories seeded.
+
+  # customertags
+  list_customer_tags:
+    resource: customertags
+    command: list
+    summary: List all customer tags
+    method: ListCustomerTags
+    query_param_struct: ListCustomerTagsParams
+    response_field: JSON200
+    example: |
+      wenmar customertags list
+  create_customer_tag:
+    resource: customertags
+    command: create
+    summary: Create a customer tag
+    method: CreateCustomerTag
+    request_struct: CreateCustomerTagRequest
+    response_field: JSON201
+  show_customer_tag:
+    resource: customertags
+    command: show
+    summary: Show a single customer tag by ID
+    method: ShowCustomerTag
+  update_customer_tag:
+    resource: customertags
+    command: update
+    summary: Update a customer tag by ID
+    method: UpdateCustomerTag
+    request_struct: UpdateCustomerTagRequest
+  update_customer_tags_trash:
+    resource: customertags
+    command: delete
+    summary: Trash a customer tag by ID
+    method: UpdateCustomerTagsTrash
+    request_struct: UpdateCustomerTagsTrashRequest
+  update_customer_tags_archive:
+    resource: customertags
+    command: archive
+    summary: Archive a customer tag by ID
+    method: UpdateCustomerTagsArchive
+    request_struct: UpdateCustomerTagsArchiveRequest
+  update_customer_tags_restore:
+    resource: customertags
+    command: restore
+    summary: Restore a customer tag to active
+    method: UpdateCustomerTagsRestore
+    request_struct: UpdateCustomerTagsRestoreRequest
+
+  # workordertags
+  list_work_order_tags:
+    resource: workordertags
+    command: list
+    summary: List all work order tags
+    method: ListWorkOrderTags
+    response_field: JSON200
+    example: |
+      wenmar workordertags list
+  create_work_order_tag:
+    resource: workordertags
+    command: create
+    summary: Create a work order tag
+    method: CreateWorkOrderTag
+    request_struct: CreateWorkOrderTagRequest
+    response_field: JSON201
+  update_work_order_tag:
+    resource: workordertags
+    command: update
+    summary: Update a work order tag by ID
+    method: UpdateWorkOrderTag
+    request_struct: UpdateWorkOrderTagRequest
+  update_work_order_tags_archive:
+    resource: workordertags
+    command: delete
+    summary: Archive a work order tag by ID
+    method: UpdateWorkOrderTagsArchive
+    request_struct: UpdateWorkOrderTagsArchiveRequest
 
 # NOTE: operations in `exclude:` must not also appear under `commands:` —
 # exclusion takes precedence and the entry would be dead.

@@ -160,6 +160,12 @@
       "flags": null,
       "children": [
         {
+          "path": "wenmar customers archive \u003cid\u003e",
+          "use": "archive \u003cid\u003e",
+          "short": "Archive a customer (hidden from active lists, retained for history)",
+          "flags": null
+        },
+        {
           "path": "wenmar customers create",
           "use": "create",
           "short": "Create a new customer",
@@ -219,6 +225,12 @@
           ]
         },
         {
+          "path": "wenmar customers download \u003cid\u003e",
+          "use": "download \u003cid\u003e",
+          "short": "Download a customer export by ID",
+          "flags": null
+        },
+        {
           "path": "wenmar customers duplicates",
           "use": "duplicates",
           "short": "Check for duplicate customers",
@@ -237,6 +249,12 @@
               "default": "0"
             }
           ]
+        },
+        {
+          "path": "wenmar customers export",
+          "use": "export",
+          "short": "Request a customer export",
+          "flags": null
         },
         {
           "path": "wenmar customers list",
@@ -268,11 +286,14 @@
               "default": "0"
             },
             {
-              "name": "query"
+              "name": "q"
             },
             {
-              "name": "tag-ids",
-              "default": "[]"
+              "name": "status"
+            },
+            {
+              "name": "tag-id",
+              "default": "0"
             },
             {
               "name": "type"
@@ -298,9 +319,21 @@
           ]
         },
         {
+          "path": "wenmar customers restore \u003cid\u003e",
+          "use": "restore \u003cid\u003e",
+          "short": "Restore a customer to active (from trashed or archived)",
+          "flags": null
+        },
+        {
           "path": "wenmar customers show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single customer by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar customers trash \u003cid\u003e",
+          "use": "trash \u003cid\u003e",
+          "short": "Soft-delete a customer (status: trashed, purgeable after 30 days)",
           "flags": null
         },
         {
@@ -369,6 +402,70 @@
           "use": "workorders \u003cid\u003e",
           "short": "List a customer's work orders",
           "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar customertags",
+      "use": "customertags",
+      "short": "Manage customer tags",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar customertags archive \u003cid\u003e",
+          "use": "archive \u003cid\u003e",
+          "short": "Archive a customer tag by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar customertags create",
+          "use": "create",
+          "short": "Create a customer tag",
+          "flags": [
+            {
+              "name": "name",
+              "required": true
+            }
+          ]
+        },
+        {
+          "path": "wenmar customertags delete \u003cid\u003e",
+          "use": "delete \u003cid\u003e",
+          "short": "Trash a customer tag by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar customertags list",
+          "use": "list",
+          "short": "List all customer tags",
+          "flags": [
+            {
+              "name": "status"
+            }
+          ]
+        },
+        {
+          "path": "wenmar customertags restore \u003cid\u003e",
+          "use": "restore \u003cid\u003e",
+          "short": "Restore a customer tag to active",
+          "flags": null
+        },
+        {
+          "path": "wenmar customertags show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "Show a single customer tag by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar customertags update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "Update a customer tag by ID",
+          "flags": [
+            {
+              "name": "name",
+              "required": true
+            }
+          ]
         }
       ]
     },
@@ -481,6 +578,12 @@
       "flags": null,
       "children": [
         {
+          "path": "wenmar servicecategories archive \u003cid\u003e",
+          "use": "archive \u003cid\u003e",
+          "short": "Archive a service category (hidden from active lists, retained for history)",
+          "flags": null
+        },
+        {
           "path": "wenmar servicecategories create",
           "use": "create",
           "short": "Create a new service category",
@@ -500,20 +603,15 @@
           ]
         },
         {
-          "path": "wenmar servicecategories delete \u003cid\u003e",
-          "use": "delete \u003cid\u003e",
-          "short": "Delete a service category by ID",
-          "flags": [
-            {
-              "name": "dry-run",
-              "default": "false"
-            }
-          ]
-        },
-        {
           "path": "wenmar servicecategories list",
           "use": "list",
           "short": "List all service categories",
+          "flags": null
+        },
+        {
+          "path": "wenmar servicecategories restore \u003cid\u003e",
+          "use": "restore \u003cid\u003e",
+          "short": "Restore a service category to active (from trashed or archived)",
           "flags": null
         },
         {
@@ -523,14 +621,16 @@
           "flags": null
         },
         {
+          "path": "wenmar servicecategories trash \u003cid\u003e",
+          "use": "trash \u003cid\u003e",
+          "short": "Soft-delete a service category (status: trashed, purgeable after 30 days)",
+          "flags": null
+        },
+        {
           "path": "wenmar servicecategories update \u003cid\u003e",
           "use": "update \u003cid\u003e",
           "short": "Update a service category by ID",
           "flags": [
-            {
-              "name": "active",
-              "default": "false"
-            },
             {
               "name": "name"
             },
@@ -615,71 +715,6 @@
       ]
     },
     {
-      "path": "wenmar tags",
-      "use": "tags",
-      "short": "Manage customer and vehicle tags",
-      "flags": null,
-      "children": [
-        {
-          "path": "wenmar tags create",
-          "use": "create",
-          "short": "Create a customer or vehicle tag",
-          "flags": [
-            {
-              "name": "name",
-              "required": true
-            },
-            {
-              "name": "type",
-              "default": "customer"
-            }
-          ]
-        },
-        {
-          "path": "wenmar tags delete",
-          "use": "delete",
-          "short": "Delete a customer or vehicle tag",
-          "flags": [
-            {
-              "name": "id",
-              "required": true,
-              "default": "0"
-            },
-            {
-              "name": "type",
-              "default": "customer"
-            }
-          ]
-        },
-        {
-          "path": "wenmar tags list",
-          "use": "list",
-          "short": "List all customer and vehicle tags",
-          "flags": null
-        },
-        {
-          "path": "wenmar tags rename",
-          "use": "rename",
-          "short": "Rename a customer or vehicle tag",
-          "flags": [
-            {
-              "name": "id",
-              "required": true,
-              "default": "0"
-            },
-            {
-              "name": "name",
-              "required": true
-            },
-            {
-              "name": "type",
-              "default": "customer"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "path": "wenmar tui",
       "use": "tui",
       "short": "Launch the TUI dispatch board",
@@ -737,6 +772,12 @@
       "flags": null,
       "children": [
         {
+          "path": "wenmar vehicles archive \u003cid\u003e",
+          "use": "archive \u003cid\u003e",
+          "short": "Archive a vehicle (hidden from active lists, retained for history)",
+          "flags": null
+        },
+        {
           "path": "wenmar vehicles create",
           "use": "create",
           "short": "Create a new vehicle",
@@ -792,10 +833,6 @@
               "name": "submodel"
             },
             {
-              "name": "tag-id",
-              "default": "[]"
-            },
-            {
               "name": "transmission"
             },
             {
@@ -818,17 +855,6 @@
           "flags": null
         },
         {
-          "path": "wenmar vehicles delete \u003cid\u003e",
-          "use": "delete \u003cid\u003e",
-          "short": "Delete a vehicle by ID",
-          "flags": [
-            {
-              "name": "dry-run",
-              "default": "false"
-            }
-          ]
-        },
-        {
           "path": "wenmar vehicles duplicates \u003cstring\u003e",
           "use": "duplicates \u003cstring\u003e",
           "short": "Check for duplicate vehicles matching a VIN",
@@ -846,6 +872,13 @@
             {
               "name": "page",
               "default": "0"
+            },
+            {
+              "name": "per-page",
+              "default": "0"
+            },
+            {
+              "name": "status"
             }
           ]
         },
@@ -888,6 +921,12 @@
           ]
         },
         {
+          "path": "wenmar vehicles restore \u003cid\u003e",
+          "use": "restore \u003cid\u003e",
+          "short": "Restore a vehicle to active (from trashed or archived)",
+          "flags": null
+        },
+        {
           "path": "wenmar vehicles show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single vehicle by ID",
@@ -908,6 +947,12 @@
               "default": "vehicle_only"
             }
           ]
+        },
+        {
+          "path": "wenmar vehicles trash \u003cid\u003e",
+          "use": "trash \u003cid\u003e",
+          "short": "Soft-delete a vehicle (status: trashed, purgeable after 30 days)",
+          "flags": null
         },
         {
           "path": "wenmar vehicles update \u003cid\u003e",
@@ -980,15 +1025,33 @@
       "flags": null,
       "children": [
         {
+          "path": "wenmar vendors archive \u003cid\u003e",
+          "use": "archive \u003cid\u003e",
+          "short": "Archive a vendor (hidden from active lists, retained for history)",
+          "flags": null
+        },
+        {
           "path": "wenmar vendors list",
           "use": "list",
           "short": "List all vendors, paginated via the Link header",
           "flags": null
         },
         {
+          "path": "wenmar vendors restore \u003cid\u003e",
+          "use": "restore \u003cid\u003e",
+          "short": "Restore a vendor to active (from trashed or archived)",
+          "flags": null
+        },
+        {
           "path": "wenmar vendors show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single vendor by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar vendors trash \u003cid\u003e",
+          "use": "trash \u003cid\u003e",
+          "short": "Soft-delete a vendor (status: trashed, purgeable after 30 days)",
           "flags": null
         }
       ]
@@ -1107,11 +1170,23 @@
               "default": "0"
             },
             {
+              "name": "saved-for-later",
+              "default": "false"
+            },
+            {
               "name": "sub-status-type-id",
               "default": "0"
             },
             {
               "name": "vehicle-arrived-at"
+            },
+            {
+              "name": "waiting-for-customer",
+              "default": "false"
+            },
+            {
+              "name": "work-order-tag-id",
+              "default": "0"
             }
           ]
         },
@@ -1120,6 +1195,52 @@
           "use": "wip \u003cid\u003e",
           "short": "Show the work-in-progress tab (services) for a work order",
           "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar workordertags",
+      "use": "workordertags",
+      "short": "Manage work order tags",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar workordertags create",
+          "use": "create",
+          "short": "Create a work order tag",
+          "flags": [
+            {
+              "name": "color",
+              "required": true
+            },
+            {
+              "name": "name",
+              "required": true
+            }
+          ]
+        },
+        {
+          "path": "wenmar workordertags delete \u003cid\u003e",
+          "use": "delete \u003cid\u003e",
+          "short": "Archive a work order tag by ID",
+          "flags": null
+        },
+        {
+          "path": "wenmar workordertags list",
+          "use": "list",
+          "short": "List all work order tags",
+          "flags": null
+        },
+        {
+          "path": "wenmar workordertags update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "Update a work order tag by ID",
+          "flags": [
+            {
+              "name": "name",
+              "required": true
+            }
+          ]
         }
       ]
     }

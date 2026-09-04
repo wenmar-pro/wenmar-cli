@@ -10,13 +10,13 @@ import (
 )
 
 var vehiclesCustomerId int
-var vehiclesFilters [status]string
 var vehiclesMake string
 var vehiclesMode string
 var vehiclesModel string
 var vehiclesPage int
 var vehiclesPerPage int
 var vehiclesSourceVehicleId int
+var vehiclesStatus string
 var vehiclesVin string
 var vehiclesYear int
 var vehiclesArchiveCmd = &cobra.Command{
@@ -30,7 +30,7 @@ func runVehiclesArchive(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "vehicles", "PATCH", func(a []string) string {
 		return fmt.Sprintf("/vehicles/%s/archive", a[0])
 	}, "Vehicle archive.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ArchiveVehicle(ctx, id)
+		resp, err := client.ArchiveVehicle(ctx, id, wenmar.ArchiveVehicleRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -85,10 +85,10 @@ var vehiclesListCmd = &cobra.Command{
 func runVehiclesList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "vehicles", "/vehicles", func(ctx context.Context, client *wenmar.Client) (any, error) {
 		resp, err := client.ListVehicles(ctx, &wenmar.ListVehiclesParams{
-			CustomerId:      intPtr(vehiclesCustomerId),
-			Filters[status]: strPtr(vehiclesFilters[status]),
-			Page:            intPtr(vehiclesPage),
-			PerPage:         intPtr(vehiclesPerPage),
+			CustomerId: intPtr(vehiclesCustomerId),
+			Page:       intPtr(vehiclesPage),
+			PerPage:    intPtr(vehiclesPerPage),
+			Status:     strPtr(vehiclesStatus),
 		})
 		if err != nil {
 			return nil, err
@@ -169,7 +169,7 @@ func runVehiclesRestore(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "vehicles", "PATCH", func(a []string) string {
 		return fmt.Sprintf("/vehicles/%s/restore", a[0])
 	}, "Vehicle restore.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.RestoreVehicle(ctx, id)
+		resp, err := client.RestoreVehicle(ctx, id, wenmar.RestoreVehicleRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -231,7 +231,7 @@ func runVehiclesTrash(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "vehicles", "PATCH", func(a []string) string {
 		return fmt.Sprintf("/vehicles/%s/trash", a[0])
 	}, "Vehicle trash.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.TrashVehicle(ctx, id)
+		resp, err := client.TrashVehicle(ctx, id, wenmar.TrashVehicleRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -271,9 +271,9 @@ var vehiclesCmd = &cobra.Command{
 
 func init() {
 	vehiclesListCmd.Flags().IntVar(&vehiclesCustomerId, "customer-id", 0, "Customer ID")
-	vehiclesListCmd.Flags().StringVar(&vehiclesFilters[status], "filters[status]", "", "Filters[status]")
 	vehiclesListCmd.Flags().IntVar(&vehiclesPage, "page", 0, "Page")
 	vehiclesListCmd.Flags().IntVar(&vehiclesPerPage, "per-page", 0, "Per Page")
+	vehiclesListCmd.Flags().StringVar(&vehiclesStatus, "status", "", "Status")
 	vehiclesMergeCmd.Flags().IntVar(&vehiclesSourceVehicleId, "source-id", 0, "Source vehicle ID (required)")
 	vehiclesMergeCmd.MarkFlagRequired("source-id")
 	vehiclesPrefillCmd.Flags().StringVar(&vehiclesMake, "make", "", "Make")

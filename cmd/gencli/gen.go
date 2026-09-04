@@ -141,6 +141,9 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 	// Apply override fields (merge-style, no early return) so cmd.IDParam
 	// is known before the path-param loop below.
 	ov := overrides.Commands[op.OperationID] // zero value if absent
+	if ov.ResponseField != "" {
+		cmd.ResponseField = ov.ResponseField
+	}
 	if ov.Resource != "" {
 		cmd.Resource = ov.Resource
 	}
@@ -982,7 +985,7 @@ func emitShowHandler(g *jen.Group, cmd GenCommand) {
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			),
-			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+			jen.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil()),
 		),
 	))
 }
@@ -1002,7 +1005,7 @@ func emitShowStrHandler(g *jen.Group, cmd GenCommand) {
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			),
-			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+			jen.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil()),
 		),
 	))
 }
@@ -1026,7 +1029,7 @@ func emitListHandler(g *jen.Group, cmd GenCommand) {
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			),
-			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+			jen.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil()),
 		),
 	))
 }
@@ -1050,7 +1053,7 @@ func emitListPaginatedHandler(g *jen.Group, cmd GenCommand) {
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 			),
-			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil()),
+			jen.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil()),
 		),
 	))
 }
@@ -1103,14 +1106,14 @@ func emitListPaginatedWithParamsHandler(g *jen.Group, cmd GenCommand) {
 				ibg.If(jen.Id("err").Op("!=").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 				)
-				ibg.Return(jen.Id("resp").Dot("JSON200"), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil())
+				ibg.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil())
 			}).Else().BlockFunc(func(ebg *jen.Group) {
 				ebg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").
 					Dot(sdkMethodNameFor(cmd)).Call(jen.Id("ctx"), jen.Nil())
 				ebg.If(jen.Id("err").Op("!=").Nil()).Block(
 					jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 				)
-				ebg.Return(jen.Id("resp").Dot("JSON200"), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil())
+				ebg.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Id("client").Dot("PaginatorFromResponse").Call(jen.Id("resp").Dot("HTTPResponse")), jen.Nil())
 			})
 		}),
 	))
@@ -1350,7 +1353,7 @@ func emitTabHandler(g *jen.Group, cmd GenCommand) {
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			),
-			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+			jen.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil()),
 		),
 	))
 }
@@ -1392,7 +1395,7 @@ func emitPositionalArgHandler(g *jen.Group, cmd GenCommand) {
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			),
-			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+			jen.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil()),
 		),
 	))
 }
@@ -1415,7 +1418,7 @@ func emitQueryParamHandler(g *jen.Group, cmd GenCommand) {
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Id("err")),
 			),
-			jen.Return(jen.Id("resp").Dot("JSON200"), jen.Nil()),
+			jen.Return(jen.Id("resp").Dot(responseFieldFor(cmd)), jen.Nil()),
 		),
 	))
 }

@@ -619,17 +619,17 @@ func TestVehiclesDuplicates_JSON(t *testing.T) {
 	}
 }
 
-func TestVehiclesDelete_JSON(t *testing.T) {
+func TestVehiclesTrash_JSON(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(
-		"vehicles", "delete", "1",
+		"vehicles", "trash", "1",
 		"--json", "--base-url", srv.URL, "--token", "secret-token",
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(out, "Vehicle 1 deleted") {
-		t.Errorf("expected delete confirmation in output, got: %s", out)
+	if !strings.Contains(out, "Vehicle trash") {
+		t.Errorf("expected trash confirmation in output, got: %s", out)
 	}
 }
 
@@ -779,26 +779,6 @@ func TestOutputFlagConflictFailsFast(t *testing.T) {
 	}
 	if n := srvRequestCount(); n != 0 {
 		t.Errorf("conflict validation should run before any API call; saw %d requests", n)
-	}
-}
-
-func TestVehiclesDelete_DryRun(t *testing.T) {
-	srv := startFakeAPI(t, "secret-token")
-	out, err := execute(
-		"vehicles", "delete", "42", "--dry-run",
-		"--json", "--base-url", srv.URL, "--token", "secret-token",
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !strings.Contains(out, `"dry_run": true`) {
-		t.Errorf("expected dry_run:true in output, got: %s", out)
-	}
-	if !strings.Contains(out, `"would_delete"`) {
-		t.Errorf("expected would_delete field in output, got: %s", out)
-	}
-	if strings.Contains(out, "Vehicle 42 deleted") {
-		t.Error("expected dry-run to NOT actually delete, but got delete confirmation")
 	}
 }
 

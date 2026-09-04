@@ -103,7 +103,7 @@ explicit mode → raw JSON. Conflicts error out.
 
 ```bash
 wenmar customers list
-wenmar customers list --query "jane" --all          # full-text + all pages
+wenmar customers list --q "jane" --all          # full-text + all pages
 wenmar customers list --ids-only
 wenmar customers show 42
 wenmar customers show 42 --jq '.emails[]?.address'
@@ -140,7 +140,7 @@ wenmar vehicles prefill --vin 1HGCM82633A004352
 wenmar vehicles duplicates 1HGCM82633A004352       # VIN as positional arg
 wenmar vehicles create --customer-id 42 --make Honda --model Civic --year 2020
 wenmar vehicles transfer 5 --customer-id 43
-wenmar vehicles delete 42 --dry-run
+wenmar vehicles trash 42
 ```
 
 ### Drivers, vendors, statements, locations, service categories, tags
@@ -157,9 +157,10 @@ wenmar account show
 wenmar servicecategories list
 wenmar servicecategories create --name "Oil change" --service-type maintenance
 wenmar servicecategories seed-defaults
-wenmar tags list
-wenmar tags create --name "Fleet A"
-wenmar tags create --type vehicle --name "Priority"
+wenmar customertags list
+wenmar customertags create --name "Fleet A"
+wenmar workordertags list
+wenmar workordertags create --name "Priority" --color "#ff0000"
 ```
 
 ### Location scoping

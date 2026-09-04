@@ -13,9 +13,12 @@ var workordersCustomerId int
 var workordersDeleteDryRun bool
 var workordersIntakeMethod string
 var workordersPayerCustomerId int
+var workordersSavedForLater bool
 var workordersSubStatusTypeId int
 var workordersVehicleArrivedAt string
 var workordersVehicleId int
+var workordersWaitingForCustomer bool
+var workordersWorkOrderTagId int
 var workordersCreateCmd = &cobra.Command{
 	Example: "wenmar workorders create --customer-id 42 --vehicle-id 5\n",
 	RunE:    runWorkordersCreate,
@@ -84,15 +87,21 @@ var workordersUpdateCmd = &cobra.Command{
 func runWorkordersUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "workorders", idPath("/work_orders/"), "Work order updated.", func(id int) (any, error) {
 		req := wenmar.UpdateWorkOrderRequest{WorkOrder: struct {
-			IntakeMethod     *string `json:"intake_method,omitempty"`
-			PayerCustomerId  *int    `json:"payer_customer_id,omitempty"`
-			SubStatusTypeId  *int    `json:"sub_status_type_id,omitempty"`
-			VehicleArrivedAt *string `json:"vehicle_arrived_at,omitempty"`
+			IntakeMethod       *string `json:"intake_method,omitempty"`
+			PayerCustomerId    *int    `json:"payer_customer_id,omitempty"`
+			SavedForLater      *bool   `json:"saved_for_later,omitempty"`
+			SubStatusTypeId    *int    `json:"sub_status_type_id,omitempty"`
+			VehicleArrivedAt   *string `json:"vehicle_arrived_at,omitempty"`
+			WaitingForCustomer *bool   `json:"waiting_for_customer,omitempty"`
+			WorkOrderTagId     *int    `json:"work_order_tag_id,omitempty"`
 		}{
-			IntakeMethod:     strPtr(workordersIntakeMethod),
-			PayerCustomerId:  intPtr(workordersPayerCustomerId),
-			SubStatusTypeId:  intPtr(workordersSubStatusTypeId),
-			VehicleArrivedAt: strPtr(workordersVehicleArrivedAt),
+			IntakeMethod:       strPtr(workordersIntakeMethod),
+			PayerCustomerId:    intPtr(workordersPayerCustomerId),
+			SavedForLater:      boolPtr(workordersSavedForLater),
+			SubStatusTypeId:    intPtr(workordersSubStatusTypeId),
+			VehicleArrivedAt:   strPtr(workordersVehicleArrivedAt),
+			WaitingForCustomer: boolPtr(workordersWaitingForCustomer),
+			WorkOrderTagId:     intPtr(workordersWorkOrderTagId),
 		}}
 		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
@@ -123,8 +132,11 @@ func init() {
 	workordersDeleteCmd.Flags().BoolVar(&workordersDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
 	workordersUpdateCmd.Flags().StringVar(&workordersIntakeMethod, "intake-method", "", "Intake method (e.g. drop_off, walk_in)")
 	workordersUpdateCmd.Flags().IntVar(&workordersPayerCustomerId, "payer-customer-id", 0, "Payer Customer ID")
+	workordersUpdateCmd.Flags().BoolVar(&workordersSavedForLater, "saved-for-later", false, "Saved For Later")
 	workordersUpdateCmd.Flags().IntVar(&workordersSubStatusTypeId, "sub-status-type-id", 0, "Sub Status Type ID")
 	workordersUpdateCmd.Flags().StringVar(&workordersVehicleArrivedAt, "vehicle-arrived-at", "", "Vehicle Arrived At")
+	workordersUpdateCmd.Flags().BoolVar(&workordersWaitingForCustomer, "waiting-for-customer", false, "Waiting For Customer")
+	workordersUpdateCmd.Flags().IntVar(&workordersWorkOrderTagId, "work-order-tag-id", 0, "Work Order Tag ID")
 	workordersCmd.AddCommand(workordersCreateCmd, workordersDeleteCmd, workordersListCmd, workordersUpdateCmd)
 	rootCmd.AddCommand(workordersCmd)
 }

@@ -4,16 +4,34 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	cobra "github.com/spf13/cobra"
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
-var servicecategoriesActive bool
-var servicecategoriesDeleteDryRun bool
 var servicecategoriesIcon string
 var servicecategoriesName string
 var servicecategoriesPosition int
 var servicecategoriesServiceType string
+var servicecategoriesArchiveCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runServicecategoriesArchive,
+	Short: "Archive a service category (hidden from active lists, retained for history)",
+	Use:   "archive <id>",
+}
+
+func runServicecategoriesArchive(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "servicecategories", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/service_categories/%s/archive", a[0])
+	}, "Servicecategory archive.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ArchiveServiceCategory(ctx, id, wenmar.ArchiveServiceCategoryRequest{})
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var servicecategoriesCreateCmd = &cobra.Command{
 	RunE:  runServicecategoriesCreate,
 	Short: "Create a new service category",
@@ -41,19 +59,6 @@ func runServicecategoriesCreate(cmd *cobra.Command, args []string) error {
 	})
 }
 
-var servicecategoriesDeleteCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesDelete,
-	Short: "Delete a service category by ID",
-	Use:   "delete <id>",
-}
-
-func runServicecategoriesDelete(cmd *cobra.Command, args []string) error {
-	return runDelete(cmd, args, "Servicecategory", "servicecategories", idPath("/service_categories/"), servicecategoriesDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		return client.DeleteServiceCategory(ctx, id)
-	})
-}
-
 var servicecategoriesListCmd = &cobra.Command{
 	Example: "wenmar servicecategories list\n",
 	RunE:    runServicecategoriesList,
@@ -64,6 +69,25 @@ var servicecategoriesListCmd = &cobra.Command{
 func runServicecategoriesList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "servicecategories", "/service_categories", func(ctx context.Context, client *wenmar.Client) (any, error) {
 		resp, err := client.ListServiceCategories(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
+var servicecategoriesRestoreCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runServicecategoriesRestore,
+	Short: "Restore a service category to active (from trashed or archived)",
+	Use:   "restore <id>",
+}
+
+func runServicecategoriesRestore(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "servicecategories", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/service_categories/%s/restore", a[0])
+	}, "Servicecategory restore.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.RestoreServiceCategory(ctx, id, wenmar.RestoreServiceCategoryRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -87,6 +111,25 @@ func runServicecategoriesSeedDefaults(cmd *cobra.Command, args []string) error {
 	})
 }
 
+var servicecategoriesTrashCmd = &cobra.Command{
+	Args:  cobra.ExactArgs(1),
+	RunE:  runServicecategoriesTrash,
+	Short: "Soft-delete a service category (status: trashed, purgeable after 30 days)",
+	Use:   "trash <id>",
+}
+
+func runServicecategoriesTrash(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "servicecategories", "PATCH", func(a []string) string {
+		return fmt.Sprintf("/service_categories/%s/trash", a[0])
+	}, "Servicecategory trash.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.TrashServiceCategory(ctx, id, wenmar.TrashServiceCategoryRequest{})
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var servicecategoriesUpdateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE:  runServicecategoriesUpdate,
@@ -97,11 +140,9 @@ var servicecategoriesUpdateCmd = &cobra.Command{
 func runServicecategoriesUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "servicecategories", idPath("/service_categories/"), "Servicecategory updated.", func(id int) (any, error) {
 		req := wenmar.UpdateServiceCategoryRequest{ServiceCategory: struct {
-			Active   *bool   `json:"active,omitempty"`
 			Name     *string `json:"name,omitempty"`
 			Position *int    `json:"position,omitempty"`
 		}{
-			Active:   boolPtr(servicecategoriesActive),
 			Name:     strPtr(servicecategoriesName),
 			Position: intPtr(servicecategoriesPosition),
 		}}
@@ -131,10 +172,8 @@ func init() {
 	servicecategoriesCreateCmd.Flags().StringVar(&servicecategoriesName, "name", "", "Name (required)")
 	servicecategoriesCreateCmd.MarkFlagRequired("name")
 	servicecategoriesCreateCmd.Flags().StringVar(&servicecategoriesServiceType, "service-type", "maintenance", "Service type (maintenance, repair, diagnostic, recall, sublet)")
-	servicecategoriesDeleteCmd.Flags().BoolVar(&servicecategoriesDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
-	servicecategoriesUpdateCmd.Flags().BoolVar(&servicecategoriesActive, "active", false, "Active")
 	servicecategoriesUpdateCmd.Flags().StringVar(&servicecategoriesName, "name", "", "Name")
 	servicecategoriesUpdateCmd.Flags().IntVar(&servicecategoriesPosition, "position", 0, "Position")
-	servicecategoriesCmd.AddCommand(servicecategoriesCreateCmd, servicecategoriesDeleteCmd, servicecategoriesListCmd, servicecategoriesSeedDefaultsCmd, servicecategoriesUpdateCmd)
+	servicecategoriesCmd.AddCommand(servicecategoriesArchiveCmd, servicecategoriesCreateCmd, servicecategoriesListCmd, servicecategoriesRestoreCmd, servicecategoriesSeedDefaultsCmd, servicecategoriesTrashCmd, servicecategoriesUpdateCmd)
 	rootCmd.AddCommand(servicecategoriesCmd)
 }

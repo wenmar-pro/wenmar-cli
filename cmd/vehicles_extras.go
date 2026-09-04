@@ -46,7 +46,6 @@ var (
 	vehicleFleetIdentifier string
 	vehicleProductionDate  string
 	vehicleNotes           string
-	vehicleTagIDs          []int
 )
 
 func init() {
@@ -69,7 +68,6 @@ func init() {
 	vehiclesCreateCmd.Flags().StringVar(&vehicleFleetIdentifier, "fleet-identifier", "", "Fleet identifier")
 	vehiclesCreateCmd.Flags().StringVar(&vehicleProductionDate, "production-date", "", "Production date (YYYY-MM-DD)")
 	vehiclesCreateCmd.Flags().StringVar(&vehicleNotes, "notes", "", "Notes")
-	vehiclesCreateCmd.Flags().IntSliceVar(&vehicleTagIDs, "tag-id", nil, "Vehicle tag ID, repeatable")
 	vehiclesCreateCmd.MarkFlagRequired("make")
 	vehiclesCreateCmd.MarkFlagRequired("model")
 	vehiclesCreateCmd.MarkFlagRequired("year")
@@ -116,7 +114,6 @@ func runVehiclesCreate(cmd *cobra.Command, args []string) error {
 				Submodel          *string        `json:"submodel,omitempty"`
 				Transmission      *string        `json:"transmission,omitempty"`
 				UnitNumber        *string        `json:"unit_number,omitempty"`
-				VehicleTagIds     *[]interface{} `json:"vehicle_tag_ids,omitempty"`
 				Vin               *string        `json:"vin,omitempty"`
 				Year              int            `json:"year"`
 			}{
@@ -187,13 +184,6 @@ func applyVehicleFlags(req *wenmar.CreateVehicleRequest) {
 		req.Vehicle.OdometerReading = &vehicleOdometer
 	}
 	req.Vehicle.OdometerUnit = strPtr(vehicleOdometerUnit)
-	if len(vehicleTagIDs) > 0 {
-		tags := make([]interface{}, len(vehicleTagIDs))
-		for i, id := range vehicleTagIDs {
-			tags[i] = id
-		}
-		req.Vehicle.VehicleTagIds = &tags
-	}
 }
 
 func applyVehicleUpdateFlags(req *wenmar.UpdateVehicleRequest) {

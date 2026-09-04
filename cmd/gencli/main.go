@@ -183,6 +183,7 @@ type CommandOverride struct {
 	Short            string   `yaml:"short"`
 	IdParam          string   `yaml:"id_param"`
 	Example          string   `yaml:"example"`
+	ResponseField    string   `yaml:"response_field"`
 }
 
 type FlagOverride struct {
