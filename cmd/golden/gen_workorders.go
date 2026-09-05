@@ -18,7 +18,7 @@ var workordersSubStatusTypeId int
 var workordersVehicleArrivedAt string
 var workordersVehicleId int
 var workordersWaitingForCustomer bool
-var workordersWorkOrderTagId int
+var workordersWorkOrderTagId string
 var workordersCreateCmd = &cobra.Command{
 	Example: "wenmar workorders create --customer-id 42 --vehicle-id 5\n",
 	RunE:    runWorkordersCreate,
@@ -93,7 +93,7 @@ func runWorkordersUpdate(cmd *cobra.Command, args []string) error {
 			SubStatusTypeId    *int    `json:"sub_status_type_id,omitempty"`
 			VehicleArrivedAt   *string `json:"vehicle_arrived_at,omitempty"`
 			WaitingForCustomer *bool   `json:"waiting_for_customer,omitempty"`
-			WorkOrderTagId     *int    `json:"work_order_tag_id,omitempty"`
+			WorkOrderTagId     *string `json:"work_order_tag_id,omitempty"`
 		}{
 			IntakeMethod:       strPtr(workordersIntakeMethod),
 			PayerCustomerId:    intPtr(workordersPayerCustomerId),
@@ -101,7 +101,7 @@ func runWorkordersUpdate(cmd *cobra.Command, args []string) error {
 			SubStatusTypeId:    intPtr(workordersSubStatusTypeId),
 			VehicleArrivedAt:   strPtr(workordersVehicleArrivedAt),
 			WaitingForCustomer: boolPtr(workordersWaitingForCustomer),
-			WorkOrderTagId:     intPtr(workordersWorkOrderTagId),
+			WorkOrderTagId:     strPtr(workordersWorkOrderTagId),
 		}}
 		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
@@ -136,7 +136,7 @@ func init() {
 	workordersUpdateCmd.Flags().IntVar(&workordersSubStatusTypeId, "sub-status-type-id", 0, "Sub Status Type ID")
 	workordersUpdateCmd.Flags().StringVar(&workordersVehicleArrivedAt, "vehicle-arrived-at", "", "Vehicle Arrived At")
 	workordersUpdateCmd.Flags().BoolVar(&workordersWaitingForCustomer, "waiting-for-customer", false, "Waiting For Customer")
-	workordersUpdateCmd.Flags().IntVar(&workordersWorkOrderTagId, "work-order-tag-id", 0, "Work Order Tag ID")
+	workordersUpdateCmd.Flags().StringVar(&workordersWorkOrderTagId, "work-order-tag-id", "", "Work Order Tag ID")
 	workordersCmd.AddCommand(workordersCreateCmd, workordersDeleteCmd, workordersListCmd, workordersUpdateCmd)
 	rootCmd.AddCommand(workordersCmd)
 }
