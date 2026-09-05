@@ -15,8 +15,6 @@ import (
 	"github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
-const defaultMaxInlineBytes = 262144 // 256 KiB; purely informational for the CLI.
-
 // Client makes raw HTTP requests to the unified /exports API.
 type Client struct {
 	HTTPClient *http.Client
@@ -160,6 +158,9 @@ func (c *Client) Download(ctx context.Context, downloadURL string, maxWait time.
 
 // DownloadInline decodes base64 data from Create when status is complete and data is present.
 func DownloadInline(resp *CreateResponse) ([]byte, error) {
+	if resp == nil {
+		return nil, fmt.Errorf("inline export requested but no response returned")
+	}
 	if resp.Data == "" {
 		return nil, fmt.Errorf("inline export requested but no data returned")
 	}
