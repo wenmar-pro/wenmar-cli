@@ -59,7 +59,7 @@ func idPath(prefix string) func(args []string) string {
 //	},
 func runShow(cmd *cobra.Command, args []string, resource, method string, pathFn func(args []string) string,
 	getter func(ctx context.Context, client *wenmar.Client, id int) (any, error)) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func runShow(cmd *cobra.Command, args []string, resource, method string, pathFn 
 // runShowStr is like runShow but for resources whose ID is a string (e.g. locations).
 func runShowStr(cmd *cobra.Command, args []string, resource, method string, pathFn func(args []string) string,
 	getter func(ctx context.Context, client *wenmar.Client, id string) (any, error)) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func runShowStr(cmd *cobra.Command, args []string, resource, method string, path
 // runList is the shared skeleton for simple "list" commands (no pagination meta).
 func runList(cmd *cobra.Command, resource, path string,
 	lister func(ctx context.Context, client *wenmar.Client) (any, error)) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func runList(cmd *cobra.Command, resource, path string,
 // pagination metadata via a Paginator (Link header).
 func runListPaginated(cmd *cobra.Command, resource, path string,
 	lister func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error)) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func runListPaginated(cmd *cobra.Command, resource, path string,
 // runListPaginated (page 1 + hasNext hint).
 func runListPaginatedWithAll(cmd *cobra.Command, resource, path string, allFlag bool,
 	lister func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error)) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func runListPaginatedWithAll(cmd *cobra.Command, resource, path string, allFlag 
 func runCreate(cmd *cobra.Command, resource, path, summary string,
 	bodyBuilder func() (any, error),
 	sender func(ctx context.Context, client *wenmar.Client, body any) (any, error)) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func runUpdate(cmd *cobra.Command, args []string, resource string, pathFn func(a
 func runAction(cmd *cobra.Command, args []string, resource, method string, pathFn func(args []string) string, summary string,
 	bodyBuilder func(id int) (any, error),
 	sender func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error)) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func runActionNoBody(cmd *cobra.Command, args []string, resource, method string,
 		return err
 	}
 
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -319,7 +319,7 @@ func runActionNoBody(cmd *cobra.Command, args []string, resource, method string,
 // bodies (e.g. service categories seed-defaults): no id, call, render.
 func runSeedAction(cmd *cobra.Command, resource, path string, summary string,
 	action func(ctx context.Context, client *wenmar.Client) (any, error)) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func runDelete(cmd *cobra.Command, args []string, resourceLabel, resourceSlug st
 		return output.Render(cmd.OutOrStdout(), dryRunData, fmt.Sprintf("Would delete %s %d (dry run).", resourceLabel, id), nil, opts)
 	}
 
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}

@@ -69,7 +69,7 @@ func init() {
 }
 
 func runWorkOrdersShow(cmd *cobra.Command, args []string) error {
-	client, err := newScopedClient(context.Background())
+	client, err := newScopedClient()
 	if err != nil {
 		return err
 	}

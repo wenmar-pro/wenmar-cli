@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
@@ -40,7 +38,7 @@ func newClient() (*wenmar.Client, error) {
 
 // newClientForLocation builds a client scoped to a location via the
 // X-Wenmar-Location header. If locationID is empty, it returns the bare client.
-func newClientForLocation(ctx context.Context, locationID string) (*wenmar.Client, error) {
+func newClientForLocation(locationID string) (*wenmar.Client, error) {
 	client, err := newClient()
 	if err != nil {
 		return nil, err
@@ -53,7 +51,7 @@ func newClientForLocation(ctx context.Context, locationID string) (*wenmar.Clien
 
 // newScopedClient resolves the location from flag/env/config and builds a
 // client scoped to it.
-func newScopedClient(ctx context.Context) (*wenmar.Client, error) {
+func newScopedClient() (*wenmar.Client, error) {
 	configPath := configPathFlag
 	if configPath == "" {
 		p, err := config.ConfigPath()
@@ -62,5 +60,5 @@ func newScopedClient(ctx context.Context) (*wenmar.Client, error) {
 		}
 	}
 	locationID := auth.ResolveLocationID(locationFlag, configPath)
-	return newClientForLocation(ctx, locationID)
+	return newClientForLocation(locationID)
 }
