@@ -180,7 +180,11 @@ func runExport(cmd *cobra.Command, args []string) error {
 	}
 	summary := fmt.Sprintf("Exported %d %s rows", created.RowCount, resource)
 	opts := output.Options{Mode: mode, JQFilter: jqFlag}
-	return output.Render(cmd.OutOrStdout(), result, summary, nil, opts)
+	renderTarget := cmd.OutOrStdout()
+	if out == "-" {
+		renderTarget = cmd.ErrOrStderr()
+	}
+	return output.Render(renderTarget, result, summary, nil, opts)
 }
 
 func parseExportFilters(raw []string) (map[string]any, error) {
