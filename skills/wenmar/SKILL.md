@@ -35,9 +35,16 @@ print the token in scripts.
 
 1. `wenmar doctor` — auth, connectivity, config, completion, skill checks
 2. `wenmar commands` — full command catalog as JSON (paths, flags, args,
-   aliases, required flags)
+   aliases, required flags). Pipe it (or add `--agent`) for raw JSON.
 3. `wenmar <command> --help --agent` — structured JSON for ONE command
-4. Read `wenmar help output` and `wenmar help exit-codes` for the contracts
+4. Read the help topics for the contracts:
+   - `wenmar help output` — output modes and the JSON envelope format
+   - `wenmar help exit-codes` — the stable 0-10 exit-code contract
+   - `wenmar help auth` — token sources and auth methods
+   - `wenmar help location` — location scoping
+   - `wenmar help environment` — environment variables
+   - `wenmar help watch` — the watch command
+   - `wenmar help agent-help` — structured `--agent --help` for AI agents
 
 ## Agent invariants
 
