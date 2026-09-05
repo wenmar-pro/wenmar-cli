@@ -558,6 +558,39 @@
       ]
     },
     {
+      "path": "wenmar export [resource]",
+      "use": "export [resource]",
+      "short": "Export shop data to CSV or JSON",
+      "flags": [
+        {
+          "name": "filter",
+          "default": "[]"
+        },
+        {
+          "name": "force-async",
+          "default": "false"
+        },
+        {
+          "name": "format"
+        },
+        {
+          "name": "inline",
+          "default": "false"
+        },
+        {
+          "name": "list",
+          "default": "false"
+        },
+        {
+          "name": "max-wait",
+          "default": "5m0s"
+        },
+        {
+          "name": "output"
+        }
+      ]
+    },
+    {
       "path": "wenmar locations",
       "use": "locations",
       "short": "Show location details",
@@ -1185,8 +1218,7 @@
               "default": "false"
             },
             {
-              "name": "work-order-tag-id",
-              "default": "0"
+              "name": "work-order-tag-id"
             }
           ]
         },
