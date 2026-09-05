@@ -70,6 +70,8 @@ These rules MUST be followed without exception:
    `servicecategories` (aliases `service-categories`, `sc`). Old spellings
    keep working; prefer canonical in new scripts.
 10. **Branch on exit codes** (see the table below) — never parse stderr.
+11. **Exit code 9 means truncated** — re-run with `--allow-partial` to
+    accept the data plus a truncation notice in the envelope.
 
 ## Output modes
 
