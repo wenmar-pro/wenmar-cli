@@ -13,6 +13,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
@@ -59,6 +60,10 @@ func execute(args ...string) (string, error) {
 	customerAddresses, customerTagIDs = nil, nil
 	customerRemovePhoneIDs = nil
 	currentDebugInfo = nil
+	// Reset export flag globals so prior tests don't leak list/filter state.
+	exportFormat, exportFilters, exportOutput = "", nil, ""
+	exportInline, exportForceAsync, exportList = false, false, false
+	exportMaxWait = 5 * time.Minute
 	rootCmd.SetArgs(args)
 	buf := &bytes.Buffer{}
 	rootCmd.SetOut(buf)
