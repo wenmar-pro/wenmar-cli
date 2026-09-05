@@ -180,9 +180,15 @@ wenmar help location                         # full topic
 
 ### Pagination
 
-Lists paginate via the Link header. `customers list` supports `--page N`,
-`--per-page N`, and `--all` (follow every page). When `meta.has_next` is
-true in `--json`, more pages exist.
+Lists paginate via the Link header. Any list command that accepts filter
+flags also supports `--all` (follow every page), `--page N`, and
+`--per-page N`. When `meta.has_next` is true in `--json`, more pages
+exist. Use `--all` to fetch the complete result set in one call:
+
+```bash
+wenmar customers list --all
+wenmar customers list --q "jane" --all
+```
 
 ### Truncated responses
 
