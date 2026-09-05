@@ -75,7 +75,11 @@ Envelope structure:
 
   WENMAR_TOKEN         API bearer token
   WENMAR_URL           API base URL (default: https://app.wenmarpro.com)
-  WENMAR_LOCATION_ID   Location ID to scope requests`,
+  WENMAR_LOCATION_ID   Location ID to scope requests
+
+The export command also supports:
+  --format csv|json, --filter key=value (repeatable), -o <path>,
+  --inline (base64 data, no polling), --force-async (always poll).`,
 	},
 	{
 		name:  "auth",
