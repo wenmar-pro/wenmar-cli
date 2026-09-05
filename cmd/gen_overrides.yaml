@@ -5,9 +5,9 @@
 #
 # Exclusion taxonomy:
 #   - companions: commands whose flag/parse logic is not per-op derivable
-#     (tags type-branching, customer splitName/email/phone parsing,
-#     work-order tab truncation) — owned by cmd/tags.go,
-#     cmd/customers_extras.go, cmd/work_orders_extras.go
+#     (customer splitName/email/phone parsing, vehicle pointer bodies,
+#     work-order tab truncation) — owned by cmd/customers_extras.go,
+#     cmd/vehicles_extras.go, cmd/work_orders_extras.go
 #   - no CLI surface: work-order lifecycle/auth/history ops the CLI has
 #     never exposed (SDK 0.4.1 has methods; surface predates them)
 #   - not exposed: delete_customer, list_team, vehicle history
