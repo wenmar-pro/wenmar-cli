@@ -376,6 +376,53 @@ exclude:
   - update_work_orders_services_revive
   - update_work_orders_services_toggle_labor_completion
   - update_work_orders_services_update_category
+
+  # Resources with no committed CLI surface — exclude every remaining op so
+  # gencli emits no file for them (matches cmd/golden/).
+  - update_counter_sales_reopen
+  - create_courtesy_car
+  - delete_courtesy_car
+  - list_locations_courtesy_cars
+  - show_courtesy_car
+  - update_courtesy_car
+  - create_expenses_export
+  - create_expenses_imports_commit
+  - create_expenses_imports_validate
+  - list_expenses_data_transfer
+  - list_expenses_export_download
+  - list_expenses_imports_template
+  - show_expense
+  - create_messages_resend
+  - list_messages
+  - show_message
+  - create_tire_event
+  - list_tire_events
+  - show_tire_event
+  - create_tires_export
+  - create_tires_imports_commit
+  - create_tires_imports_validate
+  - list_tires_export_download
+  - list_tires_imports_template
+  - create_tire_storage_slots_export
+  - delete_tire_storage_slot
+  - list_tire_storage_slots_export_download
+  - update_tire_storage_slot
+
+  # account/locations — keep only the committed show commands.
+  - list_account_billing
+  - list_account_capabilities
+  - list_account_driveon
+  - list_account_payments
+  - list_account_phone_numbers
+  - list_account_quickbooks
+  - list_locations_close_requirements
+  - list_locations_documents
+  - list_locations_lead_source_requirements
+  - list_locations_reminders
+  - update_locations_close_requirements
+  - update_locations_documents
+  - update_locations_lead_source_requirements
+  - update_locations_reminders
 groups:
   workorders:
     short: Manage work orders
