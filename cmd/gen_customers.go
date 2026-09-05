@@ -108,29 +108,21 @@ var customersListCmd = &cobra.Command{
 
 func runCustomersList(cmd *cobra.Command, args []string) error {
 	return runListPaginatedWithAll(cmd, "customers", "/customers", customersListAll, func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
-		if customersListHasFilters() {
-			resp, err := client.ListCustomers(ctx, &wenmar.ListCustomersParams{
-				CustomerTagId:   intPtr(customersCustomerTagId),
-				HasBalance:      boolPtr(customersHasBalance),
-				HasVehicle:      boolPtr(customersHasVehicle),
-				LastVisitMonths: intPtr(customersLastVisitMonths),
-				Page:            intPtr(customersPage),
-				PerPage:         intPtr(customersPerPage),
-				Q:               strPtr(customersQ),
-				Status:          strPtr(customersStatus),
-				Type:            strPtr(customersType),
-			})
-			if err != nil {
-				return nil, nil, err
-			}
-			return resp.JSON200, client.PaginatorFromResponse(resp.HTTPResponse), nil
-		} else {
-			resp, err := client.ListCustomers(ctx, nil)
-			if err != nil {
-				return nil, nil, err
-			}
-			return resp.JSON200, client.PaginatorFromResponse(resp.HTTPResponse), nil
+		resp, err := client.ListCustomers(ctx, &wenmar.ListCustomersParams{
+			CustomerTagId:   intPtr(customersCustomerTagId),
+			HasBalance:      boolPtr(customersHasBalance),
+			HasVehicle:      boolPtr(customersHasVehicle),
+			LastVisitMonths: intPtr(customersLastVisitMonths),
+			Page:            intPtr(customersPage),
+			PerPage:         intPtr(customersPerPage),
+			Q:               strPtr(customersQ),
+			Status:          strPtr(customersStatus),
+			Type:            strPtr(customersType),
+		})
+		if err != nil {
+			return nil, nil, err
 		}
+		return resp.JSON200, client.PaginatorFromResponse(resp.HTTPResponse), nil
 	})
 }
 
@@ -268,36 +260,6 @@ func runCustomersWorkorders(cmd *cobra.Command, args []string) error {
 		}
 		return resp.JSON200, nil
 	})
-}
-func customersListHasFilters() bool {
-	if customersHasBalance {
-		return true
-	}
-	if customersHasVehicle {
-		return true
-	}
-	if customersLastVisitMonths > 0 {
-		return true
-	}
-	if customersPage > 0 {
-		return true
-	}
-	if customersPerPage > 0 {
-		return true
-	}
-	if customersQ != "" {
-		return true
-	}
-	if customersStatus != "" {
-		return true
-	}
-	if customersCustomerTagId > 0 {
-		return true
-	}
-	if customersType != "" {
-		return true
-	}
-	return false
 }
 
 var customersCmd = &cobra.Command{
