@@ -174,19 +174,19 @@ func (p *Poller) fetch(ctx context.Context, client *wenmar.Client) (map[string]m
 		if ferr != nil {
 			return nil, ferr
 		}
-		items, err = decodeList(resp.JSON200)
+		items, err = decodeList(&resp.Items)
 	case "vehicles":
 		resp, ferr := client.ListVehicles(ctx, nil)
 		if ferr != nil {
 			return nil, ferr
 		}
-		items, err = decodeList(resp.JSON200)
+		items, err = decodeList(&resp.Items)
 	default: // work_orders
 		resp, ferr := client.ListWorkOrders(ctx, nil)
 		if ferr != nil {
 			return nil, ferr
 		}
-		items, err = decodeList(resp.JSON200)
+		items, err = decodeList(&resp.Items)
 	}
 	if err != nil {
 		return nil, err

@@ -72,7 +72,6 @@ exclude:
   - get_work_orders_service_adjust_time
   - list_conversations
   - list_counter_sales
-  - list_courtesy_cars
   - list_expenses
   - list_fleets
   - list_notifications
@@ -380,11 +379,7 @@ exclude:
   # Resources with no committed CLI surface — exclude every remaining op so
   # gencli emits no file for them (matches cmd/golden/).
   - update_counter_sales_reopen
-  - create_courtesy_car
-  - delete_courtesy_car
   - list_locations_courtesy_cars
-  - show_courtesy_car
-  - update_courtesy_car
   - create_expenses_export
   - create_expenses_imports_commit
   - create_expenses_imports_validate
@@ -464,7 +459,7 @@ commands:
     resource: vendors
     command: list
     summary: List all vendors, paginated via the Link header
-    method: ListVendors
+    method: ListVendorsRaw
     example: |
       wenmar vendors list
   show_vendor:
@@ -511,7 +506,7 @@ commands:
     resource: statements
     command: list
     summary: List statements for a customer, paginated via the Link header
-    method: ListCustomersStatements
+    method: ListCustomersStatementsRaw
     example: |
       wenmar statements list --customer-id 42
 
@@ -520,7 +515,7 @@ commands:
     resource: drivers
     command: list
     summary: List drivers for a customer, paginated via the Link header
-    method: ListCustomersDrivers
+    method: ListCustomersDriversRaw
     example: |
       wenmar drivers list --customer-id 42
   show_driver:
@@ -604,13 +599,13 @@ commands:
     resource: customers
     command: vehicles
     summary: List a customer's vehicles
-    method: ListCustomersVehicles
+    method: ListCustomersVehiclesRaw
     id_param: customer_id
   list_customers_work_orders:
     resource: customers
     command: workorders
     summary: List a customer's work orders
-    method: ListCustomersWorkOrders
+    method: ListCustomersWorkOrdersRaw
     id_param: customer_id
     aliases: [work-orders]
   create_customers_export:
@@ -631,7 +626,7 @@ commands:
     resource: vehicles
     command: list
     summary: List all vehicles
-    method: ListVehicles
+    method: ListVehiclesRaw
     paginated: false
     query_param_struct: ListVehiclesParams
     example: |
@@ -710,7 +705,7 @@ commands:
     resource: vehicles
     command: workorders
     summary: List a vehicle's work orders
-    method: ListVehiclesWorkOrders
+    method: ListVehiclesWorkOrdersRaw
     id_param: vehicle_id
     aliases: [work-orders]
 
@@ -753,7 +748,7 @@ commands:
     resource: servicecategories
     command: list
     summary: List all service categories
-    method: ListServiceCategories
+    method: ListServiceCategoriesRaw
     example: |
       wenmar servicecategories list
   create_service_category:

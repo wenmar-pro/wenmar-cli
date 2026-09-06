@@ -234,7 +234,7 @@ func TestEmitGroup_CustomersListWithFiltersPaginated(t *testing.T) {
 	}
 	for _, want := range []string{
 		"runListPaginatedWithAll",
-		"ListCustomers(ctx, &wenmar.ListCustomersParams",
+		"ListCustomersRaw(ctx, &wenmar.ListCustomersParams",
 		"PaginatorFromResponse",
 		"customersQuery",
 		"customersPage",

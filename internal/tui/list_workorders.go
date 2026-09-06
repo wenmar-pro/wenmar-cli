@@ -128,7 +128,7 @@ type workOrderListResultMsg struct {
 func fetchWorkOrders(client *wenmar.Client, locationID string) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *wenmar.ListWorkOrdersResponse
+		var resp *wenmar.ListResult[wenmar.WorkOrder]
 		var err error
 		if locationID != "" {
 			lc := client.ForLocation(locationID)
@@ -139,9 +139,9 @@ func fetchWorkOrders(client *wenmar.Client, locationID string) tea.Cmd {
 		if err != nil {
 			return workOrderListResultMsg{err: err}
 		}
-		if resp.JSON200 == nil {
+		if resp.Items == nil {
 			return workOrderListResultMsg{items: nil}
 		}
-		return workOrderListResultMsg{items: *resp.JSON200}
+		return workOrderListResultMsg{items: resp.Items}
 	}
 }

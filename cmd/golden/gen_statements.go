@@ -20,7 +20,7 @@ var statementsListCmd = &cobra.Command{
 
 func runStatementsList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "statements", fmt.Sprintf("/customers/%d/statements", statementsCustomerId), func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListCustomersStatements(ctx, statementsCustomerId)
+		resp, err := client.ListCustomersStatementsRaw(ctx, statementsCustomerId)
 		if err != nil {
 			return nil, err
 		}

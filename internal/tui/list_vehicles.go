@@ -113,7 +113,7 @@ type vehicleListResultMsg struct {
 func fetchVehicles(client *wenmar.Client, locationID string) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *wenmar.ListVehiclesResponse
+		var resp *wenmar.ListResult[wenmar.Vehicle]
 		var err error
 		if locationID != "" {
 			lc := client.ForLocation(locationID)
@@ -124,9 +124,9 @@ func fetchVehicles(client *wenmar.Client, locationID string) tea.Cmd {
 		if err != nil {
 			return vehicleListResultMsg{err: err}
 		}
-		if resp.JSON200 == nil {
+		if resp.Items == nil {
 			return vehicleListResultMsg{items: nil}
 		}
-		return vehicleListResultMsg{items: *resp.JSON200}
+		return vehicleListResultMsg{items: resp.Items}
 	}
 }

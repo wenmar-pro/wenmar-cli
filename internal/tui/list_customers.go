@@ -120,7 +120,7 @@ func fetchCustomers(client *wenmar.Client, locationID string) tea.Cmd {
 func fetchCustomersWithParams(client *wenmar.Client, locationID string, params wenmar.ListCustomersParams) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		var resp *wenmar.ListCustomersResponse
+		var resp *wenmar.ListResult[wenmar.Customer]
 		var err error
 		if locationID != "" {
 			lc := client.ForLocation(locationID)
@@ -131,10 +131,10 @@ func fetchCustomersWithParams(client *wenmar.Client, locationID string, params w
 		if err != nil {
 			return customerListResultMsg{err: err}
 		}
-		if resp.JSON200 == nil {
+		if resp.Items == nil {
 			return customerListResultMsg{items: nil}
 		}
-		return customerListResultMsg{items: *resp.JSON200}
+		return customerListResultMsg{items: resp.Items}
 	}
 }
 

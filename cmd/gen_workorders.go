@@ -67,7 +67,7 @@ var workordersListCmd = &cobra.Command{
 
 func runWorkordersList(cmd *cobra.Command, args []string) error {
 	return runListPaginated(cmd, "workorders", "/work_orders", func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
-		resp, err := client.ListWorkOrders(ctx, nil)
+		resp, err := client.ListWorkOrdersRaw(ctx, nil)
 		if err != nil {
 			return nil, nil, err
 		}

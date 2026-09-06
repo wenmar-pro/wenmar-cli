@@ -63,7 +63,7 @@ func TestSetup_WritesConfigOnValidToken(t *testing.T) {
 	}
 }
 
-func TestSetup_FailsOnInvalidToken(t *testing.T) {
+func TestSetup_SavesConfigEvenWhenVerifyFails(t *testing.T) {
 	ts := startFakeAPIReturning401(t)
 	defer ts.Close()
 
@@ -74,12 +74,47 @@ func TestSetup_FailsOnInvalidToken(t *testing.T) {
 	var output bytes.Buffer
 
 	err := runSetup(input, &output, configPath, ts.URL)
-	if err == nil {
-		t.Error("expected error for invalid token")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if _, err := config.LoadFrom(configPath); err == nil {
-		t.Error("config should not be written on failure")
+	// Config should still be written even though verification failed.
+	cfg, err := config.LoadFrom(configPath)
+	if err != nil {
+		t.Fatalf("config should be written even on verification failure: %v", err)
+	}
+	if cfg.BaseURL != ts.URL {
+		t.Errorf("expected base_url '%s', got '%s'", ts.URL, cfg.BaseURL)
+	}
+
+	if !strings.Contains(output.String(), "Config saved anyway") {
+		t.Error("expected a warning that config was saved despite verification failure")
+	}
+}
+
+func TestSetup_LocalFlag_SetsLocalhost(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config")
+
+	input := strings.NewReader("test-token\n")
+	var output bytes.Buffer
+
+	err := runSetup(input, &output, configPath, "http://localhost:3000")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	cfg, err := config.LoadFrom(configPath)
+	if err != nil {
+		t.Fatalf("config not written: %v", err)
+	}
+	if cfg.BaseURL != "http://localhost:3000" {
+		t.Errorf("expected base_url 'http://localhost:3000', got '%s'", cfg.BaseURL)
+	}
+
+	// The URL prompt should not be printed when an override is provided.
+	if strings.Contains(output.String(), "Base URL?") {
+		t.Error("expected no base URL prompt when --local override is used")
 	}
 }
 

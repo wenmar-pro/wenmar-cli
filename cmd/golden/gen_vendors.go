@@ -38,7 +38,7 @@ var vendorsListCmd = &cobra.Command{
 
 func runVendorsList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "vendors", "/vendors", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListVendors(ctx)
+		resp, err := client.ListVendorsRaw(ctx)
 		if err != nil {
 			return nil, err
 		}

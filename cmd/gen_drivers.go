@@ -62,7 +62,7 @@ var driversListCmd = &cobra.Command{
 
 func runDriversList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "drivers", fmt.Sprintf("/customers/%d/drivers", driversCustomerId), func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListCustomersDrivers(ctx, driversCustomerId)
+		resp, err := client.ListCustomersDriversRaw(ctx, driversCustomerId)
 		if err != nil {
 			return nil, err
 		}

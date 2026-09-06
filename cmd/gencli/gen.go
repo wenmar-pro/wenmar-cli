@@ -1041,7 +1041,7 @@ func emitListPaginatedHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("ctx").Qual("context", "Context"),
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Op("*").Qual(wenmarPkg, "Paginator"), jen.Error()).Block(
-			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameFor(cmd)).Call(callArgs...),
+			jen.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").Dot(sdkMethodNameForPaginated(cmd)).Call(callArgs...),
 			jen.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 			),
@@ -1070,7 +1070,7 @@ func emitListPaginatedWithParamsHandler(g *jen.Group, cmd GenCommand) {
 			jen.Id("client").Op("*").Qual(wenmarPkg, "Client"),
 		).Params(jen.Any(), jen.Op("*").Qual(wenmarPkg, "Paginator"), jen.Error()).BlockFunc(func(bg *jen.Group) {
 			bg.List(jen.Id("resp"), jen.Id("err")).Op(":=").Id("client").
-				Dot(sdkMethodNameFor(cmd)).Call(jen.Id("ctx"), jen.Op("&").Qual(wenmarPkg, cmd.QueryParamStruct).Values(queryParamDict(cmd)))
+				Dot(sdkMethodNameForPaginated(cmd)).Call(jen.Id("ctx"), jen.Op("&").Qual(wenmarPkg, cmd.QueryParamStruct).Values(queryParamDict(cmd)))
 			bg.If(jen.Id("err").Op("!=").Nil()).Block(
 				jen.Return(jen.Nil(), jen.Nil(), jen.Id("err")),
 			)
@@ -1480,6 +1480,15 @@ func sdkMethodNameFor(cmd GenCommand) string {
 		return cmd.SDKMethod
 	}
 	return sdkMethodName(cmd.OperationID)
+}
+
+// sdkMethodNameForPaginated returns the SDK method name for a paginated list
+// operation. The SDK's typed pagination methods return *ListResult[T], but the
+// CLI's pagination runners expect the raw response envelope (JSON200 +
+// HTTPResponse). The SDK exposes a *Raw variant for each paginated list that
+// returns that envelope, so paginated lists call the Raw variant.
+func sdkMethodNameForPaginated(cmd GenCommand) string {
+	return sdkMethodNameFor(cmd) + "Raw"
 }
 
 func sdkMethodName(operationID string) string {

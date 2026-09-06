@@ -20,6 +20,7 @@ import (
 var (
 	setupSkipAgents bool
 	setupSilent     bool
+	setupLocal      bool
 )
 
 var setupCmd = &cobra.Command{
@@ -46,15 +47,24 @@ var setupCmd = &cobra.Command{
 func init() {
 	setupCmd.Flags().BoolVar(&setupSkipAgents, "skip-agents", false, "Skip agent skill installation")
 	setupCmd.Flags().BoolVar(&setupSilent, "silent-success", false, "Minimal output on success (for harnesses)")
+	setupCmd.Flags().BoolVar(&setupLocal, "local", false, "Use http://localhost:3000 as the base URL (for local development)")
 	rootCmd.AddCommand(setupCmd)
 }
 
 func runSetupCmd(in io.Reader, out io.Writer) error {
-	configPath, err := config.ConfigPath()
-	if err != nil {
-		return err
+	configPath := configPathFlag
+	if configPath == "" {
+		p, err := config.ConfigPath()
+		if err != nil {
+			return err
+		}
+		configPath = p
 	}
-	return runSetup(in, out, configPath, "")
+	baseURLOverride := ""
+	if setupLocal {
+		baseURLOverride = "http://localhost:3000"
+	}
+	return runSetup(in, out, configPath, baseURLOverride)
 }
 
 func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) error {
@@ -86,12 +96,24 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 
 	baseURL := baseURLOverride
 	if baseURL == "" {
-		fmt.Fprint(out, "  Base URL? (default: https://app.wenmarpro.com): ")
+		fmt.Fprint(out, "  Base URL? (default: https://app.wenmarpro.com, or http://localhost:3000 for local dev): ")
 		baseLine, _ := reader.ReadString('\n')
 		baseURL = strings.TrimSpace(baseLine)
 		if baseURL == "" {
 			baseURL = "https://app.wenmarpro.com"
 		}
+	}
+
+	// Persist the config first so a failed verification (e.g. a local API
+	// that isn't up yet) doesn't lose the user's settings.
+	store := newCredentialStore()
+	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
+		return fmt.Errorf("failed to store token: %w", err)
+	}
+
+	cfg := &config.Config{BaseURL: baseURL, AuthMethod: "static"}
+	if err := config.SaveTo(configPath, cfg); err != nil {
+		return fmt.Errorf("failed to save config: %w", err)
 	}
 
 	fmt.Fprint(out, "  Verifying token...")
@@ -100,28 +122,15 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 	client, err := wenmar.NewClient(wcfg, wenmar.NewStaticTokenProvider(token))
 	if err != nil {
 		fmt.Fprintln(out, " ✗")
-		return fmt.Errorf("failed to create client: %w", err)
-	}
-
-	_, err = client.ListCustomers(context.Background(), nil)
-	if err != nil {
+		fmt.Fprintf(out, "  ⚠ Could not create client: %v\n", err)
+		fmt.Fprintf(out, "  Config saved anyway. Run 'wenmar doctor' once your API is reachable.\n")
+	} else if _, err := client.ListCustomers(context.Background(), nil); err != nil {
 		fmt.Fprintln(out, " ✗")
-		return fmt.Errorf("token verification failed: %w", err)
-	}
-
-	fmt.Fprintln(out, " ✓")
-	fmt.Fprintf(out, "  Connected successfully to %s\n", baseURL)
-
-	// Store the token in the keyring (with file fallback), not the config file.
-	store := newCredentialStore()
-	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
-		return fmt.Errorf("failed to store token: %w", err)
-	}
-
-	// Config file stores base_url and auth_method only.
-	cfg := &config.Config{BaseURL: baseURL, AuthMethod: "static"}
-	if err := config.SaveTo(configPath, cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
+		fmt.Fprintf(out, "  ⚠ Could not verify token against %s: %v\n", baseURL, err)
+		fmt.Fprintf(out, "  Config saved anyway. Run 'wenmar doctor' once your API is reachable.\n")
+	} else {
+		fmt.Fprintln(out, " ✓")
+		fmt.Fprintf(out, "  Connected successfully to %s\n", baseURL)
 	}
 
 	fmt.Fprintf(out, "\n  Config saved to %s\n", configPath)

@@ -84,7 +84,7 @@ var vehiclesListCmd = &cobra.Command{
 
 func runVehiclesList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "vehicles", "/vehicles", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListVehicles(ctx, &wenmar.ListVehiclesParams{
+		resp, err := client.ListVehiclesRaw(ctx, &wenmar.ListVehiclesParams{
 			CustomerId: intPtr(vehiclesCustomerId),
 			Page:       intPtr(vehiclesPage),
 			PerPage:    intPtr(vehiclesPerPage),
@@ -251,7 +251,7 @@ func runVehiclesWorkorders(cmd *cobra.Command, args []string) error {
 	return runShow(cmd, args, "vehicles", "GET", func(a []string) string {
 		return fmt.Sprintf("/vehicles/%s/work_orders", a[0])
 	}, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ListVehiclesWorkOrders(ctx, id)
+		resp, err := client.ListVehiclesWorkOrdersRaw(ctx, id)
 		if err != nil {
 			return nil, err
 		}

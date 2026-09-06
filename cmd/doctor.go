@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/output"
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
@@ -82,10 +83,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check 5: connectivity
-	baseURL := "https://app.wenmarpro.com"
-	if cfgErr == nil && cfg != nil && cfg.BaseURL != "" {
-		baseURL = cfg.BaseURL
-	}
+	baseURL := auth.ResolveBaseURLFrom(baseURLFlag, path)
 	if tokenPresent {
 		wcfg := wenmar.DefaultConfig()
 		wcfg.BaseURL = baseURL

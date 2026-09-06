@@ -68,7 +68,7 @@ var servicecategoriesListCmd = &cobra.Command{
 
 func runServicecategoriesList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "servicecategories", "/service_categories", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListServiceCategories(ctx)
+		resp, err := client.ListServiceCategoriesRaw(ctx)
 		if err != nil {
 			return nil, err
 		}

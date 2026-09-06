@@ -108,7 +108,7 @@ var customersListCmd = &cobra.Command{
 
 func runCustomersList(cmd *cobra.Command, args []string) error {
 	return runListPaginatedWithAll(cmd, "customers", "/customers", customersListAll, func(ctx context.Context, client *wenmar.Client) (any, *wenmar.Paginator, error) {
-		resp, err := client.ListCustomers(ctx, &wenmar.ListCustomersParams{
+		resp, err := client.ListCustomersRaw(ctx, &wenmar.ListCustomersParams{
 			CustomerTagId:   intPtr(customersCustomerTagId),
 			HasBalance:      boolPtr(customersHasBalance),
 			HasVehicle:      boolPtr(customersHasVehicle),
@@ -234,7 +234,7 @@ func runCustomersVehicles(cmd *cobra.Command, args []string) error {
 	return runShow(cmd, args, "customers", "GET", func(a []string) string {
 		return fmt.Sprintf("/customers/%s/vehicles", a[0])
 	}, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ListCustomersVehicles(ctx, id)
+		resp, err := client.ListCustomersVehiclesRaw(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -254,7 +254,7 @@ func runCustomersWorkorders(cmd *cobra.Command, args []string) error {
 	return runShow(cmd, args, "customers", "GET", func(a []string) string {
 		return fmt.Sprintf("/customers/%s/work_orders", a[0])
 	}, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ListCustomersWorkOrders(ctx, id)
+		resp, err := client.ListCustomersWorkOrdersRaw(ctx, id)
 		if err != nil {
 			return nil, err
 		}
