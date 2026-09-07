@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
@@ -61,4 +64,18 @@ func newScopedClient() (*wenmar.Client, error) {
 	}
 	locationID := auth.ResolveLocationID(locationFlag, configPath)
 	return newClientForLocation(locationID)
+}
+
+// formatMissingLocationError wraps an API error that indicates the
+// X-Wenmar-Location header is required, adding an actionable hint about how
+// to configure a default location. Other errors pass through unchanged.
+func formatMissingLocationError(err error) error {
+	if err == nil {
+		return nil
+	}
+	msg := err.Error()
+	if strings.Contains(msg, "X-Wenmar-Location header is required for this token") {
+		return fmt.Errorf("%w\n\nNo default location configured for this API token.\nRun `wenmar location use` or set WENMAR_LOCATION_ID.", err)
+	}
+	return err
 }

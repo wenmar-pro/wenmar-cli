@@ -72,7 +72,7 @@ func runShow(cmd *cobra.Command, args []string, resource, method string, pathFn 
 
 	respData, err := getter(context.Background(), client, id)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	data := extractData(respData)
@@ -95,7 +95,7 @@ func runShowStr(cmd *cobra.Command, args []string, resource, method string, path
 
 	respData, err := getter(context.Background(), client, args[0])
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	data := extractData(respData)
@@ -118,7 +118,7 @@ func runList(cmd *cobra.Command, resource, path string,
 
 	respData, err := lister(context.Background(), client)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	data := extractData(respData)
@@ -142,7 +142,7 @@ func runListPaginated(cmd *cobra.Command, resource, path string,
 
 	respData, paginator, err := lister(context.Background(), client)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	data := extractData(respData)
@@ -175,7 +175,7 @@ func runListPaginatedWithAll(cmd *cobra.Command, resource, path string, allFlag 
 
 	respData, paginator, err := lister(context.Background(), client)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	data := extractData(respData)
@@ -230,7 +230,7 @@ func runCreate(cmd *cobra.Command, resource, path, summary string,
 
 	respData, err := sender(context.Background(), client, body)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	data := extractData(respData)
@@ -274,7 +274,7 @@ func runAction(cmd *cobra.Command, args []string, resource, method string, pathF
 
 	respData, err := sender(context.Background(), client, id, body)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	data := extractData(respData)
@@ -304,7 +304,7 @@ func runActionNoBody(cmd *cobra.Command, args []string, resource, method string,
 
 	data, err := action(context.Background(), client, id)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	mode, err := resolveMode()
@@ -327,7 +327,7 @@ func runSeedAction(cmd *cobra.Command, resource, path string, summary string,
 
 	data, err := action(context.Background(), client)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	mode, err := resolveMode()
@@ -371,7 +371,7 @@ func runDelete(cmd *cobra.Command, args []string, resourceLabel, resourceSlug st
 
 	_, err = deleter(context.Background(), client, id)
 	if err != nil {
-		return err
+		return formatMissingLocationError(err)
 	}
 
 	mode, err := resolveMode()
