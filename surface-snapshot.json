@@ -1136,6 +1136,24 @@
       "flags": null,
       "children": [
         {
+          "path": "wenmar wo activity \u003cwork-order-id\u003e",
+          "use": "activity \u003cwork-order-id\u003e",
+          "short": "Show activity for a work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar wo appointments \u003cwork-order-id\u003e",
+          "use": "appointments \u003cwork-order-id\u003e",
+          "short": "Show appointments for a work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar wo auth-logs \u003cwork-order-id\u003e",
+          "use": "auth-logs \u003cwork-order-id\u003e",
+          "short": "Show authorization logs for a work order",
+          "flags": null
+        },
+        {
           "path": "wenmar wo close \u003cid\u003e",
           "use": "close \u003cid\u003e",
           "short": "Close a work order",
@@ -1219,6 +1237,25 @@
           "use": "list",
           "short": "List all work orders, paginated via the Link header",
           "flags": null
+        },
+        {
+          "path": "wenmar wo notes",
+          "use": "notes",
+          "short": "Manage notes on a work order",
+          "flags": null,
+          "children": [
+            {
+              "path": "wenmar wo notes add \u003cwork-order-id\u003e",
+              "use": "add \u003cwork-order-id\u003e",
+              "short": "Add a manual note to a work order",
+              "flags": [
+                {
+                  "name": "body",
+                  "required": true
+                }
+              ]
+            }
+          ]
         },
         {
           "path": "wenmar wo parts \u003cid\u003e",
@@ -1594,6 +1631,12 @@
               "default": "0"
             }
           ]
+        },
+        {
+          "path": "wenmar wo vehicle-history \u003cwork-order-id\u003e",
+          "use": "vehicle-history \u003cwork-order-id\u003e",
+          "short": "Show vehicle history for a work order",
+          "flags": null
         },
         {
           "path": "wenmar wo wip \u003cid\u003e",

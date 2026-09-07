@@ -311,13 +311,14 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 			}
 			switch {
 			case strings.HasSuffix(rest, "/activity"):
-				writeJSON(w, http.StatusOK, map[string]any{"activity": []map[string]any{{"id": 1, "body": "Note"}}})
+				woID, _ := strconv.Atoi(id)
+				writeJSON(w, http.StatusOK, []map[string]any{{"id": 1, "action": "created", "actor_name": "Jane", "actor_type": "User", "category": "note", "body": "Note", "created_at": "2026-09-07T10:00:00Z", "type": "note", "work_order_id": woID}})
 			case strings.HasSuffix(rest, "/vehicle_history"):
-				writeJSON(w, http.StatusOK, map[string]any{"history": []map[string]any{{"id": 1, "work_order_number": 5}}})
+				writeJSON(w, http.StatusOK, []map[string]any{{"id": 1, "work_order_number": 5}})
 			case strings.HasSuffix(rest, "/appointments"):
-				writeJSON(w, http.StatusOK, map[string]any{"appointments": []map[string]any{{"id": 1, "starts_at": "2026-09-07T10:00:00Z"}}})
+				writeJSON(w, http.StatusOK, []map[string]any{{"id": 1, "starts_at": "2026-09-07T10:00:00Z"}})
 			case strings.HasSuffix(rest, "/authorization_logs"):
-				writeJSON(w, http.StatusOK, map[string]any{"authorization_logs": []map[string]any{{"id": 1, "event_type": "authorized"}}})
+				writeJSON(w, http.StatusOK, []map[string]any{{"id": 1, "event_type": "authorized"}})
 			}
 			return
 		}
@@ -329,7 +330,8 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 				writeError(w, http.StatusNotFound, "not_found", "Resource not found")
 				return
 			}
-			writeJSON(w, http.StatusCreated, map[string]any{"id": 99, "body": "Customer approved estimate", "work_order_id": id})
+			woID, _ := strconv.Atoi(id)
+			writeJSON(w, http.StatusCreated, map[string]any{"id": woID, "app_url": "/work_orders/" + id, "work_order_number": 1})
 			return
 		}
 
