@@ -33,6 +33,22 @@ func formatCents(cents int) string {
 	return fmt.Sprintf("$%.2f", float64(cents)/100)
 }
 
+// formatCentsPtr renders a *int cent amount as a dollar string, treating nil as 0.
+func formatCentsPtr(cents *int) string {
+	if cents == nil {
+		return formatCents(0)
+	}
+	return formatCents(*cents)
+}
+
+// derefLen returns the length of *s, or 0 when s is nil.
+func derefLen[T any](s *[]T) int {
+	if s == nil {
+		return 0
+	}
+	return len(*s)
+}
+
 // stringify converts an interface{} value to its string form, returning an
 // empty string for nil.
 func stringify(v interface{}) string {

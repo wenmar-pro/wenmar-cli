@@ -16,11 +16,12 @@ var woDeleteDryRun bool
 var woIntakeMethod string
 var woPayerCustomerId int
 var woSavedForLater bool
+var woServicesVisibleToCustomer bool
 var woSubStatusTypeId int
 var woVehicleArrivedAt string
 var woVehicleId int
 var woWaitingForCustomer bool
-var woWorkOrderTagId string
+var woWorkOrderTagId int
 var woCloseCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Example: "wenmar wo close 100\n",
@@ -278,21 +279,23 @@ var woUpdateCmd = &cobra.Command{
 func runWoUpdate(cmd *cobra.Command, args []string) error {
 	return runUpdate(cmd, args, "wo", idPath("/work_orders/"), "Work order updated.", func(id int) (any, error) {
 		req := wenmar.UpdateWorkOrderRequest{WorkOrder: struct {
-			IntakeMethod       *string `json:"intake_method,omitempty"`
-			PayerCustomerId    *int    `json:"payer_customer_id,omitempty"`
-			SavedForLater      *bool   `json:"saved_for_later,omitempty"`
-			SubStatusTypeId    *int    `json:"sub_status_type_id,omitempty"`
-			VehicleArrivedAt   *string `json:"vehicle_arrived_at,omitempty"`
-			WaitingForCustomer *bool   `json:"waiting_for_customer,omitempty"`
-			WorkOrderTagId     *string `json:"work_order_tag_id,omitempty"`
+			IntakeMethod              *string `json:"intake_method,omitempty"`
+			PayerCustomerId           *int    `json:"payer_customer_id,omitempty"`
+			SavedForLater             *bool   `json:"saved_for_later,omitempty"`
+			ServicesVisibleToCustomer *bool   `json:"services_visible_to_customer,omitempty"`
+			SubStatusTypeId           *int    `json:"sub_status_type_id,omitempty"`
+			VehicleArrivedAt          *string `json:"vehicle_arrived_at,omitempty"`
+			WaitingForCustomer        *bool   `json:"waiting_for_customer,omitempty"`
+			WorkOrderTagId            *int    `json:"work_order_tag_id,omitempty"`
 		}{
-			IntakeMethod:       strPtr(woIntakeMethod),
-			PayerCustomerId:    intPtr(woPayerCustomerId),
-			SavedForLater:      boolPtr(woSavedForLater),
-			SubStatusTypeId:    intPtr(woSubStatusTypeId),
-			VehicleArrivedAt:   strPtr(woVehicleArrivedAt),
-			WaitingForCustomer: boolPtr(woWaitingForCustomer),
-			WorkOrderTagId:     strPtr(woWorkOrderTagId),
+			IntakeMethod:              strPtr(woIntakeMethod),
+			PayerCustomerId:           intPtr(woPayerCustomerId),
+			SavedForLater:             boolPtr(woSavedForLater),
+			ServicesVisibleToCustomer: boolPtr(woServicesVisibleToCustomer),
+			SubStatusTypeId:           intPtr(woSubStatusTypeId),
+			VehicleArrivedAt:          strPtr(woVehicleArrivedAt),
+			WaitingForCustomer:        boolPtr(woWaitingForCustomer),
+			WorkOrderTagId:            intPtr(woWorkOrderTagId),
 		}}
 		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
@@ -330,10 +333,11 @@ func init() {
 	woUpdateCmd.Flags().StringVar(&woIntakeMethod, "intake-method", "", "Intake method (e.g. drop_off, walk_in)")
 	woUpdateCmd.Flags().IntVar(&woPayerCustomerId, "payer-customer-id", 0, "Payer Customer ID")
 	woUpdateCmd.Flags().BoolVar(&woSavedForLater, "saved-for-later", false, "Saved For Later")
+	woUpdateCmd.Flags().BoolVar(&woServicesVisibleToCustomer, "services-visible-to-customer", false, "Services Visible To Customer")
 	woUpdateCmd.Flags().IntVar(&woSubStatusTypeId, "sub-status-type-id", 0, "Sub Status Type ID")
 	woUpdateCmd.Flags().StringVar(&woVehicleArrivedAt, "vehicle-arrived-at", "", "Vehicle Arrived At")
 	woUpdateCmd.Flags().BoolVar(&woWaitingForCustomer, "waiting-for-customer", false, "Waiting For Customer")
-	woUpdateCmd.Flags().StringVar(&woWorkOrderTagId, "work-order-tag-id", "", "Work Order Tag ID")
+	woUpdateCmd.Flags().IntVar(&woWorkOrderTagId, "work-order-tag-id", 0, "Work Order Tag ID")
 	woCmd.AddCommand(woCloseCmd, woCloseAsDeclinedCmd, woCloseAsVoidedCmd, woCreateCmd, woDeclineAllCmd, woDeleteCmd, woListCmd, woPostToAccountCmd, woReopenCmd, woSendEstimateCmd, woSendInvoiceSummaryCmd, woSendReminderCmd, woUpdateCmd)
 	rootCmd.AddCommand(woCmd)
 }

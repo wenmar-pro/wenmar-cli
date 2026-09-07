@@ -367,6 +367,69 @@ exclude:
   - update_work_orders_services_toggle_labor_completion
   - update_work_orders_services_update_category
 
+  # 2026-09-07 API surface — work-order summary/activity/notes are handled by
+  # hand-written companion files (cmd/wo_summary.go); purchase orders have no
+  # CLI commands yet. Excluded so gencli emits nothing for them.
+  - list_work_orders_activity
+  - list_work_orders_appointments
+  - list_work_orders_authorization_logs
+  - list_work_orders_vehicle_history
+  - create_work_orders_activity_log
+  - create_work_orders_purchase_order
+  - create_work_orders_purchase_orders_receive
+  - create_work_orders_purchase_orders_return
+  - delete_work_orders_purchase_order
+  - update_work_orders_purchase_order
+
+  # 2026-09-07 API surface — new resources with no CLI commands yet. Excluded
+  # so gencli emits nothing for them; add per-resource commands in follow-up.
+  - create_account_api_token
+  - create_calendar_blocked_time
+  - create_cash_drawer_session
+  - create_cash_entrie
+  - create_counter_sales_line_item
+  - create_counter_sales_payment
+  - create_inspections_group
+  - create_inspections_item
+  - create_inspections_preset
+  - create_inventory_levels_adjust
+  - create_part
+  - create_scan_lookup
+  - create_scan_started_work_order
+  - create_scan_vehicle
+  - create_statements_bulk_send
+  - create_statements_generate
+  - create_time_entrie
+  - create_users_permission_groups_assign
+  - delete_account_api_token
+  - delete_calendar_blocked_time
+  - delete_cash_entrie
+  - delete_counter_sales_line_item
+  - delete_inspections_group
+  - delete_inspections_item
+  - delete_inspections_preset
+  - delete_part
+  - delete_users_permission_groups_unassign
+  - delete_voice_command
+  - list_account_api_tokens
+  - list_cash_entries
+  - list_drivers
+  - list_parts
+  - list_reports_cash_drawer_sessions
+  - list_reports_cash_drawer_sessions_close
+  - show_cash_entrie
+  - show_part
+  - show_reports_cash_drawer_session
+  - toggle_inspection
+  - update_calendar_blocked_time
+  - update_counter_sales_line_item
+  - update_inspections_group
+  - update_inspections_item
+  - update_inspections_preset
+  - update_part
+  - update_reports_cash_drawer_sessions_confirm_close
+  - update_time_entrie
+
   # Resources with no committed CLI surface — exclude every remaining op so
   # gencli emits no file for them (matches cmd/golden/).
   - update_counter_sales_reopen
@@ -599,18 +662,6 @@ commands:
     method: ListCustomersWorkOrdersRaw
     id_param: customer_id
     aliases: [work-orders]
-  create_customers_export:
-    resource: customers
-    command: export
-    summary: Request a customer export
-    method: CreateCustomersExport
-    request_struct: CreateCustomersExportRequest
-  list_customers_export_download:
-    resource: customers
-    command: download
-    summary: Download a customer export by ID
-    method: ListCustomersExportDownload
-    response_field: Body
 
   # vehicles
   list_vehicles:
@@ -838,9 +889,8 @@ commands:
     resource: customertags
     command: list
     summary: List all customer tags
-    method: ListCustomerTags
+    method: ListCustomerTagsRaw
     query_param_struct: ListCustomerTagsParams
-    response_field: JSON200
     example: |
       wenmar customertags list
   create_customer_tag:

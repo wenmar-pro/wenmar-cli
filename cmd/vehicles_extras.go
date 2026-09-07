@@ -97,27 +97,28 @@ func runVehiclesCreate(cmd *cobra.Command, args []string) error {
 	return runCreate(cmd, "vehicles", "/vehicles", "Vehicle created.", func() (any, error) {
 		req := wenmar.CreateVehicleRequest{
 			Vehicle: struct {
-				BodyStyle         *string        `json:"body_style,omitempty"`
-				Color             *string        `json:"color,omitempty"`
-				CustomerId        int            `json:"customer_id"`
-				Drivetrain        *string        `json:"drivetrain,omitempty"`
-				Engine            *string        `json:"engine,omitempty"`
-				FleetIdentifier   *string        `json:"fleet_identifier,omitempty"`
-				LicensePlate      *string        `json:"license_plate,omitempty"`
-				LicensePlateState *string        `json:"license_plate_state,omitempty"`
-				Make              string         `json:"make"`
-				Model             string         `json:"model"`
-				Notes             *string        `json:"notes,omitempty"`
-				OdometerReading   *int           `json:"odometer_reading,omitempty"`
-				OdometerUnit      *string        `json:"odometer_unit,omitempty"`
-				ProductionDate    *string        `json:"production_date,omitempty"`
-				Submodel          *string        `json:"submodel,omitempty"`
-				Transmission      *string        `json:"transmission,omitempty"`
-				UnitNumber        *string        `json:"unit_number,omitempty"`
-				Vin               *string        `json:"vin,omitempty"`
-				Year              int            `json:"year"`
+				BodyStyle         *string `json:"body_style,omitempty"`
+				Color             *string `json:"color,omitempty"`
+				CustomerId        *int    `json:"customer_id,omitempty"`
+				Drivetrain        *string `json:"drivetrain,omitempty"`
+				Engine            *string `json:"engine,omitempty"`
+				FleetIdentifier   *string `json:"fleet_identifier,omitempty"`
+				LicensePlate      *string `json:"license_plate,omitempty"`
+				LicensePlateState *string `json:"license_plate_state,omitempty"`
+				Make              string  `json:"make"`
+				Model             string  `json:"model"`
+				Notes             *string `json:"notes,omitempty"`
+				OdometerReading   *int    `json:"odometer_reading,omitempty"`
+				OdometerUnit      *string `json:"odometer_unit,omitempty"`
+				ProductionDate    *string `json:"production_date,omitempty"`
+				Submodel          *string `json:"submodel,omitempty"`
+				Transmission      *string `json:"transmission,omitempty"`
+				UnitNumber        *string `json:"unit_number,omitempty"`
+				VehicleType       *string `json:"vehicle_type,omitempty"`
+				Vin               *string `json:"vin,omitempty"`
+				Year              int     `json:"year"`
 			}{
-				CustomerId: vehicleCreateCustomer,
+				CustomerId: intPtr(vehicleCreateCustomer),
 				Make:       vehicleCreateMake,
 				Model:      vehicleCreateModel,
 				Year:       vehicleCreateYear,
@@ -144,16 +145,17 @@ func runVehiclesUpdate(cmd *cobra.Command, args []string) error {
 				Engine            *string `json:"engine,omitempty"`
 				LicensePlate      *string `json:"license_plate,omitempty"`
 				LicensePlateState *string `json:"license_plate_state,omitempty"`
-				Make              string  `json:"make"`
+				Make              *string `json:"make,omitempty"`
 				Model             *string `json:"model,omitempty"`
 				Notes             *string `json:"notes,omitempty"`
 				OdometerReading   *int    `json:"odometer_reading,omitempty"`
 				OdometerUnit      *string `json:"odometer_unit,omitempty"`
 				Submodel          *string `json:"submodel,omitempty"`
 				Transmission      *string `json:"transmission,omitempty"`
+				VehicleType       *string `json:"vehicle_type,omitempty"`
 				Vin               *string `json:"vin,omitempty"`
 				Year              *int    `json:"year,omitempty"`
-			}{Make: vehicleUpdateMake},
+			}{Make: strPtr(vehicleUpdateMake)},
 		}
 		applyVehicleUpdateFlags(&req)
 		return req, nil

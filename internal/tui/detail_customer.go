@@ -74,7 +74,7 @@ func (m *CustomerDetail) View() string {
 	s += DetailLabelStyle.Render("Contact\n")
 	s += fmt.Sprintf("  Emails: %d\n", c.EmailsCount)
 	s += fmt.Sprintf("  Phones: %d\n", c.PhonesCount)
-	s += fmt.Sprintf("  Addresses: %d\n", len(c.Addresses))
+	s += fmt.Sprintf("  Addresses: %d\n", derefLen(c.Addresses))
 	s += "\n"
 
 	s += DetailLabelStyle.Render("Location\n")
@@ -85,9 +85,9 @@ func (m *CustomerDetail) View() string {
 	s += "\n"
 
 	s += DetailLabelStyle.Render("Financials\n")
-	s += fmt.Sprintf("  Outstanding balance: %s\n", formatCents(c.OutstandingBalanceCents))
-	s += fmt.Sprintf("  Store credit: %s\n", formatCents(c.StoreCreditCents))
-	s += fmt.Sprintf("  Total revenue: %s\n", formatCents(c.TotalRevenueCents))
+	s += fmt.Sprintf("  Outstanding balance: %s\n", formatCentsPtr(c.OutstandingBalanceCents))
+	s += fmt.Sprintf("  Store credit: %s\n", formatCentsPtr(c.StoreCreditCents))
+	s += fmt.Sprintf("  Total revenue: %s\n", formatCentsPtr(c.TotalRevenueCents))
 	s += "\n"
 
 	s += DetailLabelStyle.Render("Details\n")

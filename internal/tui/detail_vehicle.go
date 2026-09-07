@@ -111,7 +111,7 @@ func (m *VehicleDetail) View() string {
 	s += "\n"
 
 	s += DetailLabelStyle.Render("Stats\n")
-	s += fmt.Sprintf("  Lifetime revenue: %s\n", formatCents(v.LifetimeRevenueCents))
+	s += fmt.Sprintf("  Lifetime revenue: %s\n", formatCentsPtr(v.LifetimeRevenueCents))
 	s += fmt.Sprintf("  Open work orders: %d\n", v.OpenWorkOrdersCount)
 	s += fmt.Sprintf("  Appointments: %d\n", v.AppointmentsCount)
 	if v.AnnualSafetyExpiresAt != nil {

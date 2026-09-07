@@ -77,7 +77,7 @@ var customertagsListCmd = &cobra.Command{
 
 func runCustomertagsList(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "customertags", "/customer_tags", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListCustomerTags(ctx, &wenmar.ListCustomerTagsParams{Status: strPtr(customertagsStatus)})
+		resp, err := client.ListCustomerTagsRaw(ctx, &wenmar.ListCustomerTagsParams{Status: strPtr(customertagsStatus)})
 		if err != nil {
 			return nil, err
 		}

@@ -100,7 +100,7 @@ func (m *CustomerList) customerRow(c wenmar.Customer) []string {
 		truncate(c.FullName, 24),
 		truncate(c.Type, 10),
 		c.VehiclesCount,
-		formatCents(c.OutstandingBalanceCents),
+		formatCentsPtr(c.OutstandingBalanceCents),
 		c.UpdatedAt,
 	)}
 }
