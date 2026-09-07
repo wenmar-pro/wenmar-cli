@@ -258,8 +258,8 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 			}
 			workOrderID, _ := strconv.Atoi(id)
 			writeJSON(w, http.StatusOK, map[string]any{
-				"id":                       workOrderID,
-				"app_url":                  "/work_orders/" + id,
+				"id":                        workOrderID,
+				"app_url":                   "/work_orders/" + id,
 				"work_order_services_count": 1,
 				"services": []map[string]any{
 					{"id": 10, "name": "Brake pads", "line_items": []map[string]any{

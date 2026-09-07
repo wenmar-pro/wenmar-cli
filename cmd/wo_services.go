@@ -799,7 +799,6 @@ func runWorkOrderServicesUpdateCategory(cmd *cobra.Command, args []string) error
 	return output.Render(cmd.OutOrStdout(), extractData(resp.JSON200), "Service category updated.", nil, opts)
 }
 
-
 func runWorkOrderServicesLineItemsList(cmd *cobra.Command, args []string) error {
 	workOrderID, err := parseInt(args[0])
 	if err != nil {
