@@ -60,6 +60,34 @@ func TestAuthLogin_StoresToken(t *testing.T) {
 	_ = configPath
 }
 
+func TestAuthLogin_StaticToken_SavesLocation(t *testing.T) {
+	ts := startFakeAPI(t, "static-token")
+	defer ts.Close()
+
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config")
+
+	// Override base URL to point at fake API.
+	oldBaseURLFlag := baseURLFlag
+	baseURLFlag = ts.URL
+	defer func() { baseURLFlag = oldBaseURLFlag }()
+
+	oldTokenFlag := tokenFlag
+	tokenFlag = "static-token"
+	defer func() { tokenFlag = oldTokenFlag }()
+
+	var output bytes.Buffer
+	err := storeStaticToken(tokenFlag, configPath, &output, strings.NewReader("y\n"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	cfg, _ := config.LoadFrom(configPath)
+	if cfg.LocationID != "42" {
+		t.Errorf("expected location_id 42, got %s", cfg.LocationID)
+	}
+}
+
 func TestAuthToken_PrintsToken(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")

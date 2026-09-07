@@ -90,7 +90,7 @@ func init() {
 func runAuthLogin(out io.Writer, configPath string) error {
 	// Static token path: --token flag provided (backward compat for CI/agents)
 	if tokenFlag != "" {
-		return storeStaticToken(tokenFlag, configPath, out)
+		return storeStaticToken(tokenFlag, configPath, out, os.Stdin)
 	}
 
 	// OAuth flow: no --token flag
@@ -123,7 +123,7 @@ func runAuthLogin(out io.Writer, configPath string) error {
 	return nil
 }
 
-func storeStaticToken(token, configPath string, out io.Writer) error {
+func storeStaticToken(token, configPath string, out io.Writer, in io.Reader) error {
 	store := newCredentialStore()
 	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
 		return fmt.Errorf("failed to store token: %w", err)
@@ -138,6 +138,13 @@ func storeStaticToken(token, configPath string, out io.Writer) error {
 	cfg.AuthMethod = "static"
 	if err := config.SaveTo(configPath, cfg); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
+	}
+
+	client, err := wenmar.NewClient(wenmar.Config{BaseURL: baseURL}, wenmar.NewStaticTokenProvider(token))
+	if err == nil {
+		if _, locErr := auth.ResolveAndSaveLocationID(context.Background(), client, configPath, "", false, out, in); locErr != nil {
+			fmt.Fprintf(out, "  ⚠ Could not save default location: %v\n", locErr)
+		}
 	}
 
 	fmt.Fprintln(out, "  Token stored.")
