@@ -1587,7 +1587,7 @@ func toCamelCase(s string) string {
 
 func singularize(s string) string {
 	// Special cases for compound words
-	if strings.HasSuffix(s, "work_orders") || s == "workorders" {
+	if strings.HasSuffix(s, "work_orders") || s == "workorders" || s == "wo" {
 		return "work order"
 	}
 	if strings.HasSuffix(s, "ies") {

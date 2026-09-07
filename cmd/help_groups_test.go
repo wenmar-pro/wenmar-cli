@@ -16,8 +16,8 @@ func TestHelpGroups(t *testing.T) {
 		}
 	}
 	// Resources section lists the resource commands.
-	if !strings.Contains(out, "workorders") {
-		t.Error("workorders should appear under Resources")
+	if !strings.Contains(out, "wo") {
+		t.Error("wo should appear under Resources")
 	}
 	// No ungrouped orphans section with our commands in it.
 	for _, orphan := range []string{"setup", "doctor", "completion", "tui", "watch"} {

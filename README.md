@@ -93,8 +93,8 @@ wenmar customers show 42
 wenmar customers create --full-name "Jane Doe" --email "jane@test.com"
 
 # Work orders
-wenmar work_orders list
-wenmar work_orders show 100
+wenmar wo list
+wenmar wo show 100
 
 # Vehicles
 wenmar vehicles show 5
@@ -166,7 +166,7 @@ generator (`cmd/gencli`) reads the spec + `cmd/gen_overrides.yaml` and emits
 the committed `cmd/gen_*.go` files, which call shared runners in
 `cmd/runners.go`. A few non-derivable commands live in companion files
 (`tags.go`, `customers_extras.go`, `vehicles_extras.go`,
-`work_orders_extras.go`).
+`wo_extras.go`).
 
 ```bash
 make generate        # regenerate cmd/gen_*.go from the spec

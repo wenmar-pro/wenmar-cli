@@ -153,18 +153,18 @@ func TestSdkMethodNameFor(t *testing.T) {
 func TestGroupOverridesPlumbThrough(t *testing.T) {
 	overrides := &Overrides{
 		Groups: map[string]GroupOverride{
-			"workorders": {Aliases: []string{"work_orders", "wo"}, Short: "Manage work orders"},
+			"wo": {Aliases: []string{"workorders", "work_orders"}, Short: "Manage work orders"},
 		},
 		Commands: map[string]CommandOverride{},
 	}
-	group := CommandGroup{Resource: "workorders", Commands: []GenCommand{
-		{OperationID: "list_work_orders", Resource: "workorders", Command: "list", Method: "get", IsPaginated: true, SDKMethod: "ListWorkOrders"},
+	group := CommandGroup{Resource: "wo", Commands: []GenCommand{
+		{OperationID: "list_work_orders", Resource: "wo", Command: "list", Method: "get", IsPaginated: true, SDKMethod: "ListWorkOrders"},
 	}}
 	code, err := emitGroup(group, nil, overrides, "")
 	if err != nil {
 		t.Fatalf("emitGroup: %v", err)
 	}
-	if !strings.Contains(code, `Aliases: []string{"work_orders", "wo"}`) {
+	if !strings.Contains(code, `Aliases: []string{"workorders", "work_orders"}`) {
 		t.Errorf("parent aliases not emitted:\n%s", code)
 	}
 	if !strings.Contains(code, `Short: "Manage work orders"`) {

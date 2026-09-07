@@ -23,7 +23,7 @@ per-operation derivable:
   email/phone/address parsing, `mergeInto` JSON round-trip)
 - `cmd/vehicles_extras.go` — vehicle create/update (pointer-typed wrapper
   bodies with `omitempty`)
-- `cmd/work_orders_extras.go` — work-order show + 5 tabs (truncation check,
+- `cmd/wo_extras.go` — work-order show + 5 tabs (truncation check,
   tab-fetch switch)
 
 ## Golden rule
@@ -71,9 +71,9 @@ Ops in `exclude:` fall into three buckets:
 
 - kebab-case flags (`--full-name`), snake_case override keys
   (`source_customer_id`).
-- Squashed-compound resources with aliases (D2): `workorders` (aliases
-  `work_orders`, `wo`), `servicecategories` (aliases `service-categories`,
-  `sc`).
+- Squashed-compound resources with aliases (D2): `wo` (aliases
+  `workorders`, `work_orders`), `servicecategories` (aliases
+  `service-categories`, `sc`).
 - Nested collections are positional show commands via `id_param:`
   (`customers vehicles <id>`).
 

@@ -591,6 +591,20 @@
       ]
     },
     {
+      "path": "wenmar location",
+      "use": "location",
+      "short": "Manage CLI location defaults",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar location use",
+          "use": "use",
+          "short": "Set the default location for API requests",
+          "flags": null
+        }
+      ]
+    },
+    {
       "path": "wenmar locations",
       "use": "locations",
       "short": "Show location details",
@@ -680,6 +694,10 @@
       "use": "setup [claude|codex]",
       "short": "Configure the Wenmar CLI with your API token",
       "flags": [
+        {
+          "name": "local",
+          "default": "false"
+        },
         {
           "name": "silent-success",
           "default": "false"
@@ -1121,13 +1139,13 @@
       ]
     },
     {
-      "path": "wenmar workorders",
-      "use": "workorders",
+      "path": "wenmar wo",
+      "use": "wo",
       "short": "Manage work orders",
       "flags": null,
       "children": [
         {
-          "path": "wenmar workorders create",
+          "path": "wenmar wo create",
           "use": "create",
           "short": "Create a new work order",
           "flags": [
@@ -1144,7 +1162,7 @@
           ]
         },
         {
-          "path": "wenmar workorders delete \u003cid\u003e",
+          "path": "wenmar wo delete \u003cid\u003e",
           "use": "delete \u003cid\u003e",
           "short": "Delete a work order by ID",
           "flags": [
@@ -1155,43 +1173,43 @@
           ]
         },
         {
-          "path": "wenmar workorders estimate \u003cid\u003e",
+          "path": "wenmar wo estimate \u003cid\u003e",
           "use": "estimate \u003cid\u003e",
           "short": "Show the estimate tab (services) for a work order",
           "flags": null
         },
         {
-          "path": "wenmar workorders inspection \u003cid\u003e",
+          "path": "wenmar wo inspection \u003cid\u003e",
           "use": "inspection \u003cid\u003e",
           "short": "Show the inspection tab (inspection reports) for a work order",
           "flags": null
         },
         {
-          "path": "wenmar workorders list",
+          "path": "wenmar wo list",
           "use": "list",
           "short": "List all work orders, paginated via the Link header",
           "flags": null
         },
         {
-          "path": "wenmar workorders parts \u003cid\u003e",
+          "path": "wenmar wo parts \u003cid\u003e",
           "use": "parts \u003cid\u003e",
           "short": "Show the parts tab (services) for a work order",
           "flags": null
         },
         {
-          "path": "wenmar workorders payments \u003cid\u003e",
+          "path": "wenmar wo payments \u003cid\u003e",
           "use": "payments \u003cid\u003e",
           "short": "Show the payments tab (payments) for a work order",
           "flags": null
         },
         {
-          "path": "wenmar workorders show \u003cid\u003e",
+          "path": "wenmar wo show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single work order by ID",
           "flags": null
         },
         {
-          "path": "wenmar workorders update \u003cid\u003e",
+          "path": "wenmar wo update \u003cid\u003e",
           "use": "update \u003cid\u003e",
           "short": "Update a work order by ID",
           "flags": [
@@ -1223,7 +1241,7 @@
           ]
         },
         {
-          "path": "wenmar workorders wip \u003cid\u003e",
+          "path": "wenmar wo wip \u003cid\u003e",
           "use": "wip \u003cid\u003e",
           "short": "Show the work-in-progress tab (services) for a work order",
           "flags": null

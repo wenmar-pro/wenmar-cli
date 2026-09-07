@@ -419,9 +419,9 @@ exclude:
   - update_locations_lead_source_requirements
   - update_locations_reminders
 groups:
-  workorders:
+  wo:
     short: Manage work orders
-    aliases: [work_orders, wo]
+    aliases: [workorders, work_orders]
   servicecategories:
     short: Manage service categories
     aliases: [service-categories, sc]
@@ -709,39 +709,39 @@ commands:
     id_param: vehicle_id
     aliases: [work-orders]
 
-  # work orders (resource renamed per D2; aliases preserve work_orders/wo)
+  # work orders (resource renamed per D2; aliases preserve workorders/work_orders)
   list_work_orders:
-    resource: workorders
+    resource: wo
     command: list
     summary: List all work orders, paginated via the Link header
     method: ListWorkOrders
     example: |
-      wenmar workorders list
-      wenmar workorders list --jq '.[].number'
-      wenmar workorders list --jq 'length'
+      wenmar wo list
+      wenmar wo list --jq '.[].number'
+      wenmar wo list --jq 'length'
   create_work_order:
-    resource: workorders
+    resource: wo
     command: create
     summary: Create a new work order
     method: CreateWorkOrder
     request_struct: CreateWorkOrderRequest
     example: |
-      wenmar workorders create --customer-id 42 --vehicle-id 5
+      wenmar wo create --customer-id 42 --vehicle-id 5
   update_work_order:
-    resource: workorders
+    resource: wo
     command: update
     summary: Update a work order by ID
     method: UpdateWorkOrder
     request_struct: UpdateWorkOrderRequest
     example: |
-      wenmar workorders update 100 --intake-method drop_off
+      wenmar wo update 100 --intake-method drop_off
   delete_work_order:
-    resource: workorders
+    resource: wo
     command: delete
     summary: Delete a work order by ID
     method: DeleteWorkOrder
     example: |
-      wenmar workorders delete 100 --dry-run
+      wenmar wo delete 100 --dry-run
 
   # service categories (resource renamed per D2)
   list_service_categories:

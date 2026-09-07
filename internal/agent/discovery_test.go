@@ -93,7 +93,7 @@ func TestBuildCatalog_PopulatesArgs(t *testing.T) {
 
 func TestBuildCatalog_AliasCompatibilityFor(t *testing.T) {
 	root := &cobra.Command{Use: "wenmar"}
-	wo := &cobra.Command{Use: "workorders", Short: "Manage work orders", Aliases: []string{"work_orders", "wo"}}
+	wo := &cobra.Command{Use: "wo", Short: "Manage work orders", Aliases: []string{"workorders", "work_orders"}}
 	list := &cobra.Command{Use: "list", Short: "List", Run: func(cmd *cobra.Command, args []string) {}}
 	wo.AddCommand(list)
 	root.AddCommand(wo)
@@ -102,27 +102,27 @@ func TestBuildCatalog_AliasCompatibilityFor(t *testing.T) {
 
 	var canonical, alias *CommandInfo
 	for _, c := range catalog.Commands {
-		if c.Path == "workorders list" {
+		if c.Path == "wo list" {
 			canonical = &c
 		}
-		if c.Path == "wo list" {
+		if c.Path == "workorders list" {
 			alias = &c
 		}
 	}
 	if canonical == nil {
-		t.Fatal("expected canonical 'workorders list'")
+		t.Fatal("expected canonical 'wo list'")
 	}
 	if !canonical.Canonical {
 		t.Error("expected canonical command to have Canonical=true")
 	}
 	if alias == nil {
-		t.Fatal("expected alias 'wo list'")
+		t.Fatal("expected alias 'workorders list'")
 	}
 	if alias.Canonical {
 		t.Error("expected alias to have Canonical=false")
 	}
-	if alias.CompatibilityFor != "workorders list" {
-		t.Errorf("expected alias compatibility_for 'workorders list', got %q", alias.CompatibilityFor)
+	if alias.CompatibilityFor != "wo list" {
+		t.Errorf("expected alias compatibility_for 'wo list', got %q", alias.CompatibilityFor)
 	}
 }
 
