@@ -107,15 +107,17 @@ Commands:
 	{
 		name:  "location",
 		title: "Location Scoping",
-		content: `Wenmar CLI can scope all requests to a specific location.
+		content: `Every API request must be scoped to a location. The CLI sends the
+X-Wenmar-Location header automatically when a default location is configured.
+Configure it with:
 
-  --location <id>       Location ID (flag)
-  WENMAR_LOCATION_ID    Location ID (env var)
-  location_id           Location ID (config file)
+  wenmar location use
+  wenmar config set location_id <id>
+  WENMAR_LOCATION_ID=<id> wenmar ...
+  wenmar --location <id> ...
 
-When set, the CLI sends the X-Wenmar-Location header on every request. The
-SDK's ForLocation method verifies access to the location before returning a
-scoped client.`,
+During wenmar setup or wenmar auth login --token, the CLI prompts for
+a default location based on the token's own location.`,
 	},
 	{
 		name:  "watch",
