@@ -80,6 +80,7 @@ func TestResolveBaseURL_EnvVarFallback(t *testing.T) {
 
 func TestResolveBaseURL_Default(t *testing.T) {
 	os.Unsetenv("WENMAR_URL")
+	t.Setenv("WENMAR_CONFIG_HOME", t.TempDir())
 
 	url := ResolveBaseURL("")
 	if url != "https://app.wenmarpro.com" {
