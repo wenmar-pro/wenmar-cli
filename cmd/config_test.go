@@ -55,6 +55,36 @@ func TestConfigList(t *testing.T) {
 	}
 }
 
+func TestConfigSetLocationID(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config")
+	config.SaveTo(configPath, &config.Config{Token: "test", BaseURL: "https://test.example.com"})
+
+	_, err := executeWithConfig(configPath, "config", "set", "location_id", "42")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	cfg, _ := config.LoadFrom(configPath)
+	if cfg.LocationID != "42" {
+		t.Errorf("expected location_id 42, got %s", cfg.LocationID)
+	}
+}
+
+func TestConfigListShowsLocationID(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config")
+	config.SaveTo(configPath, &config.Config{Token: "my-token", BaseURL: "https://test.example.com", LocationID: "42"})
+
+	out, err := executeWithConfig(configPath, "config", "list")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "location_id") {
+		t.Errorf("expected 'location_id' in output, got %s", out)
+	}
+}
+
 func TestConfigPath(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")

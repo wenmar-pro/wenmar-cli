@@ -80,8 +80,10 @@ func runConfigGet(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(cmd.OutOrStdout(), cfg.Token)
 	case "base_url":
 		fmt.Fprintln(cmd.OutOrStdout(), cfg.BaseURL)
+	case "location_id":
+		fmt.Fprintln(cmd.OutOrStdout(), cfg.LocationID)
 	default:
-		return fmt.Errorf("unknown config key: %s (supported: token, base_url)", args[0])
+		return fmt.Errorf("unknown config key: %s (supported: token, base_url, location_id)", args[0])
 	}
 	return nil
 }
@@ -102,8 +104,10 @@ func runConfigSet(cmd *cobra.Command, args []string) error {
 		cfg.Token = args[1]
 	case "base_url":
 		cfg.BaseURL = args[1]
+	case "location_id":
+		cfg.LocationID = args[1]
 	default:
-		return fmt.Errorf("unknown config key: %s (supported: token, base_url)", args[0])
+		return fmt.Errorf("unknown config key: %s (supported: token, base_url, location_id)", args[0])
 	}
 
 	if err := config.SaveTo(path, cfg); err != nil {
@@ -125,6 +129,7 @@ func runConfigList(cmd *cobra.Command, args []string) error {
 
 	fmt.Fprintf(cmd.OutOrStdout(), "token: %s\n", errors.MaskToken(cfg.Token))
 	fmt.Fprintf(cmd.OutOrStdout(), "base_url: %s\n", cfg.BaseURL)
+	fmt.Fprintf(cmd.OutOrStdout(), "location_id: %s\n", cfg.LocationID)
 	fmt.Fprintf(cmd.OutOrStdout(), "path: %s\n", path)
 	return nil
 }
