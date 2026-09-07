@@ -17,18 +17,18 @@ import (
 // token's own location_id. If flag/env overrides are present they are passed
 // in as defaultLocationID. If nonInteractive is true, the default is used
 // silently. Otherwise the user is prompted to confirm or pick another.
-// The chosen value is saved to config and returned.
-func ResolveAndSaveLocationID(ctx context.Context, client *wenmar.Client, configPath, defaultLocationID string, nonInteractive bool, out io.Writer, in io.Reader) (string, error) {
+// The chosen value is saved to config and returned along with its name.
+func ResolveAndSaveLocationID(ctx context.Context, client *wenmar.Client, configPath, defaultLocationID string, nonInteractive bool, out io.Writer, in io.Reader) (string, string, error) {
 	accountResp, err := client.ListAccount(ctx)
 	if err != nil {
-		return "", fmt.Errorf("could not fetch account locations: %w", err)
+		return "", "", fmt.Errorf("could not fetch account locations: %w", err)
 	}
 	account := accountResp.GetJSON200()
 	if account == nil {
-		return "", fmt.Errorf("unexpected empty account response")
+		return "", "", fmt.Errorf("unexpected empty account response")
 	}
 	if len(account.Locations) == 0 {
-		return "", fmt.Errorf("account has no locations")
+		return "", "", fmt.Errorf("account has no locations")
 	}
 
 	locationsByID := make(map[string]string, len(account.Locations))
@@ -44,7 +44,7 @@ func ResolveAndSaveLocationID(ctx context.Context, client *wenmar.Client, config
 	// Validate the selected/default ID against the account's locations.
 	selectedName, ok := locationsByID[selectedID]
 	if !ok {
-		return "", fmt.Errorf("location %s is not valid for this account", selectedID)
+		return "", "", fmt.Errorf("location %s is not valid for this account", selectedID)
 	}
 
 	if !nonInteractive {
@@ -53,7 +53,7 @@ func ResolveAndSaveLocationID(ctx context.Context, client *wenmar.Client, config
 		fmt.Fprint(out, "Use this location? [Y/n]: ")
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			return "", fmt.Errorf("could not read confirmation: %w", err)
+			return "", "", fmt.Errorf("could not read confirmation: %w", err)
 		}
 		if strings.TrimSpace(strings.ToLower(line)) == "n" {
 			fmt.Fprintln(out, "Select a default location:")
@@ -64,11 +64,11 @@ func ResolveAndSaveLocationID(ctx context.Context, client *wenmar.Client, config
 			fmt.Fprint(out, "Enter number: ")
 			numLine, err := reader.ReadString('\n')
 			if err != nil {
-				return "", fmt.Errorf("could not read selection: %w", err)
+				return "", "", fmt.Errorf("could not read selection: %w", err)
 			}
 			num, err := strconv.Atoi(strings.TrimSpace(numLine))
 			if err != nil || num < 1 || num > len(account.Locations) {
-				return "", fmt.Errorf("invalid selection")
+				return "", "", fmt.Errorf("invalid selection")
 			}
 			selectedLoc := account.Locations[num-1]
 			selectedID = strconv.Itoa(selectedLoc.Id)
@@ -87,7 +87,7 @@ func ResolveAndSaveLocationID(ctx context.Context, client *wenmar.Client, config
 	}
 	cfg.LocationID = selectedID
 	if err := config.SaveTo(configPath, cfg); err != nil {
-		return "", fmt.Errorf("could not save location: %w", err)
+		return "", "", fmt.Errorf("could not save location: %w", err)
 	}
-	return selectedID, nil
+	return selectedID, selectedName, nil
 }

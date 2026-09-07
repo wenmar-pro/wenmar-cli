@@ -37,7 +37,7 @@ func TestResolveAndSaveLocationID_UsesTokenLocation(t *testing.T) {
 	client, _ := wenmar.NewClient(wenmar.Config{BaseURL: ts.URL}, wenmar.NewStaticTokenProvider("tok"))
 	var out bytes.Buffer
 
-	locationID, err := ResolveAndSaveLocationID(context.Background(), client, configPath, "42", false, &out, strings.NewReader("y\n"))
+	locationID, _, err := ResolveAndSaveLocationID(context.Background(), client, configPath, "42", false, &out, strings.NewReader("y\n"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestResolveAndSaveLocationID_FlagOverridesTokenLocation(t *testing.T) {
 	client, _ := wenmar.NewClient(wenmar.Config{BaseURL: ts.URL}, wenmar.NewStaticTokenProvider("tok"))
 	var out bytes.Buffer
 
-	locationID, err := ResolveAndSaveLocationID(context.Background(), client, configPath, "42", false, &out, strings.NewReader("y\n"))
+	locationID, _, err := ResolveAndSaveLocationID(context.Background(), client, configPath, "42", false, &out, strings.NewReader("y\n"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -134,7 +134,7 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 		fmt.Fprintf(out, "  Connected successfully to %s\n", baseURL)
 
 		if !setupSilent {
-			if _, locErr := auth.ResolveAndSaveLocationID(context.Background(), client, configPath, "", setupSilent, out, reader); locErr != nil {
+			if _, _, locErr := auth.ResolveAndSaveLocationID(context.Background(), client, configPath, "", setupSilent, out, reader); locErr != nil {
 				fmt.Fprintf(out, "  ⚠ Could not save default location: %v\n", locErr)
 			}
 		}

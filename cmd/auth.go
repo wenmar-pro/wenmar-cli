@@ -142,7 +142,7 @@ func storeStaticToken(token, configPath string, out io.Writer, in io.Reader) err
 
 	client, err := wenmar.NewClient(wenmar.Config{BaseURL: baseURL}, wenmar.NewStaticTokenProvider(token))
 	if err == nil {
-		if _, locErr := auth.ResolveAndSaveLocationID(context.Background(), client, configPath, "", false, out, in); locErr != nil {
+		if _, _, locErr := auth.ResolveAndSaveLocationID(context.Background(), client, configPath, "", false, out, in); locErr != nil {
 			fmt.Fprintf(out, "  ⚠ Could not save default location: %v\n", locErr)
 		}
 	}
