@@ -270,7 +270,7 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 			return
 		}
 
-		// GET/POST /work_orders/:id/payments[/*]
+		// GET/POST/DELETE /work_orders/:id/payments[/*]
 		if strings.Contains(rest, "/payments") {
 			id := strings.TrimSuffix(strings.TrimSuffix(rest, "/reverse_ar"), "/send_to_ar")
 			id = strings.TrimSuffix(id, "/payments")
@@ -281,12 +281,16 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 			switch r.Method {
 			case http.MethodGet:
 				writeJSON(w, http.StatusOK, map[string]any{
+					"id":      1,
+					"app_url": "/work_orders/1",
 					"payments": []map[string]any{
 						{"id": 1, "amount_cents": 10000, "method": "credit_card"},
 					},
 				})
 			case http.MethodPost:
 				writeJSON(w, http.StatusCreated, map[string]any{"id": 2, "amount_cents": 10000, "method": "credit_card"})
+			case http.MethodDelete:
+				writeJSON(w, http.StatusOK, map[string]any{"id": 2, "reversed": true})
 			default:
 				w.WriteHeader(http.StatusMethodNotAllowed)
 			}

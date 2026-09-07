@@ -55,17 +55,9 @@ var workOrdersPartsCmd = &cobra.Command{
 	RunE:    runWorkOrdersTab("parts"),
 }
 
-var workOrdersPaymentsCmd = &cobra.Command{
-	Use:     "payments <id>",
-	Short:   "Show the payments tab (payments) for a work order",
-	Example: `  wenmar wo payments 100`,
-	Args:    cobra.ExactArgs(1),
-	RunE:    runWorkOrdersTab("payments"),
-}
-
 func init() {
 	woCmd.AddCommand(workOrdersShowCmd, workOrdersEstimateCmd, workOrdersWipCmd,
-		workOrdersInspectionCmd, workOrdersPartsCmd, workOrdersPaymentsCmd)
+		workOrdersInspectionCmd, workOrdersPartsCmd)
 }
 
 func runWorkOrdersShow(cmd *cobra.Command, args []string) error {

@@ -1227,10 +1227,46 @@
           "flags": null
         },
         {
-          "path": "wenmar wo payments \u003cid\u003e",
-          "use": "payments \u003cid\u003e",
-          "short": "Show the payments tab (payments) for a work order",
-          "flags": null
+          "path": "wenmar wo payments \u003cwork-order-id\u003e",
+          "use": "payments \u003cwork-order-id\u003e",
+          "short": "Manage payments on a work order",
+          "flags": null,
+          "children": [
+            {
+              "path": "wenmar wo payments \u003cwork-order-id\u003e add \u003cwork-order-id\u003e",
+              "use": "add \u003cwork-order-id\u003e",
+              "short": "Add a payment to the work order",
+              "flags": [
+                {
+                  "name": "amount-cents",
+                  "required": true,
+                  "default": "0"
+                },
+                {
+                  "name": "method",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "path": "wenmar wo payments \u003cwork-order-id\u003e list \u003cwork-order-id\u003e",
+              "use": "list \u003cwork-order-id\u003e",
+              "short": "List payments on the work order",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo payments \u003cwork-order-id\u003e reverse-ar \u003cwork-order-id\u003e",
+              "use": "reverse-ar \u003cwork-order-id\u003e",
+              "short": "Reverse accounts-receivable for the work order payments",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo payments \u003cwork-order-id\u003e send-to-ar \u003cwork-order-id\u003e",
+              "use": "send-to-ar \u003cwork-order-id\u003e",
+              "short": "Send the work order payments to accounts receivable",
+              "flags": null
+            }
+          ]
         },
         {
           "path": "wenmar wo post-to-account \u003cid\u003e",
