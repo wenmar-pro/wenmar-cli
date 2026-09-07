@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/agent"
+	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
@@ -131,6 +132,12 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 	} else {
 		fmt.Fprintln(out, " ✓")
 		fmt.Fprintf(out, "  Connected successfully to %s\n", baseURL)
+
+		if !setupSilent {
+			if _, locErr := auth.ResolveAndSaveLocationID(context.Background(), client, configPath, "", setupSilent, out, reader); locErr != nil {
+				fmt.Fprintf(out, "  ⚠ Could not save default location: %v\n", locErr)
+			}
+		}
 	}
 
 	fmt.Fprintf(out, "\n  Config saved to %s\n", configPath)

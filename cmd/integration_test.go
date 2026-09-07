@@ -268,7 +268,13 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"id": 1, "name": "Main Shop"})
+		writeJSON(w, http.StatusOK, map[string]any{
+			"id":   1,
+			"name": "Main Shop",
+			"locations": []map[string]any{
+				{"id": 42, "name": "Downtown", "url": "...", "app_url": "..."},
+			},
+		})
 	})
 
 	// GET /locations/:id

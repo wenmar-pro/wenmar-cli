@@ -29,7 +29,7 @@ func TestSetup_WritesConfigOnValidToken(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config")
 
-	input := strings.NewReader("test-token\n\n")
+	input := strings.NewReader("test-token\n\n\ny\n")
 	var output bytes.Buffer
 
 	err := runSetup(input, &output, configPath, ts.URL)
@@ -57,9 +57,15 @@ func TestSetup_WritesConfigOnValidToken(t *testing.T) {
 	if cfg.AuthMethod != "static" {
 		t.Errorf("expected auth_method 'static', got '%s'", cfg.AuthMethod)
 	}
+	if cfg.LocationID != "42" {
+		t.Errorf("expected location_id '42', got '%s'", cfg.LocationID)
+	}
 
 	if !strings.Contains(output.String(), "✓") {
 		t.Error("expected success indicator in output")
+	}
+	if !strings.Contains(output.String(), "Default location:") {
+		t.Error("expected default location prompt in output")
 	}
 }
 
