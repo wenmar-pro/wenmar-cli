@@ -18,6 +18,7 @@ var vehiclesPage int
 var vehiclesPerPage int
 var vehiclesSourceVehicleId int
 var vehiclesStatus string
+var vehiclesType string
 var vehiclesVin string
 var vehiclesYear int
 var vehiclesArchiveCmd = &cobra.Command{
@@ -90,6 +91,7 @@ func runVehiclesList(cmd *cobra.Command, args []string) error {
 			Page:       intPtr(vehiclesPage),
 			PerPage:    intPtr(vehiclesPerPage),
 			Status:     strPtr(vehiclesStatus),
+			Type:       strPtr(vehiclesType),
 		})
 		if err != nil {
 			return nil, err
@@ -275,6 +277,7 @@ func init() {
 	vehiclesListCmd.Flags().IntVar(&vehiclesPage, "page", 0, "Page")
 	vehiclesListCmd.Flags().IntVar(&vehiclesPerPage, "per-page", 0, "Per Page")
 	vehiclesListCmd.Flags().StringVar(&vehiclesStatus, "status", "", "Status")
+	vehiclesListCmd.Flags().StringVar(&vehiclesType, "type", "", "Type")
 	vehiclesMergeCmd.Flags().IntVar(&vehiclesSourceVehicleId, "source-id", 0, "Source vehicle ID (required)")
 	vehiclesMergeCmd.MarkFlagRequired("source-id")
 	vehiclesPrefillCmd.Flags().StringVar(&vehiclesMake, "make", "", "Make")

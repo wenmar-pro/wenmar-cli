@@ -47,8 +47,8 @@ func TestCustomerList_FetchesCustomers(t *testing.T) {
 	if c.VehiclesCount != 2 {
 		t.Errorf("expected vehicles count 2, got %d", c.VehiclesCount)
 	}
-	if c.OutstandingBalanceCents != 12345 {
-		t.Errorf("expected balance 12345, got %d", c.OutstandingBalanceCents)
+	if derefInt(c.OutstandingBalanceCents) != 12345 {
+		t.Errorf("expected balance 12345, got %d", derefInt(c.OutstandingBalanceCents))
 	}
 }
 

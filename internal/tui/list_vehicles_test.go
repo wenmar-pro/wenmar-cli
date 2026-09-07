@@ -37,7 +37,7 @@ func TestVehicleList_FetchesVehicles(t *testing.T) {
 	if v.Customer.FullName != "Jane Doe" {
 		t.Errorf("expected customer 'Jane Doe', got %q", v.Customer.FullName)
 	}
-	if v.OpenWorkOrdersCount != 3 {
-		t.Errorf("expected open WOs 3, got %d", v.OpenWorkOrdersCount)
+	if derefInt(v.OpenWorkOrdersCount) != 3 {
+		t.Errorf("expected open WOs 3, got %d", derefInt(v.OpenWorkOrdersCount))
 	}
 }

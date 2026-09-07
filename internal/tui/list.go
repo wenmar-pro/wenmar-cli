@@ -41,6 +41,14 @@ func formatCentsPtr(cents *int) string {
 	return formatCents(*cents)
 }
 
+// derefInt returns *i, or 0 when i is nil.
+func derefInt(i *int) int {
+	if i == nil {
+		return 0
+	}
+	return *i
+}
+
 // derefLen returns the length of *s, or 0 when s is nil.
 func derefLen[T any](s *[]T) int {
 	if s == nil {

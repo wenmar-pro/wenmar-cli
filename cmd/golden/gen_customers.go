@@ -44,25 +44,6 @@ func runCustomersArchive(cmd *cobra.Command, args []string) error {
 	})
 }
 
-var customersDownloadCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersDownload,
-	Short: "Download a customer export by ID",
-	Use:   "download <id>",
-}
-
-func runCustomersDownload(cmd *cobra.Command, args []string) error {
-	return runShow(cmd, args, "customers", "GET", func(a []string) string {
-		return fmt.Sprintf("/customers/export/%s/download", a[0])
-	}, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ListCustomersExportDownload(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		return resp.Body, nil
-	})
-}
-
 var customersDuplicatesCmd = &cobra.Command{
 	RunE:  runCustomersDuplicates,
 	Short: "Check for duplicate customers",
@@ -77,22 +58,6 @@ func runCustomersDuplicates(cmd *cobra.Command, args []string) error {
 			LastName:  strPtr(customersLastName),
 			Phone:     intPtr(customersPhone),
 		})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-var customersExportCmd = &cobra.Command{
-	RunE:  runCustomersExport,
-	Short: "Request a customer export",
-	Use:   "export",
-}
-
-func runCustomersExport(cmd *cobra.Command, args []string) error {
-	return runSeedAction(cmd, "customers", "/customers/export", "Customer export.", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.CreateCustomersExport(ctx, wenmar.CreateCustomersExportRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -290,6 +255,6 @@ func init() {
 	customersListCmd.Flags().BoolVar(&customersListAll, "all", false, "Fetch all pages by following pagination links")
 	customersMergeCmd.Flags().IntVar(&customersSourceCustomerId, "source-id", 0, "Source customer ID to merge into keeper (required)")
 	customersMergeCmd.MarkFlagRequired("source-id")
-	customersCmd.AddCommand(customersArchiveCmd, customersDownloadCmd, customersDuplicatesCmd, customersExportCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersRestoreCmd, customersShowCmd, customersTrashCmd, customersVehiclesCmd, customersWorkordersCmd)
+	customersCmd.AddCommand(customersArchiveCmd, customersDuplicatesCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersRestoreCmd, customersShowCmd, customersTrashCmd, customersVehiclesCmd, customersWorkordersCmd)
 	rootCmd.AddCommand(customersCmd)
 }

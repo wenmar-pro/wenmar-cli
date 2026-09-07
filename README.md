@@ -95,6 +95,14 @@ wenmar customers create --full-name "Jane Doe" --email "jane@test.com"
 # Work orders
 wenmar wo list
 wenmar wo show 100
+wenmar wo services list 123
+wenmar wo services add 123 --name "Replace brake pads"
+wenmar wo services line-items add 123 456 --description "Pads" --item-type part
+wenmar wo payments list 123
+wenmar wo payments add 123 --amount-cents 10000 --method credit_card
+wenmar wo notes add 123 --body "Customer approved estimate"
+wenmar wo activity 123
+wenmar wo appointments 123
 
 # Vehicles
 wenmar vehicles show 5

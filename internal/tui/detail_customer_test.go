@@ -31,8 +31,8 @@ func TestCustomerDetail_Show(t *testing.T) {
 	if c.FullName != "Jane Doe" {
 		t.Errorf("expected 'Jane Doe', got %q", c.FullName)
 	}
-	if c.OutstandingBalanceCents != 12345 {
-		t.Errorf("expected balance 12345, got %d", c.OutstandingBalanceCents)
+	if derefInt(c.OutstandingBalanceCents) != 12345 {
+		t.Errorf("expected balance 12345, got %d", derefInt(c.OutstandingBalanceCents))
 	}
 	if c.VehiclesCount != 2 {
 		t.Errorf("expected vehicles 2, got %d", c.VehiclesCount)
