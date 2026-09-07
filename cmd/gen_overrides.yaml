@@ -27,9 +27,7 @@ exclude:
   - show_work_order_parts
   - show_work_order_payments
   # work-order lifecycle/auth/history — no CLI surface
-  - close_work_order
   - close_work_order_as_paid
-  - reopen_work_order
   - return_work_order_to_board
   - save_work_order_for_later
   - decline_all_work_order_services
@@ -190,17 +188,12 @@ exclude:
   - create_users_send_confirmation
   - create_users_send_password_reset
   - create_users_unlock
-  - create_work_orders_account_posting
   - create_work_orders_authorization
   - create_work_orders_authorization_decision
   - create_work_orders_courtesy_car_assignment
-  - create_work_orders_estimate_deliverie
   - create_work_orders_fee_exclusion
-  - create_work_orders_invoice_summarie
   - create_work_orders_refund
-  - create_work_orders_reminder
   - create_work_orders_service
-  - create_work_orders_service_decline
   - create_work_orders_services_completion
   - create_work_orders_services_copie
   - create_work_orders_services_line_item
@@ -363,8 +356,6 @@ exclude:
   - update_sub_statuse
   - update_sublet_packages_deactivate
   - update_user
-  - update_work_orders_close_as_declined
-  - update_work_orders_close_as_voided
   - update_work_orders_courtesy_car_assignment
   - update_work_orders_service
   - update_work_orders_services_adjust_time
@@ -742,6 +733,62 @@ commands:
     method: DeleteWorkOrder
     example: |
       wenmar wo delete 100 --dry-run
+
+  # work-order lifecycle/mutation (Task 6)
+  close_work_order:
+    resource: wo
+    command: close
+    summary: Close a work order
+    example: |
+      wenmar wo close 100
+  reopen_work_order:
+    resource: wo
+    command: reopen
+    summary: Reopen a closed work order
+    example: |
+      wenmar wo reopen 100
+  update_work_orders_close_as_declined:
+    resource: wo
+    command: close-as-declined
+    summary: Close a work order as declined
+    example: |
+      wenmar wo close-as-declined 100 --closure-reason "Customer declined"
+  update_work_orders_close_as_voided:
+    resource: wo
+    command: close-as-voided
+    summary: Close a work order as voided
+    example: |
+      wenmar wo close-as-voided 100 --closure-reason "Duplicate order"
+  create_work_orders_account_posting:
+    resource: wo
+    command: post-to-account
+    summary: Post a work order to the account
+    example: |
+      wenmar wo post-to-account 100
+  create_work_orders_estimate_deliverie:
+    resource: wo
+    command: send-estimate
+    summary: Send the estimate to the customer
+    example: |
+      wenmar wo send-estimate 100
+  create_work_orders_invoice_summarie:
+    resource: wo
+    command: send-invoice-summary
+    summary: Send the invoice summary to the customer
+    example: |
+      wenmar wo send-invoice-summary 100
+  create_work_orders_reminder:
+    resource: wo
+    command: send-reminder
+    summary: Send a reminder for the work order
+    example: |
+      wenmar wo send-reminder 100
+  create_work_orders_service_decline:
+    resource: wo
+    command: decline-all
+    summary: Decline all services on a work order
+    example: |
+      wenmar wo decline-all 100 --decline-reason "Customer declined all"
 
   # service categories (resource renamed per D2)
   list_service_categories:

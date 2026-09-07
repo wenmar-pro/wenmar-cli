@@ -154,6 +154,72 @@
       ]
     },
     {
+      "path": "wenmar courtesy_cars",
+      "use": "courtesy_cars",
+      "short": "courtesy_cars commands",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar courtesy_cars create",
+          "use": "create",
+          "short": "create",
+          "flags": [
+            {
+              "name": "make",
+              "required": true
+            },
+            {
+              "name": "model",
+              "required": true
+            },
+            {
+              "name": "vin",
+              "required": true
+            },
+            {
+              "name": "year",
+              "required": true,
+              "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar courtesy_cars delete \u003cid\u003e",
+          "use": "delete \u003cid\u003e",
+          "short": "destroy",
+          "flags": [
+            {
+              "name": "dry-run",
+              "default": "false"
+            }
+          ]
+        },
+        {
+          "path": "wenmar courtesy_cars list",
+          "use": "list",
+          "short": "index",
+          "flags": null
+        },
+        {
+          "path": "wenmar courtesy_cars show \u003cid\u003e",
+          "use": "show \u003cid\u003e",
+          "short": "show",
+          "flags": null
+        },
+        {
+          "path": "wenmar courtesy_cars update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "update",
+          "flags": [
+            {
+              "name": "color",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "path": "wenmar customers",
       "use": "customers",
       "short": "Manage customers",
@@ -1145,6 +1211,34 @@
       "flags": null,
       "children": [
         {
+          "path": "wenmar wo close \u003cid\u003e",
+          "use": "close \u003cid\u003e",
+          "short": "Close a work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar wo close-as-declined \u003cid\u003e",
+          "use": "close-as-declined \u003cid\u003e",
+          "short": "Close a work order as declined",
+          "flags": [
+            {
+              "name": "closure-reason",
+              "required": true
+            }
+          ]
+        },
+        {
+          "path": "wenmar wo close-as-voided \u003cid\u003e",
+          "use": "close-as-voided \u003cid\u003e",
+          "short": "Close a work order as voided",
+          "flags": [
+            {
+              "name": "closure-reason",
+              "required": true
+            }
+          ]
+        },
+        {
           "path": "wenmar wo create",
           "use": "create",
           "short": "Create a new work order",
@@ -1158,6 +1252,17 @@
               "name": "vehicle-id",
               "required": true,
               "default": "0"
+            }
+          ]
+        },
+        {
+          "path": "wenmar wo decline-all \u003cid\u003e",
+          "use": "decline-all \u003cid\u003e",
+          "short": "Decline all services on a work order",
+          "flags": [
+            {
+              "name": "decline-reason",
+              "required": true
             }
           ]
         },
@@ -1200,6 +1305,36 @@
           "path": "wenmar wo payments \u003cid\u003e",
           "use": "payments \u003cid\u003e",
           "short": "Show the payments tab (payments) for a work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar wo post-to-account \u003cid\u003e",
+          "use": "post-to-account \u003cid\u003e",
+          "short": "Post a work order to the account",
+          "flags": null
+        },
+        {
+          "path": "wenmar wo reopen \u003cid\u003e",
+          "use": "reopen \u003cid\u003e",
+          "short": "Reopen a closed work order",
+          "flags": null
+        },
+        {
+          "path": "wenmar wo send-estimate \u003cid\u003e",
+          "use": "send-estimate \u003cid\u003e",
+          "short": "Send the estimate to the customer",
+          "flags": null
+        },
+        {
+          "path": "wenmar wo send-invoice-summary \u003cid\u003e",
+          "use": "send-invoice-summary \u003cid\u003e",
+          "short": "Send the invoice summary to the customer",
+          "flags": null
+        },
+        {
+          "path": "wenmar wo send-reminder \u003cid\u003e",
+          "use": "send-reminder \u003cid\u003e",
+          "short": "Send a reminder for the work order",
           "flags": null
         },
         {
