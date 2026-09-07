@@ -154,72 +154,6 @@
       ]
     },
     {
-      "path": "wenmar courtesy_cars",
-      "use": "courtesy_cars",
-      "short": "courtesy_cars commands",
-      "flags": null,
-      "children": [
-        {
-          "path": "wenmar courtesy_cars create",
-          "use": "create",
-          "short": "create",
-          "flags": [
-            {
-              "name": "make",
-              "required": true
-            },
-            {
-              "name": "model",
-              "required": true
-            },
-            {
-              "name": "vin",
-              "required": true
-            },
-            {
-              "name": "year",
-              "required": true,
-              "default": "0"
-            }
-          ]
-        },
-        {
-          "path": "wenmar courtesy_cars delete \u003cid\u003e",
-          "use": "delete \u003cid\u003e",
-          "short": "destroy",
-          "flags": [
-            {
-              "name": "dry-run",
-              "default": "false"
-            }
-          ]
-        },
-        {
-          "path": "wenmar courtesy_cars list",
-          "use": "list",
-          "short": "index",
-          "flags": null
-        },
-        {
-          "path": "wenmar courtesy_cars show \u003cid\u003e",
-          "use": "show \u003cid\u003e",
-          "short": "show",
-          "flags": null
-        },
-        {
-          "path": "wenmar courtesy_cars update \u003cid\u003e",
-          "use": "update \u003cid\u003e",
-          "short": "update",
-          "flags": [
-            {
-              "name": "color",
-              "required": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "path": "wenmar customers",
       "use": "customers",
       "short": "Manage customers",
@@ -291,12 +225,6 @@
           ]
         },
         {
-          "path": "wenmar customers download \u003cid\u003e",
-          "use": "download \u003cid\u003e",
-          "short": "Download a customer export by ID",
-          "flags": null
-        },
-        {
           "path": "wenmar customers duplicates",
           "use": "duplicates",
           "short": "Check for duplicate customers",
@@ -315,12 +243,6 @@
               "default": "0"
             }
           ]
-        },
-        {
-          "path": "wenmar customers export",
-          "use": "export",
-          "short": "Request a customer export",
-          "flags": null
         },
         {
           "path": "wenmar customers list",
@@ -996,6 +918,9 @@
             },
             {
               "name": "status"
+            },
+            {
+              "name": "type"
             }
           ]
         },
@@ -1338,6 +1263,260 @@
           "flags": null
         },
         {
+          "path": "wenmar wo services \u003cwork-order-id\u003e",
+          "use": "services \u003cwork-order-id\u003e",
+          "short": "Manage services on a work order",
+          "flags": null,
+          "children": [
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e add \u003cwork-order-id\u003e",
+              "use": "add \u003cwork-order-id\u003e",
+              "short": "Add a service to the work order",
+              "flags": [
+                {
+                  "name": "name",
+                  "required": true
+                },
+                {
+                  "name": "package-id",
+                  "default": "0"
+                },
+                {
+                  "name": "service-type"
+                }
+              ]
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e add-package \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "add-package \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Add a package to a service",
+              "flags": [
+                {
+                  "name": "package-id",
+                  "required": true,
+                  "default": "0"
+                }
+              ]
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e add-time-entry \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "add-time-entry \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Add a time entry to a service",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e adjust-time \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "adjust-time \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Adjust logged time for a service",
+              "flags": [
+                {
+                  "name": "hours",
+                  "required": true,
+                  "default": "0"
+                },
+                {
+                  "name": "minutes",
+                  "required": true,
+                  "default": "0"
+                }
+              ]
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e complete \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "complete \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Mark a service as complete",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e copy \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "copy \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Copy a service",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e delete \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "delete \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Delete a service from the work order",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "line-items \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Manage line items on a service",
+              "flags": null,
+              "children": [
+                {
+                  "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e add \u003cwork-order-id\u003e \u003cservice-id\u003e",
+                  "use": "add \u003cwork-order-id\u003e \u003cservice-id\u003e",
+                  "short": "Add a line item to a service",
+                  "flags": [
+                    {
+                      "name": "description",
+                      "required": true
+                    },
+                    {
+                      "name": "hours",
+                      "default": "0"
+                    },
+                    {
+                      "name": "item-type",
+                      "required": true
+                    },
+                    {
+                      "name": "labor-rate-id",
+                      "default": "0"
+                    },
+                    {
+                      "name": "quantity",
+                      "default": "0"
+                    },
+                    {
+                      "name": "total"
+                    },
+                    {
+                      "name": "unit-price"
+                    }
+                  ]
+                },
+                {
+                  "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e copy \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "use": "copy \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "short": "Copy a line item",
+                  "flags": null
+                },
+                {
+                  "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e delete \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "use": "delete \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "short": "Delete a line item",
+                  "flags": null
+                },
+                {
+                  "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e inventory-addition \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "use": "inventory-addition \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "short": "Add inventory to a line item",
+                  "flags": null
+                },
+                {
+                  "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e price-refresh \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "use": "price-refresh \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "short": "Refresh line item pricing from inventory",
+                  "flags": null
+                },
+                {
+                  "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e update \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "use": "update \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
+                  "short": "Update a line item",
+                  "flags": [
+                    {
+                      "name": "description"
+                    },
+                    {
+                      "name": "part-status"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e list \u003cwork-order-id\u003e",
+              "use": "list \u003cwork-order-id\u003e",
+              "short": "List services on the work order",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e pause \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "pause \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Pause a service",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e publish \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "publish \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Publish a service",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e reorder \u003cwork-order-id\u003e",
+              "use": "reorder \u003cwork-order-id\u003e",
+              "short": "Reorder services on the work order",
+              "flags": [
+                {
+                  "name": "service-ids",
+                  "required": true,
+                  "default": "[]"
+                }
+              ]
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e reset-completion \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "reset-completion \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Reset service completion",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e revive \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "revive \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Revive a service",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e toggle-labor-completion \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "toggle-labor-completion \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Toggle labor completion for a line item",
+              "flags": [
+                {
+                  "name": "line-item-id",
+                  "required": true,
+                  "default": "0"
+                }
+              ]
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e unauthorize \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "unauthorize \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Remove authorization from a service",
+              "flags": null
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e update \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "update \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Update a service on the work order",
+              "flags": [
+                {
+                  "name": "labor-tax-enabled",
+                  "default": "false"
+                },
+                {
+                  "name": "name"
+                },
+                {
+                  "name": "position",
+                  "default": "0"
+                },
+                {
+                  "name": "pricing-mode"
+                },
+                {
+                  "name": "technician-id",
+                  "default": "0"
+                }
+              ]
+            },
+            {
+              "path": "wenmar wo services \u003cwork-order-id\u003e update-category \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "use": "update-category \u003cwork-order-id\u003e \u003cservice-id\u003e",
+              "short": "Update the category of a service",
+              "flags": [
+                {
+                  "name": "category-id",
+                  "required": true,
+                  "default": "0"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "path": "wenmar wo show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single work order by ID",
@@ -1360,6 +1539,10 @@
               "default": "false"
             },
             {
+              "name": "services-visible-to-customer",
+              "default": "false"
+            },
+            {
               "name": "sub-status-type-id",
               "default": "0"
             },
@@ -1371,7 +1554,8 @@
               "default": "false"
             },
             {
-              "name": "work-order-tag-id"
+              "name": "work-order-tag-id",
+              "default": "0"
             }
           ]
         },

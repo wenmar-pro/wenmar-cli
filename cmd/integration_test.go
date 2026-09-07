@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -239,13 +240,116 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		}
 	})
 
-	// GET/PATCH/DELETE /work_orders/:id
+	// GET/PATCH/DELETE /work_orders/:id and nested /work_orders/:id/* routes
 	mux.HandleFunc("/work_orders/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+token {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
 			return
 		}
-		id := strings.TrimPrefix(r.URL.Path, "/work_orders/")
+
+		rest := strings.TrimPrefix(r.URL.Path, "/work_orders/")
+
+		// GET /work_orders/:id/estimate (services list / line-items list)
+		if strings.HasSuffix(rest, "/estimate") {
+			id := strings.TrimSuffix(rest, "/estimate")
+			if id == "999999" {
+				writeError(w, http.StatusNotFound, "not_found", "Resource not found")
+				return
+			}
+			workOrderID, _ := strconv.Atoi(id)
+			writeJSON(w, http.StatusOK, map[string]any{
+				"id":                       workOrderID,
+				"app_url":                  "/work_orders/" + id,
+				"work_order_services_count": 1,
+				"services": []map[string]any{
+					{"id": 10, "name": "Brake pads", "line_items": []map[string]any{
+						{"id": 100, "description": "Pads"},
+					}},
+				},
+			})
+			return
+		}
+
+		// GET/POST /work_orders/:id/payments[/*]
+		if strings.Contains(rest, "/payments") {
+			id := strings.TrimSuffix(strings.TrimSuffix(rest, "/reverse_ar"), "/send_to_ar")
+			id = strings.TrimSuffix(id, "/payments")
+			if id == "999999" {
+				writeError(w, http.StatusNotFound, "not_found", "Resource not found")
+				return
+			}
+			switch r.Method {
+			case http.MethodGet:
+				writeJSON(w, http.StatusOK, map[string]any{
+					"payments": []map[string]any{
+						{"id": 1, "amount_cents": 10000, "method": "credit_card"},
+					},
+				})
+			case http.MethodPost:
+				writeJSON(w, http.StatusCreated, map[string]any{"id": 2, "amount_cents": 10000, "method": "credit_card"})
+			default:
+				w.WriteHeader(http.StatusMethodNotAllowed)
+			}
+			return
+		}
+
+		// GET /work_orders/:id/activity /vehicle_history /appointments /authorization_logs
+		if strings.HasSuffix(rest, "/activity") || strings.HasSuffix(rest, "/vehicle_history") ||
+			strings.HasSuffix(rest, "/appointments") || strings.HasSuffix(rest, "/authorization_logs") {
+			id := rest
+			if strings.Contains(rest, "/") {
+				parts := strings.Split(rest, "/")
+				id = parts[0]
+			}
+			if id == "999999" {
+				writeError(w, http.StatusNotFound, "not_found", "Resource not found")
+				return
+			}
+			switch {
+			case strings.HasSuffix(rest, "/activity"):
+				writeJSON(w, http.StatusOK, map[string]any{"activity": []map[string]any{{"id": 1, "body": "Note"}}})
+			case strings.HasSuffix(rest, "/vehicle_history"):
+				writeJSON(w, http.StatusOK, map[string]any{"history": []map[string]any{{"id": 1, "work_order_number": 5}}})
+			case strings.HasSuffix(rest, "/appointments"):
+				writeJSON(w, http.StatusOK, map[string]any{"appointments": []map[string]any{{"id": 1, "starts_at": "2026-09-07T10:00:00Z"}}})
+			case strings.HasSuffix(rest, "/authorization_logs"):
+				writeJSON(w, http.StatusOK, map[string]any{"authorization_logs": []map[string]any{{"id": 1, "event_type": "authorized"}}})
+			}
+			return
+		}
+
+		// POST /work_orders/:id/activity_logs
+		if strings.HasSuffix(rest, "/activity_logs") {
+			id := strings.TrimSuffix(rest, "/activity_logs")
+			if id == "999999" {
+				writeError(w, http.StatusNotFound, "not_found", "Resource not found")
+				return
+			}
+			writeJSON(w, http.StatusCreated, map[string]any{"id": 99, "body": "Customer approved estimate", "work_order_id": id})
+			return
+		}
+
+		// POST/PATCH/DELETE /work_orders/:work_order_id/services[/*]
+		if strings.Contains(rest, "/services/") || strings.HasSuffix(rest, "/services") || strings.HasSuffix(rest, "/services/reorder") {
+			switch r.Method {
+			case http.MethodPost:
+				status := http.StatusCreated
+				if strings.HasSuffix(rest, "/completion") || strings.HasSuffix(rest, "/copies") || strings.HasSuffix(rest, "/time_entries") || strings.HasSuffix(rest, "/packages") || strings.Contains(rest, "/line_items/inventory_addition") || strings.Contains(rest, "/line_items/price_refresh") || strings.HasSuffix(rest, "/pause") || strings.HasSuffix(rest, "/publish") || strings.HasSuffix(rest, "/revive") || strings.HasSuffix(rest, "/toggle_labor_completion") || strings.HasSuffix(rest, "/update_category") || strings.HasSuffix(rest, "/adjust_time") {
+					status = http.StatusOK
+				}
+				writeJSON(w, status, map[string]any{"id": 10, "name": "Service"})
+			case http.MethodPatch:
+				writeJSON(w, http.StatusOK, map[string]any{"id": 10, "name": "Service"})
+			case http.MethodDelete:
+				w.WriteHeader(http.StatusNoContent)
+			default:
+				w.WriteHeader(http.StatusMethodNotAllowed)
+			}
+			return
+		}
+
+		// Fallback: single work order by id
+		id := rest
 		if id == "999999" {
 			writeError(w, http.StatusNotFound, "not_found", "Resource not found")
 			return

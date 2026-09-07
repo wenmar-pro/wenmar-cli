@@ -48,6 +48,8 @@ func boolPtr(b bool) *bool { return &b }
 
 func intPtr(i int) *int { return &i }
 
+func float32Ptr(f float32) *float32 { return &f }
+
 // intSliceToStrPtr converts a []int flag var to a *[]string for SDK params
 // that take tag/ID lists as strings. Returns nil when empty.
 func intSliceToStrPtr(ids []int) *[]string {
