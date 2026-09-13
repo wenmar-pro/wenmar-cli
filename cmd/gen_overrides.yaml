@@ -41,6 +41,39 @@ exclude:
   - delete_vehicle
   - list_team
   - get_customers_vehicle_history
+  # work-order sub-resources with no dedicated CLI command. Excluding them
+  # stops the generator from creating a stray "work_orders" resource group
+  # that collides with the hand-written wo_extras.go show/tab commands.
+  - create_work_orders_quick_intake
+  - create_work_orders_concern
+  - create_work_orders_concerns_add_package
+  - create_work_orders_concerns_copy_all_to_estimate
+  - create_work_orders_concerns_copy_to_estimate
+  - create_work_orders_credit_resolution
+  - create_work_orders_payment_link_send
+  - create_work_orders_services_bulk_pull
+  - create_work_orders_services_comment
+  - create_work_orders_services_extraction
+  - create_work_orders_services_line_items_reorder
+  - create_work_orders_services_sublet_order
+  - create_work_orders_services_sublet_orders_duplicate
+  - create_work_orders_tire_storage
+  - delete_work_orders_concern
+  - delete_work_orders_services_comment
+  - delete_work_orders_services_sublet_order
+  - delete_work_orders_tire_storage
+  - list_work_orders_payment_link
+  - list_work_orders_receipts
+  - list_work_orders_services_comments
+  - list_work_orders_services_line_items
+  - list_work_orders_sublet_orders
+  - list_work_orders_tire_storage
+  - show_work_orders_signature
+  - show_work_orders_sublet_order
+  - show_work_orders_tire_storage
+  - update_work_orders_concern
+  - update_work_orders_services_sublet_order
+  - update_work_orders_tire_storage
 
   # New 2026-08-31 API surface — no CLI commands yet. Add per-resource
   # commands in follow-up plans; excluded so gencli emits nothing for them.
@@ -619,15 +652,6 @@ commands:
     summary: Merge a source customer into this keeper
     method: MergeCustomer
     request_struct: MergeCustomerRequest
-  lookup_customer:
-    resource: customers
-    command: lookup
-    summary: Search customers by name/email/phone
-    method: LookupCustomer
-    positional_arg: string
-    query_param_struct: LookupCustomerParams
-    example: |
-      wenmar customers lookup "jane doe"
   check_customer_duplicate:
     resource: customers
     command: duplicates
@@ -736,13 +760,6 @@ commands:
     summary: Prefill vehicle data from a VIN
     method: PrefillVehicle
     query_param_struct: PrefillVehicleParams
-  lookup_vehicle:
-    resource: vehicles
-    command: lookup
-    summary: Search vehicles by make/model/plate/vin
-    method: LookupVehicle
-    positional_arg: string
-    query_param_struct: LookupVehicleParams
   list_vehicles_work_orders:
     resource: vehicles
     command: workorders
@@ -777,69 +794,74 @@ commands:
     request_struct: UpdateWorkOrderRequest
     example: |
       wenmar wo update 100 --intake-method drop_off
-  delete_work_order:
-    resource: wo
-    command: delete
-    summary: Delete a work order by ID
-    method: DeleteWorkOrder
-    example: |
-      wenmar wo delete 100 --dry-run
 
   # work-order lifecycle/mutation (Task 6)
+  start_work_order:
+    resource: wo
+    command: start
+    summary: Start a work order (estimate -> in_progress)
+    example: |
+      wenmar wo start 100
+  complete_work_order:
+    resource: wo
+    command: complete
+    summary: Mark a work order complete
+    example: |
+      wenmar wo complete 100
   close_work_order:
     resource: wo
     command: close
     summary: Close a work order
     example: |
       wenmar wo close 100
+  void_work_order:
+    resource: wo
+    command: void
+    summary: Void a work order with a reason
+    example: |
+      wenmar wo void 100 --closure-reason "Duplicate order"
+  decline_work_order:
+    resource: wo
+    command: decline
+    summary: Close a work order as declined with a reason
+    example: |
+      wenmar wo decline 100 --closure-reason "Customer declined"
   reopen_work_order:
     resource: wo
     command: reopen
     summary: Reopen a closed work order
     example: |
       wenmar wo reopen 100
-  update_work_orders_close_as_declined:
-    resource: wo
-    command: close-as-declined
-    summary: Close a work order as declined
-    example: |
-      wenmar wo close-as-declined 100 --closure-reason "Customer declined"
-  update_work_orders_close_as_voided:
-    resource: wo
-    command: close-as-voided
-    summary: Close a work order as voided
-    example: |
-      wenmar wo close-as-voided 100 --closure-reason "Duplicate order"
-  create_work_orders_account_posting:
-    resource: wo
-    command: post-to-account
-    summary: Post a work order to the account
-    example: |
-      wenmar wo post-to-account 100
-  create_work_orders_estimate_deliverie:
+  send_work_order_estimate:
     resource: wo
     command: send-estimate
     summary: Send the estimate to the customer
     example: |
       wenmar wo send-estimate 100
-  create_work_orders_invoice_summarie:
-    resource: wo
-    command: send-invoice-summary
-    summary: Send the invoice summary to the customer
-    example: |
-      wenmar wo send-invoice-summary 100
-  create_work_orders_reminder:
+  send_work_order_reminder:
     resource: wo
     command: send-reminder
     summary: Send a reminder for the work order
     example: |
       wenmar wo send-reminder 100
-  create_work_orders_service_decline:
+  send_work_order_invoice_summary:
+    resource: wo
+    command: send-invoice-summary
+    summary: Send the invoice summary to the customer
+    example: |
+      wenmar wo send-invoice-summary 100
+  post_work_order_to_account:
+    resource: wo
+    command: post-to-account
+    summary: Post a work order to accounts receivable
+    example: |
+      wenmar wo post-to-account 100
+  decline_all_work_order_concerns:
     resource: wo
     command: decline-all
-    summary: Decline all services on a work order
+    summary: Decline all concerns on a work order
     example: |
-      wenmar wo decline-all 100 --decline-reason "Customer declined all"
+      wenmar wo decline-all --work-order-id 100 --decline-reason "Customer declined all"
 
   # service categories (resource renamed per D2)
   list_service_categories:

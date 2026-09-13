@@ -29,6 +29,22 @@ var customersUpdateCmd = &cobra.Command{
 	RunE:    runCustomersUpdate,
 }
 
+// customersLookupCmd is an alias for `customers list --q <term>`. The public
+// search contract is GET /customers?q=; the old /customers/lookup picker
+// endpoint is web-internal and removed from the published spec.
+var customersLookupCmd = &cobra.Command{
+	Use:     "lookup <term>",
+	Short:   "Search customers by name/email/phone (alias: list --q)",
+	Example: `  wenmar customers lookup "jane doe"`,
+	Args:    cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := customersListCmd.Flags().Set("q", args[0]); err != nil {
+			return err
+		}
+		return customersListCmd.RunE(customersListCmd, []string{})
+	},
+}
+
 var (
 	customerCreateFullName  string
 	customerUpdateFullName  string
@@ -80,7 +96,7 @@ func init() {
 	customersUpdateCmd.Flags().StringArrayVar(&customerPhones, "phone", nil, "Phone (label|number or number), repeatable")
 	customersUpdateCmd.Flags().IntSliceVar(&customerRemovePhoneIDs, "remove-phone", nil, "Phone ID to remove, repeatable")
 
-	customersCmd.AddCommand(customersCreateCmd, customersUpdateCmd)
+	customersCmd.AddCommand(customersCreateCmd, customersUpdateCmd, customersLookupCmd)
 }
 
 func runCustomersCreate(cmd *cobra.Command, args []string) error {

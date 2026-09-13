@@ -91,25 +91,6 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 	})
 }
 
-var customersLookupCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar customers lookup \"jane doe\"\n",
-	RunE:    runCustomersLookup,
-	Short:   "Search customers by name/email/phone",
-	Use:     "lookup <string>",
-}
-
-func runCustomersLookup(cmd *cobra.Command, args []string) error {
-	return runList(cmd, "customers", "/customers/lookup", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		query := args[0]
-		resp, err := client.LookupCustomer(ctx, &wenmar.LookupCustomerParams{Query: strPtr(query)})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
 var customersMergeCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE:  runCustomersMerge,
@@ -254,6 +235,6 @@ func init() {
 	customersListCmd.Flags().BoolVar(&customersListAll, "all", false, "Fetch all pages by following pagination links")
 	customersMergeCmd.Flags().IntVar(&customersSourceCustomerId, "source-id", 0, "Source customer ID to merge into keeper (required)")
 	customersMergeCmd.MarkFlagRequired("source-id")
-	customersCmd.AddCommand(customersArchiveCmd, customersDuplicatesCmd, customersListCmd, customersLookupCmd, customersMergeCmd, customersRestoreCmd, customersShowCmd, customersTrashCmd, customersVehiclesCmd, customersWorkordersCmd)
+	customersCmd.AddCommand(customersArchiveCmd, customersDuplicatesCmd, customersListCmd, customersMergeCmd, customersRestoreCmd, customersShowCmd, customersTrashCmd, customersVehiclesCmd, customersWorkordersCmd)
 	rootCmd.AddCommand(customersCmd)
 }

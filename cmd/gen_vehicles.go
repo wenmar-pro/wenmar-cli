@@ -15,6 +15,7 @@ var vehiclesMode string
 var vehiclesModel string
 var vehiclesPage int
 var vehiclesPerPage int
+var vehiclesQ string
 var vehiclesSourceVehicleId int
 var vehiclesStatus string
 var vehiclesType string
@@ -89,27 +90,10 @@ func runVehiclesList(cmd *cobra.Command, args []string) error {
 			CustomerId: intPtr(vehiclesCustomerId),
 			Page:       intPtr(vehiclesPage),
 			PerPage:    intPtr(vehiclesPerPage),
+			Q:          strPtr(vehiclesQ),
 			Status:     strPtr(vehiclesStatus),
 			Type:       strPtr(vehiclesType),
 		})
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-var vehiclesLookupCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesLookup,
-	Short: "Search vehicles by make/model/plate/vin",
-	Use:   "lookup <string>",
-}
-
-func runVehiclesLookup(cmd *cobra.Command, args []string) error {
-	return runList(cmd, "vehicles", "/vehicles/lookup", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		query := args[0]
-		resp, err := client.LookupVehicle(ctx, &wenmar.LookupVehicleParams{Query: strPtr(query)})
 		if err != nil {
 			return nil, err
 		}
@@ -275,6 +259,7 @@ func init() {
 	vehiclesListCmd.Flags().IntVar(&vehiclesCustomerId, "customer-id", 0, "Customer ID")
 	vehiclesListCmd.Flags().IntVar(&vehiclesPage, "page", 0, "Page")
 	vehiclesListCmd.Flags().IntVar(&vehiclesPerPage, "per-page", 0, "Per Page")
+	vehiclesListCmd.Flags().StringVar(&vehiclesQ, "q", "", "Q")
 	vehiclesListCmd.Flags().StringVar(&vehiclesStatus, "status", "", "Status")
 	vehiclesListCmd.Flags().StringVar(&vehiclesType, "type", "", "Type")
 	vehiclesMergeCmd.Flags().IntVar(&vehiclesSourceVehicleId, "source-id", 0, "Source vehicle ID (required)")
@@ -286,6 +271,6 @@ func init() {
 	vehiclesTransferCmd.Flags().IntVar(&vehiclesCustomerId, "customer-id", 0, "Customer ID (required)")
 	vehiclesTransferCmd.MarkFlagRequired("customer-id")
 	vehiclesTransferCmd.Flags().StringVar(&vehiclesMode, "mode", "vehicle_only", "Transfer mode (vehicle_only, vehicle_and_history, everything)")
-	vehiclesCmd.AddCommand(vehiclesArchiveCmd, vehiclesDecodeVinCmd, vehiclesDuplicatesCmd, vehiclesListCmd, vehiclesLookupCmd, vehiclesMergeCmd, vehiclesPrefillCmd, vehiclesRestoreCmd, vehiclesShowCmd, vehiclesTransferCmd, vehiclesTrashCmd, vehiclesWorkordersCmd)
+	vehiclesCmd.AddCommand(vehiclesArchiveCmd, vehiclesDecodeVinCmd, vehiclesDuplicatesCmd, vehiclesListCmd, vehiclesMergeCmd, vehiclesPrefillCmd, vehiclesRestoreCmd, vehiclesShowCmd, vehiclesTransferCmd, vehiclesTrashCmd, vehiclesWorkordersCmd)
 	rootCmd.AddCommand(vehiclesCmd)
 }

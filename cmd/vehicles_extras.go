@@ -25,6 +25,22 @@ var vehiclesUpdateCmd = &cobra.Command{
 	RunE:  runVehiclesUpdate,
 }
 
+// vehiclesLookupCmd is an alias for `vehicles list --q <term>`. The public
+// search contract is GET /vehicles?q=; the old /vehicles/lookup picker
+// endpoint is web-internal and removed from the published spec.
+var vehiclesLookupCmd = &cobra.Command{
+	Use:     "lookup <term>",
+	Short:   "Search vehicles by make/model/plate/vin (alias: list --q)",
+	Example: `  wenmar vehicles lookup "honda civic"`,
+	Args:    cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := vehiclesListCmd.Flags().Set("q", args[0]); err != nil {
+			return err
+		}
+		return vehiclesListCmd.RunE(vehiclesListCmd, []string{})
+	},
+}
+
 var (
 	vehicleCreateMake      string
 	vehicleCreateModel     string
@@ -90,7 +106,7 @@ func init() {
 	vehiclesUpdateCmd.Flags().StringVar(&vehicleProductionDate, "production-date", "", "Production date")
 	vehiclesUpdateCmd.Flags().StringVar(&vehicleNotes, "notes", "", "Notes")
 
-	vehiclesCmd.AddCommand(vehiclesCreateCmd, vehiclesUpdateCmd)
+	vehiclesCmd.AddCommand(vehiclesCreateCmd, vehiclesUpdateCmd, vehiclesLookupCmd)
 }
 
 func runVehiclesCreate(cmd *cobra.Command, args []string) error {

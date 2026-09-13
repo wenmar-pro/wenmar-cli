@@ -12,8 +12,9 @@ import (
 var woClosureReason string
 var woCustomerId int
 var woDeclineReason string
-var woDeleteDryRun bool
 var woIntakeMethod string
+var woOdometerIn int
+var woOdometerOut int
 var woPayerCustomerId int
 var woSavedForLater bool
 var woServicesVisibleToCustomer bool
@@ -21,6 +22,7 @@ var woSubStatusTypeId int
 var woVehicleArrivedAt string
 var woVehicleId int
 var woWaitingForCustomer bool
+var woWorkOrderId int
 var woWorkOrderTagId int
 var woCloseCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
@@ -31,7 +33,7 @@ var woCloseCmd = &cobra.Command{
 }
 
 func runWoClose(cmd *cobra.Command, args []string) error {
-	return runActionNoBody(cmd, args, "wo", "PATCH", func(a []string) string {
+	return runActionNoBody(cmd, args, "wo", "POST", func(a []string) string {
 		return fmt.Sprintf("/work_orders/%s/close", a[0])
 	}, "Work order close.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
 		resp, err := client.CloseWorkOrder(ctx, id, wenmar.CloseWorkOrderRequest{})
@@ -42,45 +44,28 @@ func runWoClose(cmd *cobra.Command, args []string) error {
 	})
 }
 
-var woCloseAsDeclinedCmd = &cobra.Command{
+var woCompleteCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo close-as-declined 100 --closure-reason \"Customer declined\"\n",
-	RunE:    runWoCloseAsDeclined,
-	Short:   "Close a work order as declined",
-	Use:     "close-as-declined <id>",
+	Example: "wenmar wo complete 100\n",
+	RunE:    runWoComplete,
+	Short:   "Mark a work order complete",
+	Use:     "complete <id>",
 }
 
-func runWoCloseAsDeclined(cmd *cobra.Command, args []string) error {
-	return runAction(cmd, args, "wo", "PATCH", func(a []string) string {
-		return fmt.Sprintf("/work_orders/%s/close_as_declined", a[0])
+func runWoComplete(cmd *cobra.Command, args []string) error {
+	return runAction(cmd, args, "wo", "POST", func(a []string) string {
+		return fmt.Sprintf("/work_orders/%s/complete", a[0])
 	}, "Work order action completed.", func(id int) (any, error) {
-		req := wenmar.UpdateWorkOrdersCloseAsDeclinedRequest{ClosureReason: woClosureReason}
+		req := wenmar.CompleteWorkOrderRequest{WorkOrderCompletionForm: struct {
+			OdometerIn  int `json:"odometer_in"`
+			OdometerOut int `json:"odometer_out"`
+		}{
+			OdometerIn:  woOdometerIn,
+			OdometerOut: woOdometerOut,
+		}}
 		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.UpdateWorkOrdersCloseAsDeclined(ctx, id, body.(wenmar.UpdateWorkOrdersCloseAsDeclinedRequest))
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON200, nil
-	})
-}
-
-var woCloseAsVoidedCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo close-as-voided 100 --closure-reason \"Duplicate order\"\n",
-	RunE:    runWoCloseAsVoided,
-	Short:   "Close a work order as voided",
-	Use:     "close-as-voided <id>",
-}
-
-func runWoCloseAsVoided(cmd *cobra.Command, args []string) error {
-	return runAction(cmd, args, "wo", "PATCH", func(a []string) string {
-		return fmt.Sprintf("/work_orders/%s/close_as_voided", a[0])
-	}, "Work order action completed.", func(id int) (any, error) {
-		req := wenmar.UpdateWorkOrdersCloseAsVoidedRequest{ClosureReason: woClosureReason}
-		return req, nil
-	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.UpdateWorkOrdersCloseAsVoided(ctx, id, body.(wenmar.UpdateWorkOrdersCloseAsVoidedRequest))
+		resp, err := client.CompleteWorkOrder(ctx, id, body.(wenmar.CompleteWorkOrderRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -114,22 +99,22 @@ func runWoCreate(cmd *cobra.Command, args []string) error {
 	})
 }
 
-var woDeclineAllCmd = &cobra.Command{
+var woDeclineCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo decline-all 100 --decline-reason \"Customer declined all\"\n",
-	RunE:    runWoDeclineAll,
-	Short:   "Decline all services on a work order",
-	Use:     "decline-all <id>",
+	Example: "wenmar wo decline 100 --closure-reason \"Customer declined\"\n",
+	RunE:    runWoDecline,
+	Short:   "Close a work order as declined with a reason",
+	Use:     "decline <id>",
 }
 
-func runWoDeclineAll(cmd *cobra.Command, args []string) error {
+func runWoDecline(cmd *cobra.Command, args []string) error {
 	return runAction(cmd, args, "wo", "POST", func(a []string) string {
-		return fmt.Sprintf("/work_orders/%s/service_declines", a[0])
+		return fmt.Sprintf("/work_orders/%s/decline", a[0])
 	}, "Work order action completed.", func(id int) (any, error) {
-		req := wenmar.CreateWorkOrdersServiceDeclineRequest{DeclineReason: woDeclineReason}
+		req := wenmar.DeclineWorkOrderRequest{ClosureReason: woClosureReason}
 		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
-		resp, err := client.CreateWorkOrdersServiceDecline(ctx, id, body.(wenmar.CreateWorkOrdersServiceDeclineRequest))
+		resp, err := client.DeclineWorkOrder(ctx, id, body.(wenmar.DeclineWorkOrderRequest))
 		if err != nil {
 			return nil, err
 		}
@@ -137,17 +122,23 @@ func runWoDeclineAll(cmd *cobra.Command, args []string) error {
 	})
 }
 
-var woDeleteCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo delete 100 --dry-run\n",
-	RunE:    runWoDelete,
-	Short:   "Delete a work order by ID",
-	Use:     "delete <id>",
+var woDeclineAllCmd = &cobra.Command{
+	Example: "wenmar wo decline-all --work-order-id 100 --decline-reason \"Customer declined all\"\n",
+	RunE:    runWoDeclineAll,
+	Short:   "Decline all concerns on a work order",
+	Use:     "decline-all",
 }
 
-func runWoDelete(cmd *cobra.Command, args []string) error {
-	return runDelete(cmd, args, "Work order", "wo", idPath("/work_orders/"), woDeleteDryRun, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		return client.DeleteWorkOrder(ctx, id)
+func runWoDeclineAll(cmd *cobra.Command, args []string) error {
+	return runCreate(cmd, "wo", fmt.Sprintf("/work_orders/%d/concerns/decline_all", woWorkOrderId), "Work order created.", func() (any, error) {
+		req := wenmar.DeclineAllWorkOrderConcernsRequest{DeclineReason: woDeclineReason}
+		return req, nil
+	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
+		resp, err := client.DeclineAllWorkOrderConcerns(ctx, woWorkOrderId, body.(wenmar.DeclineAllWorkOrderConcernsRequest))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
 	})
 }
 
@@ -172,15 +163,15 @@ var woPostToAccountCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Example: "wenmar wo post-to-account 100\n",
 	RunE:    runWoPostToAccount,
-	Short:   "Post a work order to the account",
+	Short:   "Post a work order to accounts receivable",
 	Use:     "post-to-account <id>",
 }
 
 func runWoPostToAccount(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "wo", "POST", func(a []string) string {
-		return fmt.Sprintf("/work_orders/%s/account_postings", a[0])
+		return fmt.Sprintf("/work_orders/%s/post_to_account", a[0])
 	}, "Work order post-to-account.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.CreateWorkOrdersAccountPosting(ctx, id, wenmar.CreateWorkOrdersAccountPostingRequest{})
+		resp, err := client.PostWorkOrderToAccount(ctx, id, wenmar.PostWorkOrderToAccountRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +188,7 @@ var woReopenCmd = &cobra.Command{
 }
 
 func runWoReopen(cmd *cobra.Command, args []string) error {
-	return runActionNoBody(cmd, args, "wo", "PATCH", func(a []string) string {
+	return runActionNoBody(cmd, args, "wo", "POST", func(a []string) string {
 		return fmt.Sprintf("/work_orders/%s/reopen", a[0])
 	}, "Work order reopen.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
 		resp, err := client.ReopenWorkOrder(ctx, id, wenmar.ReopenWorkOrderRequest{})
@@ -218,9 +209,9 @@ var woSendEstimateCmd = &cobra.Command{
 
 func runWoSendEstimate(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "wo", "POST", func(a []string) string {
-		return fmt.Sprintf("/work_orders/%s/estimate_deliveries", a[0])
+		return fmt.Sprintf("/work_orders/%s/send_estimate", a[0])
 	}, "Work order send-estimate.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.CreateWorkOrdersEstimateDeliverie(ctx, id, wenmar.CreateWorkOrdersEstimateDeliverieRequest{})
+		resp, err := client.SendWorkOrderEstimate(ctx, id, wenmar.SendWorkOrderEstimateRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -238,9 +229,9 @@ var woSendInvoiceSummaryCmd = &cobra.Command{
 
 func runWoSendInvoiceSummary(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "wo", "POST", func(a []string) string {
-		return fmt.Sprintf("/work_orders/%s/invoice_summaries", a[0])
+		return fmt.Sprintf("/work_orders/%s/send_invoice_summary", a[0])
 	}, "Work order send-invoice-summary.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.CreateWorkOrdersInvoiceSummarie(ctx, id, wenmar.CreateWorkOrdersInvoiceSummarieRequest{})
+		resp, err := client.SendWorkOrderInvoiceSummary(ctx, id, wenmar.SendWorkOrderInvoiceSummaryRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -258,9 +249,29 @@ var woSendReminderCmd = &cobra.Command{
 
 func runWoSendReminder(cmd *cobra.Command, args []string) error {
 	return runActionNoBody(cmd, args, "wo", "POST", func(a []string) string {
-		return fmt.Sprintf("/work_orders/%s/reminders", a[0])
+		return fmt.Sprintf("/work_orders/%s/send_reminder", a[0])
 	}, "Work order send-reminder.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.CreateWorkOrdersReminder(ctx, id, wenmar.CreateWorkOrdersReminderRequest{})
+		resp, err := client.SendWorkOrderReminder(ctx, id, wenmar.SendWorkOrderReminderRequest{})
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
+var woStartCmd = &cobra.Command{
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar wo start 100\n",
+	RunE:    runWoStart,
+	Short:   "Start a work order (estimate -> in_progress)",
+	Use:     "start <id>",
+}
+
+func runWoStart(cmd *cobra.Command, args []string) error {
+	return runActionNoBody(cmd, args, "wo", "POST", func(a []string) string {
+		return fmt.Sprintf("/work_orders/%s/start", a[0])
+	}, "Work order start.", func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.StartWorkOrder(ctx, id, wenmar.StartWorkOrderRequest{})
 		if err != nil {
 			return nil, err
 		}
@@ -307,6 +318,29 @@ func runWoUpdate(cmd *cobra.Command, args []string) error {
 	})
 }
 
+var woVoidCmd = &cobra.Command{
+	Args:    cobra.ExactArgs(1),
+	Example: "wenmar wo void 100 --closure-reason \"Duplicate order\"\n",
+	RunE:    runWoVoid,
+	Short:   "Void a work order with a reason",
+	Use:     "void <id>",
+}
+
+func runWoVoid(cmd *cobra.Command, args []string) error {
+	return runAction(cmd, args, "wo", "POST", func(a []string) string {
+		return fmt.Sprintf("/work_orders/%s/void", a[0])
+	}, "Work order action completed.", func(id int) (any, error) {
+		req := wenmar.VoidWorkOrderRequest{ClosureReason: woClosureReason}
+		return req, nil
+	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
+		resp, err := client.VoidWorkOrder(ctx, id, body.(wenmar.VoidWorkOrderRequest))
+		if err != nil {
+			return nil, err
+		}
+		return resp.JSON200, nil
+	})
+}
+
 var woCmd = &cobra.Command{
 	Aliases: []string{"workorders", "work_orders"},
 	Args:    cobra.NoArgs,
@@ -319,17 +353,20 @@ var woCmd = &cobra.Command{
 }
 
 func init() {
-	woCloseAsDeclinedCmd.Flags().StringVar(&woClosureReason, "closure-reason", "", "Closure Reason (required)")
-	woCloseAsDeclinedCmd.MarkFlagRequired("closure-reason")
-	woCloseAsVoidedCmd.Flags().StringVar(&woClosureReason, "closure-reason", "", "Closure Reason (required)")
-	woCloseAsVoidedCmd.MarkFlagRequired("closure-reason")
+	woCompleteCmd.Flags().IntVar(&woOdometerIn, "odometer-in", 0, "Odometer In (required)")
+	woCompleteCmd.MarkFlagRequired("odometer-in")
+	woCompleteCmd.Flags().IntVar(&woOdometerOut, "odometer-out", 0, "Odometer Out (required)")
+	woCompleteCmd.MarkFlagRequired("odometer-out")
 	woCreateCmd.Flags().IntVar(&woCustomerId, "customer-id", 0, "Customer ID (required)")
 	woCreateCmd.MarkFlagRequired("customer-id")
 	woCreateCmd.Flags().IntVar(&woVehicleId, "vehicle-id", 0, "Vehicle ID (required)")
 	woCreateCmd.MarkFlagRequired("vehicle-id")
+	woDeclineCmd.Flags().StringVar(&woClosureReason, "closure-reason", "", "Closure Reason (required)")
+	woDeclineCmd.MarkFlagRequired("closure-reason")
+	woDeclineAllCmd.Flags().IntVar(&woWorkOrderId, "work-order-id", 0, "Work Order ID (required)")
+	woDeclineAllCmd.MarkFlagRequired("work-order-id")
 	woDeclineAllCmd.Flags().StringVar(&woDeclineReason, "decline-reason", "", "Decline Reason (required)")
 	woDeclineAllCmd.MarkFlagRequired("decline-reason")
-	woDeleteCmd.Flags().BoolVar(&woDeleteDryRun, "dry-run", false, "Preview what would be deleted without making an API call")
 	woUpdateCmd.Flags().StringVar(&woIntakeMethod, "intake-method", "", "Intake method (e.g. drop_off, walk_in)")
 	woUpdateCmd.Flags().IntVar(&woPayerCustomerId, "payer-customer-id", 0, "Payer Customer ID")
 	woUpdateCmd.Flags().BoolVar(&woSavedForLater, "saved-for-later", false, "Saved For Later")
@@ -338,6 +375,8 @@ func init() {
 	woUpdateCmd.Flags().StringVar(&woVehicleArrivedAt, "vehicle-arrived-at", "", "Vehicle Arrived At")
 	woUpdateCmd.Flags().BoolVar(&woWaitingForCustomer, "waiting-for-customer", false, "Waiting For Customer")
 	woUpdateCmd.Flags().IntVar(&woWorkOrderTagId, "work-order-tag-id", 0, "Work Order Tag ID")
-	woCmd.AddCommand(woCloseCmd, woCloseAsDeclinedCmd, woCloseAsVoidedCmd, woCreateCmd, woDeclineAllCmd, woDeleteCmd, woListCmd, woPostToAccountCmd, woReopenCmd, woSendEstimateCmd, woSendInvoiceSummaryCmd, woSendReminderCmd, woUpdateCmd)
+	woVoidCmd.Flags().StringVar(&woClosureReason, "closure-reason", "", "Closure Reason (required)")
+	woVoidCmd.MarkFlagRequired("closure-reason")
+	woCmd.AddCommand(woCloseCmd, woCompleteCmd, woCreateCmd, woDeclineCmd, woDeclineAllCmd, woListCmd, woPostToAccountCmd, woReopenCmd, woSendEstimateCmd, woSendInvoiceSummaryCmd, woSendReminderCmd, woStartCmd, woUpdateCmd, woVoidCmd)
 	rootCmd.AddCommand(woCmd)
 }

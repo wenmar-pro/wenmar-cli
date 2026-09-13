@@ -354,6 +354,22 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 			return
 		}
 
+		// POST /work_orders/:id/{start,complete,close,void,decline,reopen,send_*}
+		if r.Method == http.MethodPost {
+			id := rest
+			if strings.Contains(rest, "/") {
+				parts := strings.Split(rest, "/")
+				id = parts[0]
+			}
+			if id == "999999" {
+				writeError(w, http.StatusNotFound, "not_found", "Resource not found")
+				return
+			}
+			woID, _ := strconv.Atoi(id)
+			writeJSON(w, http.StatusOK, map[string]any{"id": woID, "work_order_number": 1, "status": "voided"})
+			return
+		}
+
 		// Fallback: single work order by id
 		id := rest
 		if id == "999999" {
@@ -782,17 +798,17 @@ func TestWorkOrdersUpdate_JSON(t *testing.T) {
 	}
 }
 
-func TestWorkOrdersDelete_JSON(t *testing.T) {
+func TestWorkOrdersVoid_JSON(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(
-		"work_orders", "delete", "1",
+		"wo", "void", "1", "--closure-reason", "duplicate_order",
 		"--json", "--base-url", srv.URL, "--token", "secret-token",
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(out, "Work order 1 deleted") {
-		t.Errorf("expected delete confirmation in output, got: %s", out)
+	if !strings.Contains(out, `"status": "voided"`) {
+		t.Errorf("expected voided status in output, got: %s", out)
 	}
 }
 
@@ -903,17 +919,13 @@ func TestOutputFlagConflictFailsFast(t *testing.T) {
 	}
 }
 
-func TestWorkOrdersDelete_DryRun(t *testing.T) {
-	srv := startFakeAPI(t, "secret-token")
-	out, err := execute(
-		"work_orders", "delete", "42", "--dry-run",
-		"--json", "--base-url", srv.URL, "--token", "secret-token",
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+func TestWorkOrdersDelete_Removed(t *testing.T) {
+	_, err := execute("wo", "delete", "42")
+	if err == nil {
+		t.Fatal("wo delete should not exist (work orders are audit records)")
 	}
-	if !strings.Contains(out, `"dry_run": true`) {
-		t.Errorf("expected dry_run:true in output, got: %s", out)
+	if !strings.Contains(err.Error(), "unknown command") {
+		t.Errorf("expected unknown command error, got: %v", err)
 	}
 }
 

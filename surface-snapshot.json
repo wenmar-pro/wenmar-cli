@@ -289,9 +289,9 @@
           ]
         },
         {
-          "path": "wenmar customers lookup \u003cstring\u003e",
-          "use": "lookup \u003cstring\u003e",
-          "short": "Search customers by name/email/phone",
+          "path": "wenmar customers lookup \u003cterm\u003e",
+          "use": "lookup \u003cterm\u003e",
+          "short": "Search customers by name/email/phone (alias: list --q)",
           "flags": null
         },
         {
@@ -917,6 +917,9 @@
               "default": "0"
             },
             {
+              "name": "q"
+            },
+            {
               "name": "status"
             },
             {
@@ -925,9 +928,9 @@
           ]
         },
         {
-          "path": "wenmar vehicles lookup \u003cstring\u003e",
-          "use": "lookup \u003cstring\u003e",
-          "short": "Search vehicles by make/model/plate/vin",
+          "path": "wenmar vehicles lookup \u003cterm\u003e",
+          "use": "lookup \u003cterm\u003e",
+          "short": "Search vehicles by make/model/plate/vin (alias: list --q)",
           "flags": null
         },
         {
@@ -1160,24 +1163,19 @@
           "flags": null
         },
         {
-          "path": "wenmar wo close-as-declined \u003cid\u003e",
-          "use": "close-as-declined \u003cid\u003e",
-          "short": "Close a work order as declined",
+          "path": "wenmar wo complete \u003cid\u003e",
+          "use": "complete \u003cid\u003e",
+          "short": "Mark a work order complete",
           "flags": [
             {
-              "name": "closure-reason",
-              "required": true
-            }
-          ]
-        },
-        {
-          "path": "wenmar wo close-as-voided \u003cid\u003e",
-          "use": "close-as-voided \u003cid\u003e",
-          "short": "Close a work order as voided",
-          "flags": [
+              "name": "odometer-in",
+              "required": true,
+              "default": "0"
+            },
             {
-              "name": "closure-reason",
-              "required": true
+              "name": "odometer-out",
+              "required": true,
+              "default": "0"
             }
           ]
         },
@@ -1199,24 +1197,29 @@
           ]
         },
         {
-          "path": "wenmar wo decline-all \u003cid\u003e",
-          "use": "decline-all \u003cid\u003e",
-          "short": "Decline all services on a work order",
+          "path": "wenmar wo decline \u003cid\u003e",
+          "use": "decline \u003cid\u003e",
+          "short": "Close a work order as declined with a reason",
           "flags": [
             {
-              "name": "decline-reason",
+              "name": "closure-reason",
               "required": true
             }
           ]
         },
         {
-          "path": "wenmar wo delete \u003cid\u003e",
-          "use": "delete \u003cid\u003e",
-          "short": "Delete a work order by ID",
+          "path": "wenmar wo decline-all",
+          "use": "decline-all",
+          "short": "Decline all concerns on a work order",
           "flags": [
             {
-              "name": "dry-run",
-              "default": "false"
+              "name": "decline-reason",
+              "required": true
+            },
+            {
+              "name": "work-order-id",
+              "required": true,
+              "default": "0"
             }
           ]
         },
@@ -1308,7 +1311,7 @@
         {
           "path": "wenmar wo post-to-account \u003cid\u003e",
           "use": "post-to-account \u003cid\u003e",
-          "short": "Post a work order to the account",
+          "short": "Post a work order to accounts receivable",
           "flags": null
         },
         {
@@ -1596,6 +1599,12 @@
           "flags": null
         },
         {
+          "path": "wenmar wo start \u003cid\u003e",
+          "use": "start \u003cid\u003e",
+          "short": "Start a work order (estimate -\u003e in_progress)",
+          "flags": null
+        },
+        {
           "path": "wenmar wo update \u003cid\u003e",
           "use": "update \u003cid\u003e",
           "short": "Update a work order by ID",
@@ -1637,6 +1646,17 @@
           "use": "vehicle-history \u003cwork-order-id\u003e",
           "short": "Show vehicle history for a work order",
           "flags": null
+        },
+        {
+          "path": "wenmar wo void \u003cid\u003e",
+          "use": "void \u003cid\u003e",
+          "short": "Void a work order with a reason",
+          "flags": [
+            {
+              "name": "closure-reason",
+              "required": true
+            }
+          ]
         },
         {
           "path": "wenmar wo wip \u003cid\u003e",

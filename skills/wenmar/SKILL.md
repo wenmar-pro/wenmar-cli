@@ -54,8 +54,9 @@ These rules MUST be followed without exception:
    assume a VIN format.
 2. **Resource IDs are positional**, never flags: `wenmar customers show 42`.
 3. **Preview destructive ops** with `--dry-run` where offered
-   (vehicles/drivers/workorders/servicecategories delete). There is no
+   (vehicles/drivers/servicecategories delete). There is no
    `--force` flag; a delete without `--dry-run` executes immediately.
+   Work orders have no delete — `wo void` is the terminal action.
 4. **Set an explicit output mode** for anything parsed: `--agent` (raw JSON,
    no envelope). Default piped output is raw JSON, but explicit beats
    implicit.
@@ -133,7 +134,13 @@ wenmar workorders show 100
 wenmar workorders show 100 --jq '.vehicle.make'
 wenmar workorders create --customer-id 42 --vehicle-id 5
 wenmar workorders update 100 --intake-method drop_off
-wenmar workorders delete 100 --dry-run
+wenmar workorders start 100
+wenmar workorders complete 100
+wenmar workorders close 100
+wenmar workorders void 100 --closure-reason duplicate_order
+wenmar workorders decline 100 --closure-reason customer_declined
+wenmar workorders reopen 100
+wenmar workorders send-estimate 100
 wenmar workorders estimate 100      # also: wip, inspection, parts, payments
 ```
 
