@@ -2,11 +2,17 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/dave/jennifer/jen"
 )
+
+// warnStderr is the sink for non-fatal generator diagnostics (duplicate-command
+// drops). Testable via indirection.
+var warnStderr io.Writer = os.Stderr
 
 // CommandGroup groups operations by CLI resource.
 type CommandGroup struct {
@@ -56,7 +62,6 @@ type BodyField struct {
 	HelpText  string
 	NoFlag    bool   // true if the field appears in the body struct but has no CLI flag (arrays)
 	Default   string // optional default value for the flag ("" = type zero value)
-	FlagType  string // "intslice" to bind via IntSliceVar (array params)
 }
 
 // groupOperations reads the spec and overrides to produce command groups.
@@ -69,6 +74,7 @@ func groupOperations(spec *Spec, overrides *Overrides) []CommandGroup {
 
 	// Track seen command var names to detect duplicates within a resource.
 	seenVarNames := make(map[string][]string) // resource -> list of var names
+	seenVarOpID := make(map[string]string)    // resource + varName -> first operationID
 
 	// Iterate paths and methods deterministically so the "first wins" dedup
 	// below is stable across runs (Go map iteration order is random).
@@ -98,11 +104,15 @@ func groupOperations(spec *Spec, overrides *Overrides) []CommandGroup {
 			varName := cmdVarName(*cmd)
 			for _, existing := range seenVarNames[cmd.Resource] {
 				if existing == varName {
-					// Skip duplicate — the first one wins.
+					// First-wins dedup (e.g. list_reports_statements hides
+					// list_reports_tax_periods). Non-fatal but must be visible.
+					first := seenVarOpID[cmd.Resource+"\x00"+varName]
+					fmt.Fprintf(warnStderr, "gencli: dropping %s: var %s collides with %s (first wins)\n", cmd.OperationID, varName, first)
 					goto nextOp
 				}
 			}
 			seenVarNames[cmd.Resource] = append(seenVarNames[cmd.Resource], varName)
+			seenVarOpID[cmd.Resource+"\x00"+varName] = cmd.OperationID
 			groupMap[cmd.Resource] = append(groupMap[cmd.Resource], *cmd)
 		nextOp:
 		}
@@ -132,8 +142,12 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 		IDParam:     "id",
 	}
 
-	// Response code from the spec's declared responses.
+	// Response code from the spec's declared responses. Precedence: an
+	// explicit override, then a declared 201, then 202, else the 200 default.
 	cmd.ResponseField = "JSON200"
+	if _, ok := op.Responses["202"]; ok {
+		cmd.ResponseField = "JSON202"
+	}
 	if _, ok := op.Responses["201"]; ok {
 		cmd.ResponseField = "JSON201"
 	}
@@ -191,7 +205,8 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 
 	// Path-param loop: the param named cmd.IDParam is the positional id.
 	for _, p := range op.Parameters {
-		if p.In == "path" {
+		switch p.In {
+		case "path":
 			cmd.PathParams = append(cmd.PathParams, p)
 			if p.Name == cmd.IDParam {
 				cmd.HasIDParam = true
@@ -201,7 +216,7 @@ func buildCommand(spec *Spec, op Operation, method, path string, overrides *Over
 			} else {
 				cmd.ExtraPathParams = append(cmd.ExtraPathParams, p)
 			}
-		} else if p.In == "query" {
+		case "query":
 			cmd.QueryParams = append(cmd.QueryParams, p)
 		}
 	}
@@ -288,11 +303,7 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides, buildTag st
 					continue
 				}
 				vn := bodyFieldVarName(cmd.Resource, bf.GoName)
-				if bf.FlagType == "intslice" {
-					flagVarsSeen[vn] = "[]int"
-				} else {
-					flagVarsSeen[vn] = goType(bf.Type)
-				}
+				flagVarsSeen[vn] = goType(bf.Type)
 			}
 		}
 	}
@@ -303,7 +314,9 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides, buildTag st
 	}
 
 	for _, cmd := range group.Commands {
-		emitCommand(f, cmd, overrides)
+		if err := emitCommand(f, cmd, overrides); err != nil {
+			return "", err
+		}
 	}
 
 	// Emit the parent command as a package-level var so companion files
@@ -358,9 +371,13 @@ func emitGroup(group CommandGroup, spec *Spec, overrides *Overrides, buildTag st
 }
 
 // emitCommand emits a single cobra command variable + its RunE handler.
-func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) {
+func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) error {
 	varName := cmdVarName(cmd)
 	cmdType := classifyCommand(cmd)
+
+	if cmdType == "action" {
+		return fmt.Errorf("operation %q has no derivable command shape; add a `commands:` override or an `exclude:` entry for it", cmd.OperationID)
+	}
 
 	dict := jen.Dict{
 		jen.Id("Use"):   jen.Lit(cmd.Command + useArgsSuffix(cmdType, cmd)),
@@ -384,6 +401,7 @@ func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) {
 	f.Var().Id(varName).Op("=").Op("&").Qual("github.com/spf13/cobra", "Command").Values(dict)
 
 	emitHandler(f, cmd, cmdType, overrides)
+	return nil
 }
 
 func needsExactArgs(cmdType string) bool {
@@ -548,12 +566,6 @@ func emitFlagRegistration(g *jen.Group, cmd GenCommand) {
 				continue
 			}
 			varName := bodyFieldVarName(cmd.Resource, bf.GoName)
-			if bf.FlagType == "intslice" {
-				g.Id(cmdVar).Dot("Flags").Call().Dot("IntSliceVar").Call(
-					jen.Op("&").Id(varName), jen.Lit(bf.FlagName), jen.Nil(), jen.Lit(bf.HelpText),
-				)
-				continue
-			}
 			args := []jen.Code{jen.Op("&").Id(varName), jen.Lit(bf.FlagName), DefaultForType(bf.Type), jen.Lit(bf.HelpText)}
 			g.Id(cmdVar).Dot("Flags").Call().Dot(flagBindMethod(bf.Type)).Call(args...)
 			if bf.Required {
@@ -648,7 +660,9 @@ func emitHandler(f *jen.File, cmd GenCommand, cmdType string, overrides *Overrid
 		case "tab":
 			emitTabHandler(g, cmd)
 		default:
-			emitActionHandler(g, cmd)
+			// classifyCommand never returns anything else; emitCommand guards
+			// against the unclassifiable "action" fallback before we get here.
+			panic("unreachable command type: " + cmdType)
 		}
 	})
 }
@@ -855,6 +869,41 @@ func contains(s []string, v string) bool {
 	return false
 }
 
+// stripBracketParam strips the bracket wrapper from a parameter name for
+// flag names, keeping only the bracket content (e.g. "filter[status]" ->
+// "status"). The raw name is kept on BodyField.JSONName so SDK struct binding
+// still works; only the derived flag name drops the wrapper.
+func stripBracketParam(name string) string {
+	open := strings.Index(name, "[")
+	close := strings.Index(name, "]")
+	if open < 0 || close < 0 || close < open {
+		return name
+	}
+	return name[open+1 : close]
+}
+
+// bracketToPascalKey converts a bracket param name to the PascalCase key the
+// SDK uses for its params struct fields: brackets become underscores, then the
+// whole thing is PascalCased. "filter[status]" -> "filter_status" ->
+// "FilterStatus"; "filters[has_open_work_order]" -> "FiltersHasOpenWorkOrder".
+func bracketToPascalKey(name string) string {
+	if strings.Contains(name, "[") {
+		name = strings.ReplaceAll(name, "[", "_")
+		name = strings.ReplaceAll(name, "]", "")
+	}
+	return snakeToPascal(name)
+}
+
+// queryFieldsGoName returns the Go field name for a query parameter. Bracket
+// params keep their prefix so the emitted params struct literal matches the
+// SDK's generated field (e.g. FilterStatus for filter[status]).
+func queryFieldsGoName(name string) string {
+	if strings.Contains(name, "[") {
+		return bracketToPascalKey(name)
+	}
+	return snakeToPascal(name)
+}
+
 // extractQueryFields extracts BodyFields from query parameters.
 func extractQueryFields(op Operation, queryParamStruct string, flagOverrides map[string]FlagOverride) []BodyField {
 	var fields []BodyField
@@ -863,18 +912,19 @@ func extractQueryFields(op Operation, queryParamStruct string, flagOverrides map
 			continue
 		}
 		// Skip object query params — they need custom parsing. Array params
-		// are captured so they can be bound via IntSliceVar when overridden.
+		// are captured for struct assignability but get no CLI flag.
 		if p.Schema.Type == "object" {
 			continue
 		}
+		key := stripBracketParam(p.Name)
 		f := BodyField{
 			JSONName:  p.Name,
-			GoName:    snakeToPascal(p.Name),
-			FlagName:  kebabCase(p.Name),
+			GoName:    queryFieldsGoName(p.Name),
+			FlagName:  kebabCase(key),
 			Type:      p.Schema.Type,
 			Required:  p.Required,
 			IsPointer: !p.Required,
-			HelpText:  prettifyParamName(p.Name),
+			HelpText:  prettifyParamName(key),
 		}
 		if p.Schema.Type == "array" {
 			f.NoFlag = true
@@ -903,10 +953,6 @@ func extractQueryFields(op Operation, queryParamStruct string, flagOverrides map
 			}
 			if ov.Suppress {
 				f.NoFlag = true
-			}
-			if ov.FlagType != "" {
-				f.FlagType = ov.FlagType
-				f.NoFlag = false
 			}
 		}
 		fields = append(fields, f)
@@ -1144,9 +1190,19 @@ func responseFieldFor(cmd GenCommand) string {
 	return cmd.ResponseField
 }
 
+// createUpdateSummary returns the past-tense success message for a create or
+// update command. It prefers the ActionSummary override and falls back to the
+// derived "<Resource> created/updated." message.
+func createUpdateSummary(cmd GenCommand, verb string) string {
+	if cmd.ActionSummary != "" {
+		return cmd.ActionSummary
+	}
+	return titleCase(singularize(cmd.Resource)) + " " + verb + "."
+}
+
 func emitCreateHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
-	summary := titleCase(singularize(resource)) + " created."
+	summary := createUpdateSummary(cmd, "created")
 
 	// Build the body builder closure.
 	bodyBuilder := jen.Func().Params().Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
@@ -1190,7 +1246,7 @@ func emitCreateHandler(g *jen.Group, cmd GenCommand) {
 
 func emitUpdateHandler(g *jen.Group, cmd GenCommand) {
 	resource := cmd.Resource
-	summary := titleCase(singularize(resource)) + " updated."
+	summary := createUpdateSummary(cmd, "updated")
 
 	// Build the body builder closure (takes id as param).
 	bodyBuilder := jen.Func().Params(jen.Id("id").Id("int")).Params(jen.Any(), jen.Error()).BlockFunc(func(bg *jen.Group) {
@@ -1391,11 +1447,6 @@ func queryParamDict(cmd GenCommand) jen.Dict {
 			continue
 		}
 		varName := bodyFieldVarName(cmd.Resource, bf.GoName)
-		if bf.FlagType == "intslice" {
-			// Convert the []int flag var to the SDK's *[]string param.
-			dict[jen.Id(bf.GoName)] = jen.Id("intSliceToStrPtr").Call(jen.Id(varName))
-			continue
-		}
 		if bf.IsPointer {
 			dict[jen.Id(bf.GoName)] = wrapPtr(bf.Type, jen.Id(varName))
 		} else {
@@ -1403,12 +1454,6 @@ func queryParamDict(cmd GenCommand) jen.Dict {
 		}
 	}
 	return dict
-}
-
-func emitActionHandler(g *jen.Group, cmd GenCommand) {
-	// Actions without body (merge, transfer) — treat as list for now.
-	g.Comment("TODO: implement action handler for " + cmd.OperationID)
-	g.Return(jen.Qual("fmt", "Errorf").Call(jen.Lit("action %s not yet generated"), jen.Lit(cmd.OperationID)))
 }
 
 // actionSummary returns the past-tense success message for an action command.

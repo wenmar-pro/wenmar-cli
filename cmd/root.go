@@ -113,7 +113,7 @@ func init() {
 
 	// --config-path stays hidden (it's for testing); the output-mode flags
 	// are all visible at every help level.
-	rootCmd.PersistentFlags().MarkHidden("config-path")
+	_ = rootCmd.PersistentFlags().MarkHidden("config-path")
 
 	// Fail fast on mode conflicts/typos BEFORE any command runs (and
 	// before any API call inside it).

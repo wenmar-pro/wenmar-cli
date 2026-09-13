@@ -29,7 +29,7 @@ golden-update:
 	go run ./cmd/gencli -spec $(SPEC_PATH) -overrides cmd/gen_overrides.yaml -build-tag ignore -out cmd/golden
 
 clean:
-	rm -f wenmar
+	rm -f wenmar gencli
 
 # Dump the command surface as JSON for CI diffing.
 surface-snapshot:

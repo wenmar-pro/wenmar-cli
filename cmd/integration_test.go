@@ -335,9 +335,13 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 			return
 		}
 
-		// POST/PATCH/DELETE /work_orders/:work_order_id/services[/*]
+		// GET/POST/PATCH/DELETE /work_orders/:work_order_id/services[/*]
 		if strings.Contains(rest, "/services/") || strings.HasSuffix(rest, "/services") || strings.HasSuffix(rest, "/services/reorder") {
 			switch r.Method {
+			case http.MethodGet:
+				// The services index (GET /work_orders/:id/services) returns a
+				// bare array; other GETs on sub-resources fall through here too.
+				writeJSON(w, http.StatusOK, []map[string]any{{"id": 10, "name": "Brake pads"}})
 			case http.MethodPost:
 				status := http.StatusCreated
 				if strings.HasSuffix(rest, "/completion") || strings.HasSuffix(rest, "/copies") || strings.HasSuffix(rest, "/time_entries") || strings.HasSuffix(rest, "/packages") || strings.Contains(rest, "/line_items/inventory_addition") || strings.Contains(rest, "/line_items/price_refresh") || strings.HasSuffix(rest, "/pause") || strings.HasSuffix(rest, "/publish") || strings.HasSuffix(rest, "/revive") || strings.HasSuffix(rest, "/toggle_labor_completion") || strings.HasSuffix(rest, "/update_category") || strings.HasSuffix(rest, "/adjust_time") {
@@ -386,6 +390,53 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
+	})
+
+	// GET /reports/statements, GET/POST /reports/tax_periods, PATCH /reports/tax_periods/:id
+	mux.HandleFunc("/reports/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		rest := strings.TrimPrefix(r.URL.Path, "/reports/")
+		switch {
+		case rest == "statements":
+			writeJSON(w, http.StatusOK, []map[string]any{{"id": 1, "statement_number": "S-1", "status": "sent"}})
+		case rest == "tax_periods" && r.Method == http.MethodGet:
+			writeJSON(w, http.StatusOK, []map[string]any{{"id": 5, "period_start": "2026-01-01", "period_end": "2026-03-31"}})
+		case rest == "tax_periods" && r.Method == http.MethodPost:
+			writeJSON(w, http.StatusCreated, map[string]any{"id": 5, "period_start": "2026-01-01", "period_end": "2026-03-31"})
+		case strings.HasPrefix(rest, "tax_periods/") && r.Method == http.MethodPatch:
+			writeJSON(w, http.StatusOK, map[string]any{"id": 5, "marked_remitted": true})
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// POST /inventory_levels/extractions
+	mux.HandleFunc("/inventory_levels/extractions", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		writeJSON(w, http.StatusAccepted, map[string]any{"status": "accepted", "stream_id": "stream-1"})
+	})
+
+	// POST /tech_assignments?work_order_id=:id
+	mux.HandleFunc("/tech_assignments", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
+			return
+		}
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"id": 1, "work_order_number": 1, "assigned_technician_id": 7})
 	})
 
 	// GET /account

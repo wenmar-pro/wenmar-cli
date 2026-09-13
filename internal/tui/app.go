@@ -81,7 +81,7 @@ func (m AppModel) Init() tea.Cmd {
 		cmds = append(cmds, fetchAccountName(m.client))
 	}
 	if m.initialWorkOrder > 0 {
-		m.active = 0
+		// Work orders are the first tab, so the initial detail opens there.
 		if wo, ok := m.tabs[0].(*WorkOrderList); ok {
 			cmds = append(cmds, wo.OpenDetail(m.initialWorkOrder))
 		}
@@ -260,7 +260,7 @@ func (m AppModel) renderHelp() string {
 		{"q / ctrl+c", "quit"},
 	}
 	for _, r := range rows {
-		b.WriteString(fmt.Sprintf("  %-18s %s\n", r[0], r[1]))
+		fmt.Fprintf(&b, "  %-18s %s\n", r[0], r[1])
 	}
 	return b.String()
 }

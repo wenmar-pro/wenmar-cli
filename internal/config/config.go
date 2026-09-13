@@ -107,14 +107,14 @@ func SaveTo(path string, cfg *Config) error {
 		return fmt.Errorf("could not create temp file: %w", err)
 	}
 	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath) // no-op after successful rename
+	defer func() { _ = os.Remove(tmpPath) }() // no-op after successful rename
 
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("could not write config: %w", err)
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("could not sync config: %w", err)
 	}
 	if err := tmp.Close(); err != nil {

@@ -142,6 +142,8 @@ wenmar workorders decline 100 --closure-reason customer_declined
 wenmar workorders reopen 100
 wenmar workorders send-estimate 100
 wenmar workorders estimate 100      # also: wip, inspection, parts, payments
+wenmar workorders services list 100
+wenmar workorders technicians add 100 --technician-id 7
 ```
 
 ### Vehicles
@@ -177,6 +179,11 @@ wenmar customertags list
 wenmar customertags create --name "Fleet A"
 wenmar workordertags list
 wenmar workordertags create --name "Priority" --color "#ff0000"
+wenmar reports statements --status sent
+wenmar reports taxperiods
+wenmar reports create --period-start 2026-01-01 --period-end 2026-03-31
+wenmar reports update 5 --marked-remitted --remitted-date 2026-04-15
+wenmar inventory extract --extraction-id abc123 --text "2x oil filter"
 ```
 
 ### Location scoping

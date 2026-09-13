@@ -56,7 +56,7 @@ func LoginWithClientID(ctx context.Context, baseURL, clientID string) (*authpkg.
 	// 3. Build the authorization URL
 	authURL, err := buildAuthURL(baseURL, clientID, redirectURI, challenge, state)
 	if err != nil {
-		listener.Close()
+		_ = listener.Close()
 		return nil, err
 	}
 

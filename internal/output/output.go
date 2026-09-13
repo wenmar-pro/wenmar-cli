@@ -94,14 +94,21 @@ func ParseMode(spec ModeSpec) (Mode, error) {
 	}
 
 	// Auto-switch: piped stdout gets machine-readable raw JSON.
-	if !isTerminal(os.Stdout) {
+	if !IsTerminal(os.Stdout) {
 		return ModeAgent, nil
 	}
 	return ModeDefault, nil
 }
 
-func isTerminal(f *os.File) bool {
+// IsTerminal reports whether f is attached to a terminal.
+func IsTerminal(f *os.File) bool {
 	return isatty.IsTerminal(f.Fd())
+}
+
+// IsInteractive reports whether both stdin and stdout are attached to a
+// terminal, so interactive prompts are safe.
+func IsInteractive() bool {
+	return IsTerminal(os.Stdin) && IsTerminal(os.Stdout)
 }
 
 func Render(w io.Writer, data any, summary string, meta *Meta, opts Options) error {

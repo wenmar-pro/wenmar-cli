@@ -52,9 +52,6 @@ func checkTruncated(truncated bool, detail string) (string, error) {
 // checkTruncatedResponse inspects the X-Wenmar-Truncated header on an HTTP
 // response and returns a notice/error via checkTruncated.
 func checkTruncatedResponse(hr *http.Response, detail string) (string, error) {
-	truncated := false
-	if hr != nil && hr.Header.Get("X-Wenmar-Truncated") == "true" {
-		truncated = true
-	}
+	truncated := hr != nil && hr.Header.Get("X-Wenmar-Truncated") == "true"
 	return checkTruncated(truncated, detail)
 }

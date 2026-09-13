@@ -100,12 +100,21 @@ wenmar wo services add 123 --name "Replace brake pads"
 wenmar wo services line-items add 123 456 --description "Pads" --item-type part
 wenmar wo payments list 123
 wenmar wo payments add 123 --amount-cents 10000 --method credit_card
+wenmar wo technicians add 123 --technician-id 7
 wenmar wo notes add 123 --body "Customer approved estimate"
 wenmar wo activity 123
 wenmar wo appointments 123
 
 # Vehicles
 wenmar vehicles show 5
+
+# Reports
+wenmar reports statements --status sent
+wenmar reports taxperiods
+wenmar reports create --period-start 2026-01-01 --period-end 2026-03-31
+
+# Inventory
+wenmar inventory extract --extraction-id abc123 --text "2x oil filter"
 ```
 
 ## Output modes
@@ -173,8 +182,8 @@ The resource commands are generated from the enriched OpenAPI spec. The
 generator (`cmd/gencli`) reads the spec + `cmd/gen_overrides.yaml` and emits
 the committed `cmd/gen_*.go` files, which call shared runners in
 `cmd/runners.go`. A few non-derivable commands live in companion files
-(`tags.go`, `customers_extras.go`, `vehicles_extras.go`,
-`wo_extras.go`).
+(`customers_extras.go`, `vehicles_extras.go`, `wo_extras.go`,
+`wo_technicians.go`).
 
 ```bash
 make generate        # regenerate cmd/gen_*.go from the spec

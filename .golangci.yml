@@ -4,10 +4,23 @@ linters:
     - errcheck
     - govet
     - staticcheck
-    - gofmt
     - unused
+  settings:
+    errcheck:
+      # CLI output writes to stdout/stderr are not actionable; ignore them
+      # rather than polluting every print call with error handling.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Print
+        - fmt.Printf
+        - fmt.Println
   exclusions:
     rules:
       - path: _test\.go
         linters:
           - errcheck
+formatters:
+  enable:
+    - gofmt

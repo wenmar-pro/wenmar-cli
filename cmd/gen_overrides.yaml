@@ -1,13 +1,14 @@
 # gen_overrides.yaml maps OpenAPI operations to CLI command names.
 # Hand-maintained — the generator reads it to produce ergonomic command
-# names and groupings. Verified against wenmar-sdk go/v0.4.0 (method
+# names and groupings. Verified against wenmar-sdk go/v0.6.0 (method
 # signatures in wenmar/operations.gen.go).
 #
 # Exclusion taxonomy:
 #   - companions: commands whose flag/parse logic is not per-op derivable
 #     (customer splitName/email/phone parsing, vehicle pointer bodies,
-#     work-order tab truncation) — owned by cmd/customers_extras.go,
-#     cmd/vehicles_extras.go, cmd/wo_extras.go
+#     work-order tab truncation, tech assignments) — owned by
+#     cmd/customers_extras.go, cmd/vehicles_extras.go, cmd/wo_extras.go,
+#     cmd/wo_technicians.go
 #   - no CLI surface: work-order lifecycle/auth/history ops the CLI has
 #     never exposed (SDK 0.4.1 has methods; surface predates them)
 #   - not exposed: delete_customer, list_team, vehicle history
@@ -191,7 +192,7 @@ exclude:
   - create_inspection
   - create_inspection_report
   - create_inventory_level
-  - create_labor_matrice
+  - create_labor_matrix
   - create_labor_rate
   - create_lead_source
   - create_lead_sources_seed_default
@@ -201,7 +202,7 @@ exclude:
   - create_orders_purchase_orders_cancellation
   - create_orders_return_orders_refund_completion
   - create_packages_duplicate
-  - create_parts_matrice
+  - create_parts_matrix
   - create_payments_cancellation
   - create_payments_confirmation
   - create_payments_failure
@@ -212,7 +213,7 @@ exclude:
   - create_shop_fee
   - create_shop_fees_duplicate
   - create_store_credits_void
-  - create_sub_statuse
+  - create_sub_status
   - create_tire_storage_slots_check_out
   - create_user
   - create_users_disable
@@ -228,25 +229,25 @@ exclude:
   - create_work_orders_refund
   - create_work_orders_service
   - create_work_orders_services_completion
-  - create_work_orders_services_copie
+  - create_work_orders_services_copy
   - create_work_orders_services_line_item
-  - create_work_orders_services_line_items_copie
+  - create_work_orders_services_line_items_copy
   - create_work_orders_services_line_items_inventory_addition
-  - create_work_orders_services_line_items_price_refreshe
+  - create_work_orders_services_line_items_price_refresh
   - create_work_orders_services_package
-  - create_work_orders_services_time_entrie
+  - create_work_orders_services_time_entry
   - create_work_orders_void
   - delete_account
   - delete_appointment
   - delete_inspection_report
   - delete_inventory_level
-  - delete_labor_matrice
+  - delete_labor_matrix
   - delete_labor_template
   - delete_lead_source
   - delete_me_api_token
   - delete_orders_purchase_order
   - delete_orders_return_order
-  - delete_parts_matrice
+  - delete_parts_matrix
   - delete_recent_searche
   - delete_recent_searches_clear
   - delete_shop_discount
@@ -369,7 +370,7 @@ exclude:
   - update_inspection
   - update_inventory_level
   - update_inventory_levels_stock
-  - update_labor_matrice
+  - update_labor_matrix
   - update_labor_template
   - update_lead_source
   - update_location
@@ -382,11 +383,11 @@ exclude:
   - update_orders_purchase_order
   - update_orders_return_order
   - update_orders_sublet_orders_mark_payment_complete
-  - update_parts_matrice
+  - update_parts_matrix
   - update_permission_group
   - update_shop_discount
   - update_shop_fee
-  - update_sub_statuse
+  - update_sub_status
   - update_sublet_packages_deactivate
   - update_user
   - update_work_orders_courtesy_car_assignment
@@ -419,7 +420,7 @@ exclude:
   - create_account_api_token
   - create_calendar_blocked_time
   - create_cash_drawer_session
-  - create_cash_entrie
+  - create_cash_entry
   - create_counter_sales_line_item
   - create_counter_sales_payment
   - create_inspections_group
@@ -436,7 +437,7 @@ exclude:
   - create_users_permission_groups_assign
   - delete_account_api_token
   - delete_calendar_blocked_time
-  - delete_cash_entrie
+  - delete_cash_entry
   - delete_counter_sales_line_item
   - delete_inspections_group
   - delete_inspections_item
@@ -450,7 +451,7 @@ exclude:
   - list_parts
   - list_reports_cash_drawer_sessions
   - list_reports_cash_drawer_sessions_close
-  - show_cash_entrie
+  - show_cash_entry
   - show_part
   - show_reports_cash_drawer_session
   - toggle_inspection
@@ -505,6 +506,16 @@ exclude:
   - update_locations_documents
   - update_locations_lead_source_requirements
   - update_locations_reminders
+
+  # 2026-09-13 API surface — companions.
+  #   list_work_order_services is the services index already exposed by the
+  #   hand-written `wo services list` (cmd/wo_services.go). Excluding it stops
+  #   the stray "work_orders" resource group that collides with the `wo` group.
+  #   create_work_order_tech_assignment takes a query param (work_order_id) plus
+  #   a body, which the generator cannot emit; it lives in cmd/wo_technicians.go
+  #   as `wo technicians add`.
+  - list_work_order_services
+  - create_work_order_tech_assignment
 groups:
   wo:
     short: Manage work orders
@@ -530,6 +541,10 @@ groups:
     short: Manage customer tags
   workordertags:
     short: Manage work order tags
+  reports:
+    short: Manage report views and tax periods
+  inventory:
+    short: Manage inventory extractions
 
 commands:
   # account
@@ -980,6 +995,57 @@ commands:
     summary: Archive a work order tag by ID
     method: UpdateWorkOrderTagsArchive
     request_struct: UpdateWorkOrderTagsArchiveRequest
+
+  # reports — account-wide report views. The SDK exposes no *Raw variant for
+  # these lists, so they are non-paginated (paginated: false) and use runList.
+  list_reports_statements:
+    resource: reports
+    command: statements
+    summary: List account-wide statements
+    method: ListReportsStatements
+    query_param_struct: ListReportsStatementsParams
+    paginated: false
+    example: |
+      wenmar reports statements
+      wenmar reports statements --status sent
+  list_reports_tax_periods:
+    resource: reports
+    command: taxperiods
+    summary: List tax periods
+    method: ListReportsTaxPeriods
+    paginated: false
+    example: |
+      wenmar reports taxperiods
+  create_reports_tax_period:
+    resource: reports
+    command: create
+    summary: Create a tax period for remittance tracking
+    method: CreateReportsTaxPeriod
+    request_struct: CreateReportsTaxPeriodRequest
+    response_field: JSON201
+    action_summary: Tax period created.
+    example: |
+      wenmar reports create --period-start 2026-01-01 --period-end 2026-03-31
+  update_reports_tax_period:
+    resource: reports
+    command: update
+    summary: Update a tax period by ID
+    method: UpdateReportsTaxPeriod
+    request_struct: UpdateReportsTaxPeriodRequest
+    action_summary: Tax period updated.
+    example: |
+      wenmar reports update 5 --marked-remitted --remitted-date 2026-04-15
+
+  # inventory — kick off a level extraction (202 + stream_id).
+  create_inventory_level_extraction:
+    resource: inventory
+    command: extract
+    summary: Extract inventory levels from text
+    method: CreateInventoryLevelExtraction
+    request_struct: CreateInventoryLevelExtractionRequest
+    action_summary: Inventory extraction started.
+    example: |
+      wenmar inventory extract --extraction-id abc123 --text "2x oil filter"
 
 # NOTE: operations in `exclude:` must not also appear under `commands:` —
 # exclusion takes precedence and the entry would be dead.

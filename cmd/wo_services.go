@@ -295,14 +295,14 @@ func runWorkOrderServicesList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	setRequest("GET", fmt.Sprintf("/work_orders/%s/estimate", args[0]))
+	setRequest("GET", fmt.Sprintf("/work_orders/%s/services", args[0]))
 
 	workOrderID, err := parseInt(args[0])
 	if err != nil {
 		return err
 	}
 
-	resp, err := client.ShowWorkOrderEstimate(context.Background(), workOrderID)
+	resp, err := client.ListWorkOrderServices(context.Background(), workOrderID)
 	if err != nil {
 		return formatMissingLocationError(err)
 	}
@@ -555,7 +555,7 @@ func runWorkOrderServicesCopy(cmd *cobra.Command, args []string) error {
 	}
 	setRequest("POST", fmt.Sprintf("/work_orders/%d/services/%d/copies", workOrderID, serviceID))
 
-	resp, err := client.CreateWorkOrdersServicesCopie(context.Background(), workOrderID, serviceID, map[string]any{})
+	resp, err := client.CreateWorkOrdersServicesCopy(context.Background(), workOrderID, serviceID, map[string]any{})
 	if err != nil {
 		return formatMissingLocationError(err)
 	}
@@ -696,7 +696,7 @@ func runWorkOrderServicesAddTimeEntry(cmd *cobra.Command, args []string) error {
 	}
 	setRequest("POST", fmt.Sprintf("/work_orders/%d/services/%d/time_entries", workOrderID, serviceID))
 
-	resp, err := client.CreateWorkOrdersServicesTimeEntrie(context.Background(), workOrderID, serviceID, map[string]any{})
+	resp, err := client.CreateWorkOrdersServicesTimeEntry(context.Background(), workOrderID, serviceID, map[string]any{})
 	if err != nil {
 		return formatMissingLocationError(err)
 	}
@@ -991,7 +991,7 @@ func runWorkOrderServicesLineItemsCopy(cmd *cobra.Command, args []string) error 
 	}
 	setRequest("POST", fmt.Sprintf("/work_orders/%d/services/%d/line_items/%d/copies", workOrderID, serviceID, lineItemID))
 
-	resp, err := client.CreateWorkOrdersServicesLineItemsCopie(context.Background(), workOrderID, serviceID, lineItemID, map[string]any{})
+	resp, err := client.CreateWorkOrdersServicesLineItemsCopy(context.Background(), workOrderID, serviceID, lineItemID, map[string]any{})
 	if err != nil {
 		return formatMissingLocationError(err)
 	}
@@ -1055,7 +1055,7 @@ func runWorkOrderServicesLineItemsPriceRefresh(cmd *cobra.Command, args []string
 	}
 	setRequest("POST", fmt.Sprintf("/work_orders/%d/services/%d/line_items/%d/price_refresh", workOrderID, serviceID, lineItemID))
 
-	resp, err := client.CreateWorkOrdersServicesLineItemsPriceRefreshe(context.Background(), workOrderID, serviceID, lineItemID, map[string]any{})
+	resp, err := client.CreateWorkOrdersServicesLineItemsPriceRefresh(context.Background(), workOrderID, serviceID, lineItemID, map[string]any{})
 	if err != nil {
 		return formatMissingLocationError(err)
 	}

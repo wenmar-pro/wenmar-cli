@@ -75,7 +75,7 @@ func formatMissingLocationError(err error) error {
 	}
 	msg := err.Error()
 	if strings.Contains(msg, "X-Wenmar-Location header is required for this token") {
-		return fmt.Errorf("%w\n\nNo default location configured for this API token.\nRun `wenmar location use` or set WENMAR_LOCATION_ID.", err)
+		return fmt.Errorf("%w\n\nNo default location configured for this API token\nRun `wenmar location use` or set WENMAR_LOCATION_ID", err)
 	}
 	return err
 }

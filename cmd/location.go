@@ -2,12 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
+	"github.com/wenmar-pro/wenmar-cli/internal/output"
 )
 
 var locationUseCmd = &cobra.Command{
@@ -27,7 +26,7 @@ var locationUseCmd = &cobra.Command{
 			return err
 		}
 
-		selectedID, selectedName, err := auth.ResolveAndSaveLocationID(cmd.Context(), client, configPath, locationFlag, !isTerminal(), cmd.OutOrStdout(), cmd.InOrStdin())
+		selectedID, selectedName, err := auth.ResolveAndSaveLocationID(cmd.Context(), client, configPath, locationFlag, !output.IsInteractive(), cmd.OutOrStdout(), cmd.InOrStdin())
 		if err != nil {
 			return err
 		}
@@ -45,10 +44,4 @@ var locationCmd = &cobra.Command{
 func init() {
 	locationCmd.AddCommand(locationUseCmd)
 	rootCmd.AddCommand(locationCmd)
-}
-
-// isTerminal reports whether both stdin and stdout are attached to a terminal.
-// Used to decide whether interactive prompts are safe.
-func isTerminal() bool {
-	return isatty.IsTerminal(os.Stdin.Fd()) && isatty.IsTerminal(os.Stdout.Fd())
 }

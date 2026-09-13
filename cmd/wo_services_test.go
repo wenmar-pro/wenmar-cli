@@ -14,8 +14,8 @@ func TestWoServicesList_JSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(out, `"work_order_services_count"`) {
-		t.Errorf("expected work order estimate in output, got: %s", out)
+	if !strings.Contains(out, `"name"`) {
+		t.Errorf("expected service in output, got: %s", out)
 	}
 }
 

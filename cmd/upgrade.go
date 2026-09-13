@@ -94,7 +94,7 @@ func fetchLatestVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	loc := resp.Header.Get("Location")
 	if loc == "" {
 		return "", fmt.Errorf("no Location header in redirect")
@@ -165,7 +165,7 @@ func runInstallerUpgrade(cmd *cobra.Command, target, binPath string) error {
 	if !upgradeForce {
 		fmt.Fprintf(cmd.OutOrStdout(), "Upgrade wenmar to v%s? (y/N): ", target)
 		var answer string
-		fmt.Fscanln(cmd.InOrStdin(), &answer)
+		_, _ = fmt.Fscanln(cmd.InOrStdin(), &answer)
 		if strings.ToLower(strings.TrimSpace(answer)) != "y" {
 			fmt.Fprintln(cmd.OutOrStdout(), "Upgrade cancelled.")
 			return nil
@@ -185,7 +185,7 @@ func runInstallerUpgrade(cmd *cobra.Command, target, binPath string) error {
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
 	}
@@ -194,11 +194,14 @@ func runInstallerUpgrade(cmd *cobra.Command, target, binPath string) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
+	defer func() { _ = os.Remove(tmp.Name()) }()
 	if _, err := io.Copy(tmp, resp.Body); err != nil {
+		_ = tmp.Close()
 		return err
 	}
-	tmp.Close()
+	if err := tmp.Close(); err != nil {
+		return err
+	}
 
 	// Backup the current binary, then swap.
 	backup := binPath + ".bak"

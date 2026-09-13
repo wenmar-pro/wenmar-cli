@@ -49,7 +49,7 @@ func (c *Client) Schema(ctx context.Context) (*SchemaResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read schema response: %w", err)
@@ -83,7 +83,7 @@ func (c *Client) Create(ctx context.Context, r CreateRequest) (*CreateResponse, 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read export response: %w", err)
@@ -127,7 +127,7 @@ func (c *Client) Download(ctx context.Context, downloadURL string, maxWait time.
 			return nil, "", "", err
 		}
 		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			return nil, "", "", fmt.Errorf("read download response: %w", err)
 		}

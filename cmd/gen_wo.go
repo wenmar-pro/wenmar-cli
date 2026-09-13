@@ -23,7 +23,7 @@ var woVehicleArrivedAt string
 var woVehicleId int
 var woWaitingForCustomer bool
 var woWorkOrderId int
-var woWorkOrderTagId int
+var woWorkOrderTagId string
 var woCloseCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Example: "wenmar wo close 100\n",
@@ -297,7 +297,7 @@ func runWoUpdate(cmd *cobra.Command, args []string) error {
 			SubStatusTypeId           *int    `json:"sub_status_type_id,omitempty"`
 			VehicleArrivedAt          *string `json:"vehicle_arrived_at,omitempty"`
 			WaitingForCustomer        *bool   `json:"waiting_for_customer,omitempty"`
-			WorkOrderTagId            *int    `json:"work_order_tag_id,omitempty"`
+			WorkOrderTagId            *string `json:"work_order_tag_id,omitempty"`
 		}{
 			IntakeMethod:              strPtr(woIntakeMethod),
 			PayerCustomerId:           intPtr(woPayerCustomerId),
@@ -306,7 +306,7 @@ func runWoUpdate(cmd *cobra.Command, args []string) error {
 			SubStatusTypeId:           intPtr(woSubStatusTypeId),
 			VehicleArrivedAt:          strPtr(woVehicleArrivedAt),
 			WaitingForCustomer:        boolPtr(woWaitingForCustomer),
-			WorkOrderTagId:            intPtr(woWorkOrderTagId),
+			WorkOrderTagId:            strPtr(woWorkOrderTagId),
 		}}
 		return req, nil
 	}, func(ctx context.Context, client *wenmar.Client, id int, body any) (any, error) {
@@ -374,7 +374,7 @@ func init() {
 	woUpdateCmd.Flags().IntVar(&woSubStatusTypeId, "sub-status-type-id", 0, "Sub Status Type ID")
 	woUpdateCmd.Flags().StringVar(&woVehicleArrivedAt, "vehicle-arrived-at", "", "Vehicle Arrived At")
 	woUpdateCmd.Flags().BoolVar(&woWaitingForCustomer, "waiting-for-customer", false, "Waiting For Customer")
-	woUpdateCmd.Flags().IntVar(&woWorkOrderTagId, "work-order-tag-id", 0, "Work Order Tag ID")
+	woUpdateCmd.Flags().StringVar(&woWorkOrderTagId, "work-order-tag-id", "", "Work Order Tag ID")
 	woVoidCmd.Flags().StringVar(&woClosureReason, "closure-reason", "", "Closure Reason (required)")
 	woVoidCmd.MarkFlagRequired("closure-reason")
 	woCmd.AddCommand(woCloseCmd, woCompleteCmd, woCreateCmd, woDeclineCmd, woDeclineAllCmd, woListCmd, woPostToAccountCmd, woReopenCmd, woSendEstimateCmd, woSendInvoiceSummaryCmd, woSendReminderCmd, woStartCmd, woUpdateCmd, woVoidCmd)

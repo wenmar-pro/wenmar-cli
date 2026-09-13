@@ -579,6 +579,29 @@
       ]
     },
     {
+      "path": "wenmar inventory",
+      "use": "inventory",
+      "short": "Manage inventory extractions",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar inventory extract",
+          "use": "extract",
+          "short": "Extract inventory levels from text",
+          "flags": [
+            {
+              "name": "extraction-id",
+              "required": true
+            },
+            {
+              "name": "text",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "path": "wenmar location",
       "use": "location",
       "short": "Manage CLI location defaults",
@@ -603,6 +626,61 @@
           "use": "show \u003cid\u003e",
           "short": "Show a location by ID",
           "flags": null
+        }
+      ]
+    },
+    {
+      "path": "wenmar reports",
+      "use": "reports",
+      "short": "Manage report views and tax periods",
+      "flags": null,
+      "children": [
+        {
+          "path": "wenmar reports create",
+          "use": "create",
+          "short": "Create a tax period for remittance tracking",
+          "flags": [
+            {
+              "name": "period-end",
+              "required": true
+            },
+            {
+              "name": "period-start",
+              "required": true
+            }
+          ]
+        },
+        {
+          "path": "wenmar reports statements",
+          "use": "statements",
+          "short": "List account-wide statements",
+          "flags": [
+            {
+              "name": "status"
+            }
+          ]
+        },
+        {
+          "path": "wenmar reports taxperiods",
+          "use": "taxperiods",
+          "short": "List tax periods",
+          "flags": null
+        },
+        {
+          "path": "wenmar reports update \u003cid\u003e",
+          "use": "update \u003cid\u003e",
+          "short": "Update a tax period by ID",
+          "flags": [
+            {
+              "name": "marked-remitted",
+              "required": true,
+              "default": "false"
+            },
+            {
+              "name": "remitted-date",
+              "required": true
+            }
+          ]
         }
       ]
     },
@@ -764,10 +842,6 @@
         },
         {
           "name": "location"
-        },
-        {
-          "name": "remote",
-          "default": "false"
         },
         {
           "name": "work-order",
@@ -1605,6 +1679,26 @@
           "flags": null
         },
         {
+          "path": "wenmar wo technicians \u003cwork-order-id\u003e",
+          "use": "technicians \u003cwork-order-id\u003e",
+          "short": "Manage technician assignments on a work order",
+          "flags": null,
+          "children": [
+            {
+              "path": "wenmar wo technicians \u003cwork-order-id\u003e add \u003cwork-order-id\u003e",
+              "use": "add \u003cwork-order-id\u003e",
+              "short": "Assign a technician to the work order",
+              "flags": [
+                {
+                  "name": "technician-id",
+                  "required": true,
+                  "default": "0"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "path": "wenmar wo update \u003cid\u003e",
           "use": "update \u003cid\u003e",
           "short": "Update a work order by ID",
@@ -1636,8 +1730,7 @@
               "default": "false"
             },
             {
-              "name": "work-order-tag-id",
-              "default": "0"
+              "name": "work-order-tag-id"
             }
           ]
         },

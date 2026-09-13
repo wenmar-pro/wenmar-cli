@@ -154,7 +154,7 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 	}
 
 	fmt.Fprintln(out, "\n  Next steps:")
-	fmt.Fprintln(out, "    wenmar customers list --md")
+	fmt.Fprintln(out, "    wenmar customers list")
 	fmt.Fprintln(out, "    wenmar --help")
 	fmt.Fprintln(out, "")
 

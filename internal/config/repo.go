@@ -95,7 +95,9 @@ func TrustRepo(repoDir string) error {
 		sb.WriteString(dir + "\n")
 	}
 
-	os.MkdirAll(filepath.Dir(trustPath), 0755)
+	if err := os.MkdirAll(filepath.Dir(trustPath), 0755); err != nil {
+		return err
+	}
 	return os.WriteFile(trustPath, []byte(sb.String()), 0600)
 }
 

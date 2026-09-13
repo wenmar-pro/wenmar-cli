@@ -103,7 +103,6 @@ type ListModel[T any] struct {
 	loading    bool
 	err        error
 	refreshed  time.Time
-	filter     string
 }
 
 func (m *ListModel[T]) moveDown() {

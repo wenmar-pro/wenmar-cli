@@ -153,11 +153,12 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	// Human-readable
 	for _, r := range results {
 		icon := "✓"
-		if r.Status == "fail" {
+		switch r.Status {
+		case "fail":
 			icon = "✗"
-		} else if r.Status == "warn" {
+		case "warn":
 			icon = "⚠"
-		} else if r.Status == "skip" {
+		case "skip":
 			icon = "—"
 		}
 		fmt.Fprintf(cmd.OutOrStdout(), "  %s  %-14s %s\n", icon, r.Check, r.Detail)

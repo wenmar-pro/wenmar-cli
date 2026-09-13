@@ -16,7 +16,7 @@ spec/openapi.enriched.yaml + cmd/gen_overrides.yaml
         → shared runners in cmd/runners.go
 ```
 
-Three companion files hold commands whose flag/parse logic is not
+Four companion files hold commands whose flag/parse logic is not
 per-operation derivable:
 
 - `cmd/customers_extras.go` — customer create/update (splitName, label|value
@@ -25,6 +25,8 @@ per-operation derivable:
   bodies with `omitempty`)
 - `cmd/wo_extras.go` — work-order show + 5 tabs (truncation check,
   tab-fetch switch)
+- `cmd/wo_technicians.go` — `wo technicians add`, whose op takes a query
+  param (`work_order_id`) plus a body — a shape the generator cannot emit.
 
 ## Golden rule
 
@@ -60,8 +62,9 @@ make generate && make golden-update
 
 Ops in `exclude:` fall into three buckets:
 
-- **companion** — non-derivable per-op logic (tags type-branching, customer
-  email/phone parsing, work-order tab truncation, vehicle pointer bodies).
+- **companion** — non-derivable per-op logic (customer email/phone parsing,
+  work-order tab truncation, vehicle pointer bodies, tech assignments whose
+  op mixes a query param with a body).
 - **no CLI surface** — work-order lifecycle/auth/history ops the CLI has
   never exposed (e.g. `create_work_order_authorization`, whose
   `ServiceDecisions` has numeric-key fields unrepresentable as flags).

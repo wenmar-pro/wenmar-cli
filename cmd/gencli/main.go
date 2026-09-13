@@ -192,7 +192,6 @@ type FlagOverride struct {
 	Required *bool  `yaml:"required"`
 	Suppress bool   `yaml:"suppress"`
 	Default  string `yaml:"default"`
-	FlagType string `yaml:"flag_type"` // "intslice" for array params bound via IntSliceVar
 }
 
 func loadOverrides(path string) (*Overrides, error) {

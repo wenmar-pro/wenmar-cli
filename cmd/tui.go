@@ -15,7 +15,6 @@ var (
 	tuiLocation  string
 	tuiInterval  time.Duration
 	tuiWorkOrder int
-	tuiRemote    bool
 )
 
 var tuiCmd = &cobra.Command{
@@ -29,7 +28,6 @@ func init() {
 	tuiCmd.Flags().StringVar(&tuiLocation, "location", "", "Location ID to scope requests")
 	tuiCmd.Flags().DurationVar(&tuiInterval, "interval", 10*time.Second, "Polling interval")
 	tuiCmd.Flags().IntVar(&tuiWorkOrder, "work-order", 0, "Jump to a work order detail view")
-	tuiCmd.Flags().BoolVar(&tuiRemote, "remote", false, "Desktop integration view spec")
 	rootCmd.AddCommand(tuiCmd)
 }
 

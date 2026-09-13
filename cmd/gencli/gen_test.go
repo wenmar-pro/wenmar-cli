@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -244,5 +245,210 @@ func TestEmitGroup_CustomersListWithFiltersPaginated(t *testing.T) {
 		if !strings.Contains(code, want) {
 			t.Errorf("emitted code missing %q:\n%s", want, code)
 		}
+	}
+}
+
+func TestExtractQueryFields_BracketParamNames(t *testing.T) {
+	op := Operation{
+		Parameters: []Parameter{
+			{Name: "filter[status]", In: "query", Required: false, Schema: Schema{Type: "string"}},
+			{Name: "filters[q]", In: "query", Required: false, Schema: Schema{Type: "string"}},
+			{Name: "filters[has_open_work_order]", In: "query", Required: false, Schema: Schema{Type: "boolean"}},
+		},
+	}
+	fields := extractQueryFields(op, "ListReportsStatementsParams", nil)
+	for _, f := range fields {
+		if strings.ContainsAny(f.GoName, "[]") {
+			t.Errorf("GoName %q contains brackets — invalid Go identifier", f.GoName)
+		}
+		if strings.ContainsAny(f.FlagName, "[]") {
+			t.Errorf("FlagName %q contains brackets", f.FlagName)
+		}
+	}
+	got := map[string]BodyField{}
+	for _, f := range fields {
+		got[f.JSONName] = f
+	}
+	// JSONName must keep the raw spec name so the SDK struct binding works.
+	if got["filter[status]"].GoName != "FilterStatus" {
+		t.Errorf("filter[status] GoName = %q, want %q", got["filter[status]"].GoName, "FilterStatus")
+	}
+	if got["filter[status]"].FlagName != "status" {
+		t.Errorf("filter[status] FlagName = %q, want %q", got["filter[status]"].FlagName, "status")
+	}
+	if got["filters[q]"].GoName != "FiltersQ" {
+		t.Errorf("filters[q] GoName = %q, want %q", got["filters[q]"].GoName, "FiltersQ")
+	}
+	if got["filters[q]"].FlagName != "q" {
+		t.Errorf("filters[q] FlagName = %q, want %q", got["filters[q]"].FlagName, "q")
+	}
+	if got["filters[has_open_work_order]"].GoName != "FiltersHasOpenWorkOrder" {
+		t.Errorf("filters[has_open_work_order] GoName = %q, want %q", got["filters[has_open_work_order]"].GoName, "FiltersHasOpenWorkOrder")
+	}
+	if got["filters[has_open_work_order]"].FlagName != "has-open-work-order" {
+		t.Errorf("filters[has_open_work_order] FlagName = %q, want %q", got["filters[has_open_work_order]"].FlagName, "has-open-work-order")
+	}
+}
+
+func TestEmitGroup_BracketQueryParamsEmitValidIdentifiers(t *testing.T) {
+	cmd := GenCommand{
+		OperationID:      "list_reports_statements",
+		Resource:         "reports",
+		Command:          "list",
+		Method:           "get",
+		Path:             "/reports/statements",
+		IsPaginated:      true,
+		QueryParamStruct: "ListReportsStatementsParams",
+		SDKMethod:        "ListReportsStatements",
+		QueryFields: []BodyField{
+			{JSONName: "filter[status]", GoName: "FilterStatus", FlagName: "status", Type: "string", HelpText: "Filter status"},
+		},
+	}
+	group := CommandGroup{Resource: "reports", Commands: []GenCommand{cmd}}
+	code, err := emitGroup(group, nil, &Overrides{}, "")
+	if err != nil {
+		t.Fatalf("emitGroup: %v", err)
+	}
+	for _, want := range []string{
+		"reportsFilterStatus",
+		"FilterStatus:",
+		`"status"`,
+	} {
+		if !strings.Contains(code, want) {
+			t.Errorf("emitted code missing %q:\n%s", want, code)
+		}
+	}
+	for _, bad := range []string{"Filter[status]", "reportsFilter[status]"} {
+		if strings.Contains(code, bad) {
+			t.Errorf("emitted code contains invalid identifier %q:\n%s", bad, code)
+		}
+	}
+}
+
+func TestBuildCommand_ResponseField202(t *testing.T) {
+	spec := &Spec{}
+	op := Operation{
+		OperationID: "create_inventory_level_extraction",
+		Responses:   map[string]Response{"202": {}, "403": {}, "422": {}},
+		RequestBody: &RequestBody{Content: map[string]Media{
+			"application/json": {Schema: Schema{Type: "object"}},
+		}},
+		XWenmarRequestSchema: "CreateInventoryLevelExtractionRequest",
+	}
+	cmd := buildCommand(spec, op, "post", "/inventory_levels/extractions", &Overrides{Commands: map[string]CommandOverride{}})
+	if cmd == nil {
+		t.Fatal("buildCommand returned nil")
+	}
+	if cmd.ResponseField != "JSON202" {
+		t.Errorf("ResponseField = %q, want %q", cmd.ResponseField, "JSON202")
+	}
+}
+
+func TestBuildCommand_ResponseField201WinsOver202(t *testing.T) {
+	spec := &Spec{}
+	op := Operation{
+		OperationID: "create_thing",
+		Responses:   map[string]Response{"201": {}, "202": {}},
+		RequestBody: &RequestBody{Content: map[string]Media{
+			"application/json": {Schema: Schema{Type: "object"}},
+		}},
+	}
+	cmd := buildCommand(spec, op, "post", "/things", &Overrides{Commands: map[string]CommandOverride{}})
+	if cmd == nil {
+		t.Fatal("buildCommand returned nil")
+	}
+	if cmd.ResponseField != "JSON201" {
+		t.Errorf("ResponseField = %q, want %q (201 should win over 202)", cmd.ResponseField, "JSON201")
+	}
+}
+
+func TestEmitGroup_UnclassifiableActionFailsAtGeneration(t *testing.T) {
+	cmd := GenCommand{
+		OperationID: "some_unclassifiable_action",
+		Resource:    "widgets",
+		Command:     "act",
+		Method:      "post",
+		Path:        "/widgets/{id}/bogus",
+		HasIDParam:  true,
+	}
+	group := CommandGroup{Resource: "widgets", Commands: []GenCommand{cmd}}
+	_, err := emitGroup(group, nil, &Overrides{}, "")
+	if err == nil {
+		t.Fatal("expected emitGroup to fail on an unclassifiable action, got nil")
+	}
+	if !strings.Contains(err.Error(), "some_unclassifiable_action") {
+		t.Errorf("error should name the operationID, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "commands:") {
+		t.Errorf("error should mention a commands: override, got: %v", err)
+	}
+}
+
+func TestGroupOperations_DuplicateVarNameWarns(t *testing.T) {
+	spec := &Spec{
+		Paths: map[string]PathItem{
+			"/things/a": {
+				"get": {
+					OperationID: "list_a_things",
+					Summary:     "list a",
+					Responses:   map[string]Response{},
+					Parameters:  []Parameter{},
+				},
+			},
+			"/things/b": {
+				"get": {
+					OperationID: "list_b_things",
+					Summary:     "list b",
+					Responses:   map[string]Response{},
+					Parameters:  []Parameter{},
+				},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	old := warnStderr
+	warnStderr = &buf
+	defer func() { warnStderr = old }()
+
+	_ = groupOperations(spec, &Overrides{Commands: map[string]CommandOverride{}})
+	msg := buf.String()
+	if !strings.Contains(msg, "list_a_things") {
+		t.Errorf("warning should name the first operationID, got: %q", msg)
+	}
+	if !strings.Contains(msg, "list_b_things") {
+		t.Errorf("warning should name the dropped operationID, got: %q", msg)
+	}
+	if !strings.Contains(msg, "thingsListCmd") {
+		t.Errorf("warning should name the colliding var name, got: %q", msg)
+	}
+}
+
+func TestEmitCreateHandler_ActionSummaryOverride(t *testing.T) {
+	cmd := GenCommand{
+		OperationID:   "create_reports_tax_period",
+		Resource:      "reports",
+		Command:       "create",
+		Method:        "post",
+		Path:          "/reports/tax_periods",
+		RequestStruct: "CreateReportsTaxPeriodRequest",
+		SDKMethod:     "CreateReportsTaxPeriod",
+		ResponseField: "JSON201",
+		ActionSummary: "Tax period created.",
+		WrapperKey:    "tax_period",
+		RequestBody:   &RequestBody{Content: map[string]Media{"application/json": {Schema: Schema{Type: "object"}}}},
+		BodyFields: []BodyField{
+			{JSONName: "period_start", GoName: "PeriodStart", FlagName: "period-start", Type: "string", Required: true, HelpText: "Period Start (required)"},
+		},
+	}
+	group := CommandGroup{Resource: "reports", Commands: []GenCommand{cmd}}
+	code, err := emitGroup(group, nil, &Overrides{}, "")
+	if err != nil {
+		t.Fatalf("emitGroup: %v", err)
+	}
+	if !strings.Contains(code, `"Tax period created."`) {
+		t.Errorf("action_summary override not used for create handler:\n%s", code)
+	}
+	if strings.Contains(code, `"Report created."`) {
+		t.Errorf("derived create summary emitted despite action_summary override:\n%s", code)
 	}
 }

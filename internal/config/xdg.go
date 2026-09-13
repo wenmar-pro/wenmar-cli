@@ -69,14 +69,14 @@ func migrateOldConfig(oldPath string) (bool, error) {
 		return false, fmt.Errorf("could not create temp file: %w", err)
 	}
 	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath)
+	defer func() { _ = os.Remove(tmpPath) }()
 
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return false, fmt.Errorf("could not write migrated config: %w", err)
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return false, fmt.Errorf("could not sync migrated config: %w", err)
 	}
 	if err := tmp.Close(); err != nil {

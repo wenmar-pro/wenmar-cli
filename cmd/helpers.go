@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"strconv"
 
 	"github.com/wenmar-pro/wenmar-cli/internal/errors"
 )
@@ -49,16 +48,3 @@ func boolPtr(b bool) *bool { return &b }
 func intPtr(i int) *int { return &i }
 
 func float32Ptr(f float32) *float32 { return &f }
-
-// intSliceToStrPtr converts a []int flag var to a *[]string for SDK params
-// that take tag/ID lists as strings. Returns nil when empty.
-func intSliceToStrPtr(ids []int) *[]string {
-	if len(ids) == 0 {
-		return nil
-	}
-	out := make([]string, len(ids))
-	for i, id := range ids {
-		out[i] = strconv.Itoa(id)
-	}
-	return &out
-}
