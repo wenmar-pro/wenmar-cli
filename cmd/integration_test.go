@@ -231,10 +231,10 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		switch r.Method {
 		case http.MethodGet:
 			writeJSON(w, http.StatusOK, []map[string]any{
-				{"id": 1, "work_order_number": 1, "status": "in_progress"},
+				{"id": 1, "work_order_number": 1, "stage": "in_progress"},
 			})
 		case http.MethodPost:
-			writeJSON(w, http.StatusCreated, map[string]any{"id": 10, "work_order_number": 10, "status": "pending"})
+			writeJSON(w, http.StatusCreated, map[string]any{"id": 10, "work_order_number": 10, "stage": "pending"})
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -370,7 +370,7 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 				return
 			}
 			woID, _ := strconv.Atoi(id)
-			writeJSON(w, http.StatusOK, map[string]any{"id": woID, "work_order_number": 1, "status": "voided"})
+			writeJSON(w, http.StatusOK, map[string]any{"id": woID, "work_order_number": 1, "stage": "voided"})
 			return
 		}
 
@@ -382,9 +382,9 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		}
 		switch r.Method {
 		case http.MethodGet:
-			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "work_order_number": 1, "status": "in_progress"})
+			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "work_order_number": 1, "stage": "in_progress"})
 		case http.MethodPatch:
-			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "work_order_number": 1, "status": "completed"})
+			writeJSON(w, http.StatusOK, map[string]any{"id": 1, "work_order_number": 1, "stage": "completed"})
 		case http.MethodDelete:
 			w.WriteHeader(http.StatusNoContent)
 		default:
@@ -401,7 +401,7 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		rest := strings.TrimPrefix(r.URL.Path, "/reports/")
 		switch {
 		case rest == "statements":
-			writeJSON(w, http.StatusOK, []map[string]any{{"id": 1, "statement_number": "S-1", "status": "sent"}})
+			writeJSON(w, http.StatusOK, []map[string]any{{"id": 1, "statement_number": "S-1", "billing_status": "sent"}})
 		case rest == "tax_periods" && r.Method == http.MethodGet:
 			writeJSON(w, http.StatusOK, []map[string]any{{"id": 5, "period_start": "2026-01-01", "period_end": "2026-03-31"}})
 		case rest == "tax_periods" && r.Method == http.MethodPost:
@@ -858,7 +858,7 @@ func TestWorkOrdersVoid_JSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(out, `"status": "voided"`) {
+	if !strings.Contains(out, `"stage": "voided"`) {
 		t.Errorf("expected voided status in output, got: %s", out)
 	}
 }

@@ -656,7 +656,7 @@
           "short": "List account-wide statements",
           "flags": [
             {
-              "name": "status"
+              "name": "billing-status"
             }
           ]
         },

@@ -8,7 +8,7 @@ import (
 func TestReportsStatements_JSON(t *testing.T) {
 	srv := startFakeAPI(t, "secret-token")
 	out, err := execute(
-		"reports", "statements", "--status", "sent",
+		"reports", "statements", "--billing-status", "sent",
 		"--json", "--base-url", srv.URL, "--token", "secret-token",
 	)
 	if err != nil {

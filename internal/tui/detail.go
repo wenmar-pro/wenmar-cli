@@ -66,7 +66,7 @@ func (m *DetailModel) View() string {
 	wo := m.wo
 	s := TitleStyle.Render(fmt.Sprintf(" Work Order #%d ", wo.WorkOrderNumber)) + "\n\n"
 
-	s += DetailLabelStyle.Render("Status: ") + statusColored(wo.Status) + "\n"
+	s += DetailLabelStyle.Render("Status: ") + statusColored(wo.Stage) + "\n"
 	s += DetailLabelStyle.Render("Intake: ") + DetailValueStyle.Render(wo.IntakeMethod) + "\n\n"
 
 	s += DetailLabelStyle.Render("Customer\n")

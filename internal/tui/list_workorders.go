@@ -104,7 +104,7 @@ var workOrderHeaders = []string{
 }
 
 func (m *WorkOrderList) workOrderRow(wo wenmar.WorkOrder) []string {
-	status := fmt.Sprintf("%-12s", wo.Status)
+	status := fmt.Sprintf("%-12s", wo.Stage)
 	updated := wo.UpdatedAt
 	if len(updated) >= 8 {
 		updated = updated[len(updated)-8:]

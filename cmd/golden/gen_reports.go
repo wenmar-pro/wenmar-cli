@@ -9,7 +9,7 @@ import (
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
-var reportsFilterStatus string
+var reportsFilterBillingStatus string
 var reportsMarkedRemitted bool
 var reportsPeriodEnd string
 var reportsPeriodStart string
@@ -49,7 +49,7 @@ var reportsStatementsCmd = &cobra.Command{
 
 func runReportsStatements(cmd *cobra.Command, args []string) error {
 	return runList(cmd, "reports", "/reports/statements", func(ctx context.Context, client *wenmar.Client) (any, error) {
-		resp, err := client.ListReportsStatements(ctx, &wenmar.ListReportsStatementsParams{FilterStatus: strPtr(reportsFilterStatus)})
+		resp, err := client.ListReportsStatements(ctx, &wenmar.ListReportsStatementsParams{FilterBillingStatus: strPtr(reportsFilterBillingStatus)})
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func init() {
 	reportsCreateCmd.MarkFlagRequired("period-end")
 	reportsCreateCmd.Flags().StringVar(&reportsPeriodStart, "period-start", "", "Period Start (required)")
 	reportsCreateCmd.MarkFlagRequired("period-start")
-	reportsStatementsCmd.Flags().StringVar(&reportsFilterStatus, "status", "", "Status")
+	reportsStatementsCmd.Flags().StringVar(&reportsFilterBillingStatus, "billing-status", "", "Billing Status")
 	reportsUpdateCmd.Flags().BoolVar(&reportsMarkedRemitted, "marked-remitted", false, "Marked Remitted (required)")
 	reportsUpdateCmd.MarkFlagRequired("marked-remitted")
 	reportsUpdateCmd.Flags().StringVar(&reportsRemittedDate, "remitted-date", "", "Remitted Date (required)")

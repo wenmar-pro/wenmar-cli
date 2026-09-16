@@ -109,7 +109,7 @@ wenmar wo appointments 123
 wenmar vehicles show 5
 
 # Reports
-wenmar reports statements --status sent
+wenmar reports statements --billing-status sent
 wenmar reports taxperiods
 wenmar reports create --period-start 2026-01-01 --period-end 2026-03-31
 

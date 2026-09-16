@@ -9,7 +9,7 @@ import (
 func TestWatch_ExitOnFirst(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, []map[string]any{
-			{"id": 1, "status": "open"},
+			{"id": 1, "stage": "open"},
 		})
 	}))
 	defer srv.Close()

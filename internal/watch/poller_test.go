@@ -35,13 +35,13 @@ func TestPoller_EmitsNewItems(t *testing.T) {
 		if n == 1 {
 			// First poll: one work order
 			json.NewEncoder(w).Encode([]map[string]any{
-				{"id": float64(1), "status": "open"},
+				{"id": float64(1), "stage": "open"},
 			})
 		} else {
 			// Second poll: two work orders (one new, one changed)
 			json.NewEncoder(w).Encode([]map[string]any{
-				{"id": float64(1), "status": "in_progress"}, // changed
-				{"id": float64(2), "status": "open"},        // new
+				{"id": float64(1), "stage": "in_progress"}, // changed
+				{"id": float64(2), "stage": "open"},        // new
 			})
 		}
 	}))
@@ -162,7 +162,7 @@ func TestPoller_ExitOnFirst(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]map[string]any{
-			{"id": float64(1), "status": "open"},
+			{"id": float64(1), "stage": "open"},
 		})
 	}))
 	defer srv.Close()

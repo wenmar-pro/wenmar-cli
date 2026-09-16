@@ -179,7 +179,7 @@ wenmar customertags list
 wenmar customertags create --name "Fleet A"
 wenmar workordertags list
 wenmar workordertags create --name "Priority" --color "#ff0000"
-wenmar reports statements --status sent
+wenmar reports statements --billing-status sent
 wenmar reports taxperiods
 wenmar reports create --period-start 2026-01-01 --period-end 2026-03-31
 wenmar reports update 5 --marked-remitted --remitted-date 2026-04-15
