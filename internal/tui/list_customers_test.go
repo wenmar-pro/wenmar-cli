@@ -138,3 +138,23 @@ func TestCustomerList_FetchWithHasBalanceSendsBoolParam(t *testing.T) {
 		t.Fatalf("expected has_balance param 'true', got %q", capturedHasBalance)
 	}
 }
+
+func TestCustomerList_FetchErrorWithLocationSurfaces(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"boom"}`))
+	}))
+	defer srv.Close()
+
+	client := newTestClient(t, srv.URL, "test")
+	params := wenmar.ListCustomersParams{}
+	msg := fetchCustomersWithParams(client, "42", params)()
+
+	res, ok := msg.(customerListResultMsg)
+	if !ok {
+		t.Fatalf("expected customerListResultMsg, got %T", msg)
+	}
+	if res.err == nil {
+		t.Fatal("expected error to surface from location-scoped list, got nil (err was shadowed)")
+	}
+}

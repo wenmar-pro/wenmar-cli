@@ -49,3 +49,22 @@ func TestDetailModel_FetchesWorkOrder(t *testing.T) {
 		t.Errorf("expected customer 'Jane Doe', got %q", res.wo.Customer.FullName)
 	}
 }
+
+func TestWorkOrderDetail_FetchErrorWithLocationSurfaces(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"boom"}`))
+	}))
+	defer srv.Close()
+
+	client := newTestClient(t, srv.URL, "test")
+	msg := fetchWorkOrderDetail(client, "42", 1)()
+
+	res, ok := msg.(detailResultMsg)
+	if !ok {
+		t.Fatalf("expected detailResultMsg, got %T", msg)
+	}
+	if res.err == nil {
+		t.Fatal("expected error to surface from location-scoped detail, got nil (err was shadowed)")
+	}
+}

@@ -152,8 +152,9 @@ func fetchVehicleDetail(client *wenmar.Client, locationID string, id int) tea.Cm
 		ctx := context.Background()
 		var resp *wenmar.ShowVehicleResponse
 		var err error
+		var lc *wenmar.Client
 		if locationID != "" {
-			lc, err := client.ForLocation(locationID)
+			lc, err = client.ForLocation(locationID)
 			if err != nil {
 				return vehicleDetailResultMsg{err: err}
 			}

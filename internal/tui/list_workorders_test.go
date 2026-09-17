@@ -35,3 +35,22 @@ func TestWorkOrderList_FetchPopulatesCustomer(t *testing.T) {
 		t.Errorf("expected vehicle 'Honda Civic', got %q %q", wo.Vehicle.Make, wo.Vehicle.Model)
 	}
 }
+
+func TestWorkOrderList_FetchErrorWithLocationSurfaces(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"boom"}`))
+	}))
+	defer srv.Close()
+
+	client := newTestClient(t, srv.URL, "test")
+	msg := fetchWorkOrders(client, "42")()
+
+	res, ok := msg.(workOrderListResultMsg)
+	if !ok {
+		t.Fatalf("expected workOrderListResultMsg, got %T", msg)
+	}
+	if res.err == nil {
+		t.Fatal("expected error to surface from location-scoped list, got nil (err was shadowed)")
+	}
+}

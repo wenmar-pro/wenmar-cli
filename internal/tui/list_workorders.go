@@ -130,8 +130,9 @@ func fetchWorkOrders(client *wenmar.Client, locationID string) tea.Cmd {
 		ctx := context.Background()
 		var resp *wenmar.ListResult[wenmar.WorkOrder]
 		var err error
+		var lc *wenmar.Client
 		if locationID != "" {
-			lc, err := client.ForLocation(locationID)
+			lc, err = client.ForLocation(locationID)
 			if err != nil {
 				return workOrderListResultMsg{err: err}
 			}
