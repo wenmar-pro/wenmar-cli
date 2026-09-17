@@ -228,7 +228,10 @@
             {
               "name": "tax-exempt-number"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /customers"
+          }
         },
         {
           "path": "wenmar customers duplicates",
@@ -304,7 +307,10 @@
           "path": "wenmar customers lookup \u003cterm\u003e",
           "use": "lookup \u003cterm\u003e",
           "short": "Search customers by name/email/phone (alias: list --q)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /customers"
+          }
         },
         {
           "path": "wenmar customers merge \u003cid\u003e",
@@ -401,7 +407,10 @@
             {
               "name": "tax-exempt-number"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "PATCH /customers/{id}"
+          }
         },
         {
           "path": "wenmar customers vehicles \u003cid\u003e",
@@ -1073,7 +1082,10 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /vehicles"
+          }
         },
         {
           "path": "wenmar vehicles decode-vin \u003cstring\u003e",
@@ -1128,7 +1140,10 @@
           "path": "wenmar vehicles lookup \u003cterm\u003e",
           "use": "lookup \u003cterm\u003e",
           "short": "Search vehicles by make/model/plate/vin (alias: list --q)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /vehicles"
+          }
         },
         {
           "path": "wenmar vehicles merge \u003cid\u003e",
@@ -1268,7 +1283,10 @@
             {
               "name": "vin"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "PATCH /vehicles/{id}"
+          }
         },
         {
           "path": "wenmar vehicles workorders \u003cid\u003e",
@@ -1375,19 +1393,28 @@
           "path": "wenmar wo activity \u003cwork-order-id\u003e",
           "use": "activity \u003cwork-order-id\u003e",
           "short": "Show activity for a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{id}/activity"
+          }
         },
         {
           "path": "wenmar wo appointments \u003cwork-order-id\u003e",
           "use": "appointments \u003cwork-order-id\u003e",
           "short": "Show appointments for a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{id}/appointments"
+          }
         },
         {
           "path": "wenmar wo auth-logs \u003cwork-order-id\u003e",
           "use": "auth-logs \u003cwork-order-id\u003e",
           "short": "Show authorization logs for a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{id}/authorization_logs"
+          }
         },
         {
           "path": "wenmar wo close \u003cid\u003e",
@@ -1475,13 +1502,19 @@
           "path": "wenmar wo estimate \u003cid\u003e",
           "use": "estimate \u003cid\u003e",
           "short": "Show the estimate tab (services) for a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{work_order_id}/estimate"
+          }
         },
         {
           "path": "wenmar wo inspection \u003cid\u003e",
           "use": "inspection \u003cid\u003e",
           "short": "Show the inspection tab (inspection reports) for a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{work_order_id}/inspection"
+          }
         },
         {
           "path": "wenmar wo list",
@@ -1507,7 +1540,10 @@
                   "name": "body",
                   "required": true
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "POST /work_orders/{work_order_id}/activity_logs"
+              }
             }
           ]
         },
@@ -1515,13 +1551,19 @@
           "path": "wenmar wo parts \u003cid\u003e",
           "use": "parts \u003cid\u003e",
           "short": "Show the parts tab (services) for a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{work_order_id}/parts"
+          }
         },
         {
           "path": "wenmar wo payments \u003cwork-order-id\u003e",
           "use": "payments \u003cwork-order-id\u003e",
           "short": "Manage payments on a work order",
           "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{work_order_id}/payments"
+          },
           "children": [
             {
               "path": "wenmar wo payments \u003cwork-order-id\u003e add \u003cwork-order-id\u003e",
@@ -1537,25 +1579,37 @@
                   "name": "method",
                   "required": true
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "POST /work_orders/{work_order_id}/payments"
+              }
             },
             {
               "path": "wenmar wo payments \u003cwork-order-id\u003e list \u003cwork-order-id\u003e",
               "use": "list \u003cwork-order-id\u003e",
               "short": "List payments on the work order",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "GET /work_orders/{work_order_id}/payments"
+              }
             },
             {
               "path": "wenmar wo payments \u003cwork-order-id\u003e reverse-ar \u003cwork-order-id\u003e",
               "use": "reverse-ar \u003cwork-order-id\u003e",
               "short": "Reverse accounts-receivable for the work order payments",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "DELETE /work_orders/{work_order_id}/payments/reverse_ar"
+              }
             },
             {
               "path": "wenmar wo payments \u003cwork-order-id\u003e send-to-ar \u003cwork-order-id\u003e",
               "use": "send-to-ar \u003cwork-order-id\u003e",
               "short": "Send the work order payments to accounts receivable",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "POST /work_orders/{work_order_id}/payments/send_to_ar"
+              }
             }
           ]
         },
@@ -1609,6 +1663,9 @@
           "use": "services \u003cwork-order-id\u003e",
           "short": "Manage services on a work order",
           "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{work_order_id}/services"
+          },
           "children": [
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e add \u003cwork-order-id\u003e",
@@ -1626,7 +1683,10 @@
                 {
                   "name": "service-type"
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "POST /work_orders/{work_order_id}/services"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e add-package \u003cwork-order-id\u003e \u003cservice-id\u003e",
@@ -1638,13 +1698,19 @@
                   "required": true,
                   "default": "0"
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "POST /work_orders/{work_order_id}/services/{id}/packages"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e add-time-entry \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "add-time-entry \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Add a time entry to a service",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "POST /work_orders/{work_order_id}/services/{id}/time_entries"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e adjust-time \u003cwork-order-id\u003e \u003cservice-id\u003e",
@@ -1661,31 +1727,46 @@
                   "required": true,
                   "default": "0"
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/adjust_time"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e complete \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "complete \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Mark a service as complete",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "POST /work_orders/{work_order_id}/services/{id}/completion"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e copy \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "copy \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Copy a service",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "POST /work_orders/{work_order_id}/services/{id}/copies"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e delete \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "delete \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Delete a service from the work order",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "DELETE /work_orders/{work_order_id}/services/{id}"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "line-items \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Manage line items on a service",
               "flags": null,
+              "annotations": {
+                "wenmar/op": "GET /work_orders/{work_order_id}/estimate"
+              },
               "children": [
                 {
                   "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e add \u003cwork-order-id\u003e \u003cservice-id\u003e",
@@ -1718,31 +1799,46 @@
                     {
                       "name": "unit-price"
                     }
-                  ]
+                  ],
+                  "annotations": {
+                    "wenmar/op": "POST /work_orders/{work_order_id}/services/{service_id}/line_items"
+                  }
                 },
                 {
                   "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e copy \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
                   "use": "copy \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
                   "short": "Copy a line item",
-                  "flags": null
+                  "flags": null,
+                  "annotations": {
+                    "wenmar/op": "POST /work_orders/{work_order_id}/services/{service_id}/line_items/{id}/copies"
+                  }
                 },
                 {
                   "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e delete \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
                   "use": "delete \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
                   "short": "Delete a line item",
-                  "flags": null
+                  "flags": null,
+                  "annotations": {
+                    "wenmar/op": "DELETE /work_orders/{work_order_id}/services/{service_id}/line_items/{id}"
+                  }
                 },
                 {
                   "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e inventory-addition \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
                   "use": "inventory-addition \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
                   "short": "Add inventory to a line item",
-                  "flags": null
+                  "flags": null,
+                  "annotations": {
+                    "wenmar/op": "POST /work_orders/{work_order_id}/services/{service_id}/line_items/{id}/inventory_additions"
+                  }
                 },
                 {
                   "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e price-refresh \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
                   "use": "price-refresh \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
                   "short": "Refresh line item pricing from inventory",
-                  "flags": null
+                  "flags": null,
+                  "annotations": {
+                    "wenmar/op": "POST /work_orders/{work_order_id}/services/{service_id}/line_items/{id}/price_refreshes"
+                  }
                 },
                 {
                   "path": "wenmar wo services \u003cwork-order-id\u003e line-items \u003cwork-order-id\u003e \u003cservice-id\u003e update \u003cwork-order-id\u003e \u003cservice-id\u003e \u003cline-item-id\u003e",
@@ -1755,7 +1851,10 @@
                     {
                       "name": "part-status"
                     }
-                  ]
+                  ],
+                  "annotations": {
+                    "wenmar/op": "PATCH /work_orders/{work_order_id}/services/{service_id}/line_items/{id}"
+                  }
                 }
               ]
             },
@@ -1763,19 +1862,28 @@
               "path": "wenmar wo services \u003cwork-order-id\u003e list \u003cwork-order-id\u003e",
               "use": "list \u003cwork-order-id\u003e",
               "short": "List services on the work order",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "GET /work_orders/{work_order_id}/services"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e pause \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "pause \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Pause a service",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/pause"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e publish \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "publish \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Publish a service",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/publish"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e reorder \u003cwork-order-id\u003e",
@@ -1787,19 +1895,28 @@
                   "required": true,
                   "default": "[]"
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "PATCH /work_orders/{work_order_id}/services/reorder"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e reset-completion \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "reset-completion \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Reset service completion",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "DELETE /work_orders/{work_order_id}/services/{id}/completion"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e revive \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "revive \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Revive a service",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/revive"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e toggle-labor-completion \u003cwork-order-id\u003e \u003cservice-id\u003e",
@@ -1811,13 +1928,19 @@
                   "required": true,
                   "default": "0"
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/toggle_labor_completion"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e unauthorize \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "use": "unauthorize \u003cwork-order-id\u003e \u003cservice-id\u003e",
               "short": "Remove authorization from a service",
-              "flags": null
+              "flags": null,
+              "annotations": {
+                "wenmar/op": "DELETE /work_orders/{work_order_id}/services/{id}/authorization"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e update \u003cwork-order-id\u003e \u003cservice-id\u003e",
@@ -1842,7 +1965,10 @@
                   "name": "technician-id",
                   "default": "0"
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}"
+              }
             },
             {
               "path": "wenmar wo services \u003cwork-order-id\u003e update-category \u003cwork-order-id\u003e \u003cservice-id\u003e",
@@ -1854,7 +1980,10 @@
                   "required": true,
                   "default": "0"
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/update_category"
+              }
             }
           ]
         },
@@ -1862,7 +1991,10 @@
           "path": "wenmar wo show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single work order by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{id}"
+          }
         },
         {
           "path": "wenmar wo start \u003cid\u003e",
@@ -1878,6 +2010,9 @@
           "use": "technicians \u003cwork-order-id\u003e",
           "short": "Manage technician assignments on a work order",
           "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /tech_assignments"
+          },
           "children": [
             {
               "path": "wenmar wo technicians \u003cwork-order-id\u003e add \u003cwork-order-id\u003e",
@@ -1889,7 +2024,10 @@
                   "required": true,
                   "default": "0"
                 }
-              ]
+              ],
+              "annotations": {
+                "wenmar/op": "POST /tech_assignments"
+              }
             }
           ]
         },
@@ -1936,7 +2074,10 @@
           "path": "wenmar wo vehicle-history \u003cwork-order-id\u003e",
           "use": "vehicle-history \u003cwork-order-id\u003e",
           "short": "Show vehicle history for a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{id}/vehicle_history"
+          }
         },
         {
           "path": "wenmar wo void \u003cid\u003e",
@@ -1956,7 +2097,10 @@
           "path": "wenmar wo wip \u003cid\u003e",
           "use": "wip \u003cid\u003e",
           "short": "Show the work-in-progress tab (services) for a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders/{work_order_id}/wip"
+          }
         }
       ]
     },

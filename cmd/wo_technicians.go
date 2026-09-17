@@ -12,17 +12,19 @@ import (
 var woTechniciansAddTechnicianID int
 
 var woTechniciansCmd = &cobra.Command{
-	Use:   "technicians <work-order-id>",
-	Short: "Manage technician assignments on a work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderTechniciansAdd,
+	Use:         "technicians <work-order-id>",
+	Short:       "Manage technician assignments on a work order",
+	Annotations: map[string]string{"wenmar/op": "POST /tech_assignments"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderTechniciansAdd,
 }
 
 var woTechniciansAddCmd = &cobra.Command{
-	Use:   "add <work-order-id>",
-	Short: "Assign a technician to the work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderTechniciansAdd,
+	Use:         "add <work-order-id>",
+	Short:       "Assign a technician to the work order",
+	Annotations: map[string]string{"wenmar/op": "POST /tech_assignments"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderTechniciansAdd,
 }
 
 func init() {

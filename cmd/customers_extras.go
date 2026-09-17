@@ -15,28 +15,31 @@ import (
 )
 
 var customersCreateCmd = &cobra.Command{
-	Use:     "create",
-	Short:   "Create a new customer",
-	Example: `  wenmar customers create --full-name "Jane Doe" --email "jane@test.com"`,
-	RunE:    runCustomersCreate,
+	Use:         "create",
+	Short:       "Create a new customer",
+	Annotations: map[string]string{"wenmar/op": "POST /customers"},
+	Example:     `  wenmar customers create --full-name "Jane Doe" --email "jane@test.com"`,
+	RunE:        runCustomersCreate,
 }
 
 var customersUpdateCmd = &cobra.Command{
-	Use:     "update <id>",
-	Short:   "Update a customer by ID",
-	Example: `  wenmar customers update 42 --company-name "New Corp"`,
-	Args:    cobra.ExactArgs(1),
-	RunE:    runCustomersUpdate,
+	Use:         "update <id>",
+	Short:       "Update a customer by ID",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customers/{id}"},
+	Example:     `  wenmar customers update 42 --company-name "New Corp"`,
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomersUpdate,
 }
 
 // customersLookupCmd is an alias for `customers list --q <term>`. The public
 // search contract is GET /customers?q=; the old /customers/lookup picker
 // endpoint is web-internal and removed from the published spec.
 var customersLookupCmd = &cobra.Command{
-	Use:     "lookup <term>",
-	Short:   "Search customers by name/email/phone (alias: list --q)",
-	Example: `  wenmar customers lookup "jane doe"`,
-	Args:    cobra.ExactArgs(1),
+	Use:         "lookup <term>",
+	Short:       "Search customers by name/email/phone (alias: list --q)",
+	Annotations: map[string]string{"wenmar/op": "GET /customers"},
+	Example:     `  wenmar customers lookup "jane doe"`,
+	Args:        cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := customersListCmd.Flags().Set("q", args[0]); err != nil {
 			return err

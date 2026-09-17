@@ -41,178 +41,203 @@ var (
 )
 
 var woServicesCmd = &cobra.Command{
-	Use:   "services <work-order-id>",
-	Short: "Manage services on a work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderServicesList,
+	Use:         "services <work-order-id>",
+	Short:       "Manage services on a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/services"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderServicesList,
 }
 
 var woServicesListCmd = &cobra.Command{
-	Use:   "list <work-order-id>",
-	Short: "List services on the work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderServicesList,
+	Use:         "list <work-order-id>",
+	Short:       "List services on the work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/services"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderServicesList,
 }
 
 var woServicesAddCmd = &cobra.Command{
-	Use:   "add <work-order-id>",
-	Short: "Add a service to the work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderServicesAdd,
+	Use:         "add <work-order-id>",
+	Short:       "Add a service to the work order",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderServicesAdd,
 }
 
 var woServicesUpdateCmd = &cobra.Command{
-	Use:   "update <work-order-id> <service-id>",
-	Short: "Update a service on the work order",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesUpdate,
+	Use:         "update <work-order-id> <service-id>",
+	Short:       "Update a service on the work order",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesUpdate,
 }
 
 var woServicesDeleteCmd = &cobra.Command{
-	Use:   "delete <work-order-id> <service-id>",
-	Short: "Delete a service from the work order",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesDelete,
+	Use:         "delete <work-order-id> <service-id>",
+	Short:       "Delete a service from the work order",
+	Annotations: map[string]string{"wenmar/op": "DELETE /work_orders/{work_order_id}/services/{id}"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesDelete,
 }
 
 var woServicesReorderCmd = &cobra.Command{
-	Use:   "reorder <work-order-id>",
-	Short: "Reorder services on the work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderServicesReorder,
+	Use:         "reorder <work-order-id>",
+	Short:       "Reorder services on the work order",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/reorder"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderServicesReorder,
 }
 
 var woServicesCompleteCmd = &cobra.Command{
-	Use:   "complete <work-order-id> <service-id>",
-	Short: "Mark a service as complete",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesComplete,
+	Use:         "complete <work-order-id> <service-id>",
+	Short:       "Mark a service as complete",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services/{id}/completion"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesComplete,
 }
 
 var woServicesResetCompletionCmd = &cobra.Command{
-	Use:   "reset-completion <work-order-id> <service-id>",
-	Short: "Reset service completion",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesResetCompletion,
+	Use:         "reset-completion <work-order-id> <service-id>",
+	Short:       "Reset service completion",
+	Annotations: map[string]string{"wenmar/op": "DELETE /work_orders/{work_order_id}/services/{id}/completion"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesResetCompletion,
 }
 
 var woServicesUnauthorizeCmd = &cobra.Command{
-	Use:   "unauthorize <work-order-id> <service-id>",
-	Short: "Remove authorization from a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesUnauthorize,
+	Use:         "unauthorize <work-order-id> <service-id>",
+	Short:       "Remove authorization from a service",
+	Annotations: map[string]string{"wenmar/op": "DELETE /work_orders/{work_order_id}/services/{id}/authorization"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesUnauthorize,
 }
 
 var woServicesCopyCmd = &cobra.Command{
-	Use:   "copy <work-order-id> <service-id>",
-	Short: "Copy a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesCopy,
+	Use:         "copy <work-order-id> <service-id>",
+	Short:       "Copy a service",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services/{id}/copies"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesCopy,
 }
 
 var woServicesAddPackageCmd = &cobra.Command{
-	Use:   "add-package <work-order-id> <service-id>",
-	Short: "Add a package to a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesAddPackage,
+	Use:         "add-package <work-order-id> <service-id>",
+	Short:       "Add a package to a service",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services/{id}/packages"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesAddPackage,
 }
 
 var woServicesPauseCmd = &cobra.Command{
-	Use:   "pause <work-order-id> <service-id>",
-	Short: "Pause a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesPause,
+	Use:         "pause <work-order-id> <service-id>",
+	Short:       "Pause a service",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/pause"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesPause,
 }
 
 var woServicesPublishCmd = &cobra.Command{
-	Use:   "publish <work-order-id> <service-id>",
-	Short: "Publish a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesPublish,
+	Use:         "publish <work-order-id> <service-id>",
+	Short:       "Publish a service",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/publish"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesPublish,
 }
 
 var woServicesReviveCmd = &cobra.Command{
-	Use:   "revive <work-order-id> <service-id>",
-	Short: "Revive a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesRevive,
+	Use:         "revive <work-order-id> <service-id>",
+	Short:       "Revive a service",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/revive"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesRevive,
 }
 
 var woServicesAddTimeEntryCmd = &cobra.Command{
-	Use:   "add-time-entry <work-order-id> <service-id>",
-	Short: "Add a time entry to a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesAddTimeEntry,
+	Use:         "add-time-entry <work-order-id> <service-id>",
+	Short:       "Add a time entry to a service",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services/{id}/time_entries"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesAddTimeEntry,
 }
 
 var woServicesToggleLaborCompletionCmd = &cobra.Command{
-	Use:   "toggle-labor-completion <work-order-id> <service-id>",
-	Short: "Toggle labor completion for a line item",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesToggleLaborCompletion,
+	Use:         "toggle-labor-completion <work-order-id> <service-id>",
+	Short:       "Toggle labor completion for a line item",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/toggle_labor_completion"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesToggleLaborCompletion,
 }
 
 var woServicesAdjustTimeCmd = &cobra.Command{
-	Use:   "adjust-time <work-order-id> <service-id>",
-	Short: "Adjust logged time for a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesAdjustTime,
+	Use:         "adjust-time <work-order-id> <service-id>",
+	Short:       "Adjust logged time for a service",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/adjust_time"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesAdjustTime,
 }
 
 var woServicesUpdateCategoryCmd = &cobra.Command{
-	Use:   "update-category <work-order-id> <service-id>",
-	Short: "Update the category of a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesUpdateCategory,
+	Use:         "update-category <work-order-id> <service-id>",
+	Short:       "Update the category of a service",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/{id}/update_category"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesUpdateCategory,
 }
 
 var woServicesLineItemsCmd = &cobra.Command{
-	Use:   "line-items <work-order-id> <service-id>",
-	Short: "Manage line items on a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesLineItemsList,
+	Use:         "line-items <work-order-id> <service-id>",
+	Short:       "Manage line items on a service",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/estimate"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesLineItemsList,
 }
 
 var woServicesLineItemsAddCmd = &cobra.Command{
-	Use:   "add <work-order-id> <service-id>",
-	Short: "Add a line item to a service",
-	Args:  cobra.ExactArgs(2),
-	RunE:  runWorkOrderServicesLineItemsAdd,
+	Use:         "add <work-order-id> <service-id>",
+	Short:       "Add a line item to a service",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services/{service_id}/line_items"},
+	Args:        cobra.ExactArgs(2),
+	RunE:        runWorkOrderServicesLineItemsAdd,
 }
 
 var woServicesLineItemsUpdateCmd = &cobra.Command{
-	Use:   "update <work-order-id> <service-id> <line-item-id>",
-	Short: "Update a line item",
-	Args:  cobra.ExactArgs(3),
-	RunE:  runWorkOrderServicesLineItemsUpdate,
+	Use:         "update <work-order-id> <service-id> <line-item-id>",
+	Short:       "Update a line item",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{work_order_id}/services/{service_id}/line_items/{id}"},
+	Args:        cobra.ExactArgs(3),
+	RunE:        runWorkOrderServicesLineItemsUpdate,
 }
 
 var woServicesLineItemsDeleteCmd = &cobra.Command{
-	Use:   "delete <work-order-id> <service-id> <line-item-id>",
-	Short: "Delete a line item",
-	Args:  cobra.ExactArgs(3),
-	RunE:  runWorkOrderServicesLineItemsDelete,
+	Use:         "delete <work-order-id> <service-id> <line-item-id>",
+	Short:       "Delete a line item",
+	Annotations: map[string]string{"wenmar/op": "DELETE /work_orders/{work_order_id}/services/{service_id}/line_items/{id}"},
+	Args:        cobra.ExactArgs(3),
+	RunE:        runWorkOrderServicesLineItemsDelete,
 }
 
 var woServicesLineItemsCopyCmd = &cobra.Command{
-	Use:   "copy <work-order-id> <service-id> <line-item-id>",
-	Short: "Copy a line item",
-	Args:  cobra.ExactArgs(3),
-	RunE:  runWorkOrderServicesLineItemsCopy,
+	Use:         "copy <work-order-id> <service-id> <line-item-id>",
+	Short:       "Copy a line item",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services/{service_id}/line_items/{id}/copies"},
+	Args:        cobra.ExactArgs(3),
+	RunE:        runWorkOrderServicesLineItemsCopy,
 }
 
 var woServicesLineItemsInventoryAdditionCmd = &cobra.Command{
-	Use:   "inventory-addition <work-order-id> <service-id> <line-item-id>",
-	Short: "Add inventory to a line item",
-	Args:  cobra.ExactArgs(3),
-	RunE:  runWorkOrderServicesLineItemsInventoryAddition,
+	Use:         "inventory-addition <work-order-id> <service-id> <line-item-id>",
+	Short:       "Add inventory to a line item",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services/{service_id}/line_items/{id}/inventory_additions"},
+	Args:        cobra.ExactArgs(3),
+	RunE:        runWorkOrderServicesLineItemsInventoryAddition,
 }
 
 var woServicesLineItemsPriceRefreshCmd = &cobra.Command{
-	Use:   "price-refresh <work-order-id> <service-id> <line-item-id>",
-	Short: "Refresh line item pricing from inventory",
-	Args:  cobra.ExactArgs(3),
-	RunE:  runWorkOrderServicesLineItemsPriceRefresh,
+	Use:         "price-refresh <work-order-id> <service-id> <line-item-id>",
+	Short:       "Refresh line item pricing from inventory",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/services/{service_id}/line_items/{id}/price_refreshes"},
+	Args:        cobra.ExactArgs(3),
+	RunE:        runWorkOrderServicesLineItemsPriceRefresh,
 }
 
 func init() {

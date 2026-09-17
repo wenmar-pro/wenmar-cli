@@ -13,26 +13,29 @@ import (
 )
 
 var vehiclesCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create a new vehicle",
-	RunE:  runVehiclesCreate,
+	Use:         "create",
+	Short:       "Create a new vehicle",
+	Annotations: map[string]string{"wenmar/op": "POST /vehicles"},
+	RunE:        runVehiclesCreate,
 }
 
 var vehiclesUpdateCmd = &cobra.Command{
-	Use:   "update <id>",
-	Short: "Update a vehicle by ID",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesUpdate,
+	Use:         "update <id>",
+	Short:       "Update a vehicle by ID",
+	Annotations: map[string]string{"wenmar/op": "PATCH /vehicles/{id}"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVehiclesUpdate,
 }
 
 // vehiclesLookupCmd is an alias for `vehicles list --q <term>`. The public
 // search contract is GET /vehicles?q=; the old /vehicles/lookup picker
 // endpoint is web-internal and removed from the published spec.
 var vehiclesLookupCmd = &cobra.Command{
-	Use:     "lookup <term>",
-	Short:   "Search vehicles by make/model/plate/vin (alias: list --q)",
-	Example: `  wenmar vehicles lookup "honda civic"`,
-	Args:    cobra.ExactArgs(1),
+	Use:         "lookup <term>",
+	Short:       "Search vehicles by make/model/plate/vin (alias: list --q)",
+	Annotations: map[string]string{"wenmar/op": "GET /vehicles"},
+	Example:     `  wenmar vehicles lookup "honda civic"`,
+	Args:        cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := vehiclesListCmd.Flags().Set("q", args[0]); err != nil {
 			return err

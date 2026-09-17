@@ -10,17 +10,19 @@ import (
 )
 
 var woPaymentsCmd = &cobra.Command{
-	Use:   "payments <work-order-id>",
-	Short: "Manage payments on a work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderPaymentsList,
+	Use:         "payments <work-order-id>",
+	Short:       "Manage payments on a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/payments"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderPaymentsList,
 }
 
 var woPaymentsListCmd = &cobra.Command{
-	Use:   "list <work-order-id>",
-	Short: "List payments on the work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderPaymentsList,
+	Use:         "list <work-order-id>",
+	Short:       "List payments on the work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/payments"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderPaymentsList,
 }
 
 var (
@@ -29,24 +31,27 @@ var (
 )
 
 var woPaymentsAddCmd = &cobra.Command{
-	Use:   "add <work-order-id>",
-	Short: "Add a payment to the work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderPaymentsAdd,
+	Use:         "add <work-order-id>",
+	Short:       "Add a payment to the work order",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/payments"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderPaymentsAdd,
 }
 
 var woPaymentsReverseArCmd = &cobra.Command{
-	Use:   "reverse-ar <work-order-id>",
-	Short: "Reverse accounts-receivable for the work order payments",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderPaymentsReverseAr,
+	Use:         "reverse-ar <work-order-id>",
+	Short:       "Reverse accounts-receivable for the work order payments",
+	Annotations: map[string]string{"wenmar/op": "DELETE /work_orders/{work_order_id}/payments/reverse_ar"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderPaymentsReverseAr,
 }
 
 var woPaymentsSendToArCmd = &cobra.Command{
-	Use:   "send-to-ar <work-order-id>",
-	Short: "Send the work order payments to accounts receivable",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderPaymentsSendToAr,
+	Use:         "send-to-ar <work-order-id>",
+	Short:       "Send the work order payments to accounts receivable",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/payments/send_to_ar"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderPaymentsSendToAr,
 }
 
 func init() {

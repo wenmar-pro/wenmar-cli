@@ -15,8 +15,9 @@ import (
 )
 
 var workOrdersShowCmd = &cobra.Command{
-	Use:   "show <id>",
-	Short: "Show a single work order by ID",
+	Use:         "show <id>",
+	Short:       "Show a single work order by ID",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{id}"},
 	Example: `  wenmar wo show 100
   wenmar wo show 100 --agent`,
 	Args: cobra.ExactArgs(1),
@@ -24,35 +25,39 @@ var workOrdersShowCmd = &cobra.Command{
 }
 
 var workOrdersEstimateCmd = &cobra.Command{
-	Use:     "estimate <id>",
-	Short:   "Show the estimate tab (services) for a work order",
-	Example: `  wenmar wo estimate 100`,
-	Args:    cobra.ExactArgs(1),
-	RunE:    runWorkOrdersTab("estimate"),
+	Use:         "estimate <id>",
+	Short:       "Show the estimate tab (services) for a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/estimate"},
+	Example:     `  wenmar wo estimate 100`,
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrdersTab("estimate"),
 }
 
 var workOrdersWipCmd = &cobra.Command{
-	Use:     "wip <id>",
-	Short:   "Show the work-in-progress tab (services) for a work order",
-	Example: `  wenmar wo wip 100`,
-	Args:    cobra.ExactArgs(1),
-	RunE:    runWorkOrdersTab("wip"),
+	Use:         "wip <id>",
+	Short:       "Show the work-in-progress tab (services) for a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/wip"},
+	Example:     `  wenmar wo wip 100`,
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrdersTab("wip"),
 }
 
 var workOrdersInspectionCmd = &cobra.Command{
-	Use:     "inspection <id>",
-	Short:   "Show the inspection tab (inspection reports) for a work order",
-	Example: `  wenmar wo inspection 100`,
-	Args:    cobra.ExactArgs(1),
-	RunE:    runWorkOrdersTab("inspection"),
+	Use:         "inspection <id>",
+	Short:       "Show the inspection tab (inspection reports) for a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/inspection"},
+	Example:     `  wenmar wo inspection 100`,
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrdersTab("inspection"),
 }
 
 var workOrdersPartsCmd = &cobra.Command{
-	Use:     "parts <id>",
-	Short:   "Show the parts tab (services) for a work order",
-	Example: `  wenmar wo parts 100`,
-	Args:    cobra.ExactArgs(1),
-	RunE:    runWorkOrdersTab("parts"),
+	Use:         "parts <id>",
+	Short:       "Show the parts tab (services) for a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{work_order_id}/parts"},
+	Example:     `  wenmar wo parts 100`,
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrdersTab("parts"),
 }
 
 func init() {

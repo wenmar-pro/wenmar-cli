@@ -10,9 +10,10 @@ import (
 )
 
 var woActivityCmd = &cobra.Command{
-	Use:   "activity <work-order-id>",
-	Short: "Show activity for a work order",
-	Args:  cobra.ExactArgs(1),
+	Use:         "activity <work-order-id>",
+	Short:       "Show activity for a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{id}/activity"},
+	Args:        cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runShow(cmd, args, "wo", "GET", func(a []string) string { return fmt.Sprintf("/work_orders/%s/activity", a[0]) },
 			func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
@@ -26,9 +27,10 @@ var woActivityCmd = &cobra.Command{
 }
 
 var woVehicleHistoryCmd = &cobra.Command{
-	Use:   "vehicle-history <work-order-id>",
-	Short: "Show vehicle history for a work order",
-	Args:  cobra.ExactArgs(1),
+	Use:         "vehicle-history <work-order-id>",
+	Short:       "Show vehicle history for a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{id}/vehicle_history"},
+	Args:        cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runShow(cmd, args, "wo", "GET", func(a []string) string { return fmt.Sprintf("/work_orders/%s/vehicle_history", a[0]) },
 			func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
@@ -42,9 +44,10 @@ var woVehicleHistoryCmd = &cobra.Command{
 }
 
 var woAppointmentsCmd = &cobra.Command{
-	Use:   "appointments <work-order-id>",
-	Short: "Show appointments for a work order",
-	Args:  cobra.ExactArgs(1),
+	Use:         "appointments <work-order-id>",
+	Short:       "Show appointments for a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{id}/appointments"},
+	Args:        cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runShow(cmd, args, "wo", "GET", func(a []string) string { return fmt.Sprintf("/work_orders/%s/appointments", a[0]) },
 			func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
@@ -58,9 +61,10 @@ var woAppointmentsCmd = &cobra.Command{
 }
 
 var woAuthLogsCmd = &cobra.Command{
-	Use:   "auth-logs <work-order-id>",
-	Short: "Show authorization logs for a work order",
-	Args:  cobra.ExactArgs(1),
+	Use:         "auth-logs <work-order-id>",
+	Short:       "Show authorization logs for a work order",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders/{id}/authorization_logs"},
+	Args:        cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runShow(cmd, args, "wo", "GET", func(a []string) string { return fmt.Sprintf("/work_orders/%s/authorization_logs", a[0]) },
 			func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
@@ -83,10 +87,11 @@ var woNotesCmd = &cobra.Command{
 }
 
 var woNotesAddCmd = &cobra.Command{
-	Use:   "add <work-order-id>",
-	Short: "Add a manual note to a work order",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkOrderNotesAdd,
+	Use:         "add <work-order-id>",
+	Short:       "Add a manual note to a work order",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/activity_logs"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkOrderNotesAdd,
 }
 
 func init() {
