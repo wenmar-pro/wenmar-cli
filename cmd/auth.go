@@ -103,7 +103,7 @@ func runAuthLogin(out io.Writer, configPath string) error {
 	}
 
 	// Store token (keyring with file fallback)
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	if err := store.SaveToken(context.Background(), token); err != nil {
 		return fmt.Errorf("failed to store token: %w", err)
 	}
@@ -124,7 +124,7 @@ func runAuthLogin(out io.Writer, configPath string) error {
 }
 
 func storeStaticToken(token, configPath string, out io.Writer, in io.Reader) error {
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
 		return fmt.Errorf("failed to store token: %w", err)
 	}
@@ -152,7 +152,7 @@ func storeStaticToken(token, configPath string, out io.Writer, in io.Reader) err
 }
 
 func runAuthLogout(configPath string) error {
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	if err := store.DeleteToken(context.Background()); err != nil {
 		fmt.Fprintf(os.Stderr, "  warning: could not delete stored token: %v\n", err)
 	}
@@ -205,7 +205,7 @@ func runAuthToken(out io.Writer, configPath string) error {
 }
 
 func runAuthRefresh(out io.Writer, configPath string) error {
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	manager, err := auth.ResolveAuthManager(tokenFlag, configPath)
 	if err != nil {
 		fmt.Fprintln(out, "  Not logged in. Run `wenmar auth login` to authenticate.")

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 )
 
@@ -61,7 +62,7 @@ func TestDoctor_NoToken(t *testing.T) {
 	t.Setenv("WENMAR_CONFIG_HOME", t.TempDir())
 
 	// Clear any credential-store token so the test is deterministic.
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	_ = store.DeleteToken(context.Background())
 
 	dir := t.TempDir()

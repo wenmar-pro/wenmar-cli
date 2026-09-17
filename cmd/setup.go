@@ -107,7 +107,7 @@ func runSetup(in io.Reader, out io.Writer, configPath, baseURLOverride string) e
 
 	// Persist the config first so a failed verification (e.g. a local API
 	// that isn't up yet) doesn't lose the user's settings.
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	if err := store.SaveToken(context.Background(), &authpkg.Token{AccessToken: token}); err != nil {
 		return fmt.Errorf("failed to store token: %w", err)
 	}

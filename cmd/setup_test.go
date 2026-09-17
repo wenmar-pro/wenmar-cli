@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 )
 
@@ -38,7 +39,7 @@ func TestSetup_WritesConfigOnValidToken(t *testing.T) {
 	}
 
 	// Token should be stored in the credential store (file fallback), not config.
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	tok, err := store.GetToken(context.Background())
 	if err != nil {
 		t.Fatalf("token not stored in credential store: %v", err)

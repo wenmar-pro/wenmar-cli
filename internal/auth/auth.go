@@ -46,10 +46,10 @@ func ResolveTokenFrom(flagToken, configPath string) (string, error) {
 	return rt.Token, nil
 }
 
-// newDefaultStore returns the SDK credential store with the file fallback
+// NewCredentialStore returns the SDK credential store with the file fallback
 // redirected under $WENMAR_CONFIG_HOME when set (so tests never touch the
 // developer's real keyring or credentials file).
-func newDefaultStore() authpkg.CredentialStore {
+func NewCredentialStore() authpkg.CredentialStore {
 	if base := os.Getenv("WENMAR_CONFIG_HOME"); base != "" {
 		return authpkg.FileStore{Path: filepath.Join(base, "wenmar", "credentials.json")}
 	}
@@ -59,7 +59,7 @@ func newDefaultStore() authpkg.CredentialStore {
 // ResolveTokenWithSource resolves a token and reports where it came from,
 // so callers can surface useful diagnostics on auth failures.
 func ResolveTokenWithSource(flagToken, configPath string) (ResolvedToken, error) {
-	return ResolveTokenWithSourceFrom(flagToken, configPath, newDefaultStore())
+	return ResolveTokenWithSourceFrom(flagToken, configPath, NewCredentialStore())
 }
 
 // ResolveTokenWithSourceFrom is ResolveTokenWithSource with an injectable
@@ -102,7 +102,7 @@ func keyringTokenFrom(store authpkg.CredentialStore) (string, error) {
 // It returns an AuthManager whose provider resolves the token with the
 // correct precedence. flagToken is the --token flag value.
 func ResolveAuthManager(flagToken, configPath string) (*authpkg.AuthManager, error) {
-	return ResolveAuthManagerWithStore(flagToken, configPath, newDefaultStore())
+	return ResolveAuthManagerWithStore(flagToken, configPath, NewCredentialStore())
 }
 
 // ResolveAuthManagerWithStore is ResolveAuthManager with an injectable
@@ -118,16 +118,14 @@ func ResolveAuthManagerWithStore(flagToken, configPath string, store authpkg.Cre
 	case SourceKeyring:
 		// Keyring / file credential store with auto-refresh.
 		manager := authpkg.NewAuthManager(store, nil)
-		provider := &authpkg.CredentialStoreProvider{Store: store, Manager: manager}
-		manager.Provider = provider
 		if tok, err := store.GetToken(context.Background()); err == nil && tok != nil && tok.RefreshToken != "" {
 			baseURL := ResolveBaseURLFrom("", configPath)
 			if cfg, err := config.LoadFrom(configPath); err == nil && cfg.AuthMethod == "oauth" {
-				manager.SetRefreshFn(func(ctx context.Context, refreshToken string) (*authpkg.Token, error) {
-					return authpkg.RefreshToken(ctx, baseURL+"/oauth/token", "wenmar-cli", refreshToken)
-				})
+				manager = authpkg.NewAuthManagerWithOAuth(store, nil, baseURL, "wenmar-cli")
 			}
 		}
+		provider := &authpkg.CredentialStoreProvider{Store: store, Manager: manager}
+		manager.Provider = provider
 		return manager, nil
 	}
 	return nil, fmt.Errorf("API token required. Run `wenmar setup` to configure, or set --token / WENMAR_TOKEN env var")

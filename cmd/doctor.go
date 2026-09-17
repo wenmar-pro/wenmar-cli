@@ -53,7 +53,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	// Check 2: Token present (keyring or file or config)
 	tokenPresent := false
 	tokenSource := ""
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	if tok, err := store.GetToken(context.Background()); err == nil && tok != nil && tok.AccessToken != "" {
 		tokenPresent = true
 		tokenSource = "keyring/file"

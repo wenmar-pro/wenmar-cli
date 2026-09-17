@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/wenmar-pro/wenmar-cli/internal/auth"
 	"github.com/wenmar-pro/wenmar-cli/internal/config"
 	authpkg "github.com/wenmar-pro/wenmar-sdk/go/pkg/auth"
 )
@@ -49,7 +50,7 @@ func TestAuthLogin_StoresToken(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	tok, err := store.GetToken(context.Background())
 	if err != nil {
 		t.Fatalf("token not stored: %v", err)
@@ -147,7 +148,7 @@ func TestAuthLogout_ClearsCredentials(t *testing.T) {
 	t.Setenv("WENMAR_CONFIG_HOME", t.TempDir())
 	config.SaveTo(configPath, &config.Config{BaseURL: "https://app.wenmarpro.com"})
 
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	_ = store.SaveToken(context.Background(), &authpkg.Token{AccessToken: "sk-temp"})
 
 	if err := runAuthLogout(configPath); err != nil {
@@ -190,7 +191,7 @@ func seedCredsFile(t *testing.T, contents string) {
 // themselves or they leak into other tests.
 func clearStoredCredentials(t *testing.T) {
 	t.Helper()
-	store := newCredentialStore()
+	store := auth.NewCredentialStore()
 	if err := store.DeleteToken(context.Background()); err != nil {
 		t.Logf("cleanup: delete credentials: %v", err)
 	}
