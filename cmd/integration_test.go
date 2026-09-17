@@ -413,19 +413,6 @@ func startFakeAPI(t *testing.T, token string) *httptest.Server {
 		}
 	})
 
-	// POST /inventory_levels/extractions
-	mux.HandleFunc("/inventory_levels/extractions", func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer "+token {
-			writeError(w, http.StatusUnauthorized, "unauthorized", "Invalid or missing API token")
-			return
-		}
-		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		writeJSON(w, http.StatusAccepted, map[string]any{"status": "accepted", "stream_id": "stream-1"})
-	})
-
 	// POST /tech_assignments?work_order_id=:id
 	mux.HandleFunc("/tech_assignments", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+token {

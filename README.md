@@ -112,9 +112,6 @@ wenmar vehicles show 5
 wenmar reports statements --billing-status sent
 wenmar reports taxperiods
 wenmar reports create --period-start 2026-01-01 --period-end 2026-03-31
-
-# Inventory
-wenmar inventory extract --extraction-id abc123 --text "2x oil filter"
 ```
 
 ## Output modes

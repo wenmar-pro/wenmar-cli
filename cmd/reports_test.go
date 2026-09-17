@@ -62,18 +62,3 @@ func TestReportsUpdate_JSON(t *testing.T) {
 		t.Errorf("expected update summary, got: %s", out)
 	}
 }
-
-func TestInventoryExtract_JSON(t *testing.T) {
-	srv := startFakeAPI(t, "secret-token")
-	out, err := execute(
-		"inventory", "extract",
-		"--extraction-id", "abc123", "--text", "2x oil filter",
-		"--json", "--base-url", srv.URL, "--token", "secret-token",
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !strings.Contains(out, "stream-1") {
-		t.Errorf("expected stream id in output, got: %s", out)
-	}
-}

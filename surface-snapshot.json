@@ -654,32 +654,6 @@
       ]
     },
     {
-      "path": "wenmar inventory",
-      "use": "inventory",
-      "short": "Manage inventory extractions",
-      "flags": null,
-      "children": [
-        {
-          "path": "wenmar inventory extract",
-          "use": "extract",
-          "short": "Extract inventory levels from text",
-          "flags": [
-            {
-              "name": "extraction-id",
-              "required": true
-            },
-            {
-              "name": "text",
-              "required": true
-            }
-          ],
-          "annotations": {
-            "wenmar/op": "POST /inventory_levels/extractions"
-          }
-        }
-      ]
-    },
-    {
       "path": "wenmar location",
       "use": "location",
       "short": "Manage CLI location defaults",

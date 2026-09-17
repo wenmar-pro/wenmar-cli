@@ -554,8 +554,6 @@ groups:
     short: Manage work order tags
   reports:
     short: Manage report views and tax periods
-  inventory:
-    short: Manage inventory extractions
 
 commands:
   # account
@@ -1046,17 +1044,6 @@ commands:
     action_summary: Tax period updated.
     example: |
       wenmar reports update 5 --marked-remitted --remitted-date 2026-04-15
-
-  # inventory — kick off a level extraction (202 + stream_id).
-  create_inventory_level_extraction:
-    resource: inventory
-    command: extract
-    summary: Extract inventory levels from text
-    method: CreateInventoryLevelExtraction
-    request_struct: CreateInventoryLevelExtractionRequest
-    action_summary: Inventory extraction started.
-    example: |
-      wenmar inventory extract --extraction-id abc123 --text "2x oil filter"
 
 # NOTE: operations in `exclude:` must not also appear under `commands:` —
 # exclusion takes precedence and the entry would be dead.
