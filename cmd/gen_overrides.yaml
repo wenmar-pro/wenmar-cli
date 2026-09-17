@@ -516,6 +516,17 @@ exclude:
   #   as `wo technicians add`.
   - list_work_order_services
   - create_work_order_tech_assignment
+  # 2026-09-17 store-credit / conversation surface — no CLI commands yet
+  #   (deferred to a follow-up plan). Excluded so gencli emits nothing: without
+  #   them `create_customers_store_credit` yields a generated customersCreateCmd
+  #   that collides with the hand-written `customers create`
+  #   (cmd/customers_extras.go), and `show_customers_store_credit` steals the
+  #   `show` slot from `show_customer` (first-wins dedup).
+  - list_customers_store_credits
+  - show_customers_store_credit
+  - create_customers_store_credit
+  - create_store_credits_refund
+  - list_customers_conversations
 groups:
   wo:
     short: Manage work orders

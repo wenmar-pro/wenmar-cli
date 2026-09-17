@@ -10,14 +10,11 @@ import (
 	wenmar "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
 )
 
-var customersAmount string
-var customersCustomerId int
 var customersCustomerTagId int
 var customersEmail string
 var customersFirstName string
 var customersHasBalance bool
 var customersHasVehicle bool
-var customersKind string
 var customersLastName string
 var customersLastVisitMonths int
 var customersListAll bool
@@ -45,32 +42,6 @@ func runCustomersArchive(cmd *cobra.Command, args []string) error {
 			return nil, err
 		}
 		return resp.JSON200, nil
-	})
-}
-
-var customersCreateCmd = &cobra.Command{
-	Annotations: map[string]string{"wenmar/op": "POST /customers/{customer_id}/store_credits"},
-	RunE:        runCustomersCreate,
-	Short:       "create",
-	Use:         "create",
-}
-
-func runCustomersCreate(cmd *cobra.Command, args []string) error {
-	return runCreate(cmd, "customers", fmt.Sprintf("/customers/%d/store_credits", customersCustomerId), "Customer created.", func() (any, error) {
-		req := wenmar.CreateCustomersStoreCreditRequest{StoreCredit: struct {
-			Amount string `json:"amount"`
-			Kind   string `json:"kind"`
-		}{
-			Amount: customersAmount,
-			Kind:   customersKind,
-		}}
-		return req, nil
-	}, func(ctx context.Context, client *wenmar.Client, body any) (any, error) {
-		resp, err := client.CreateCustomersStoreCredit(ctx, customersCustomerId, body.(wenmar.CreateCustomersStoreCreditRequest))
-		if err != nil {
-			return nil, err
-		}
-		return resp.JSON201, nil
 	})
 }
 
@@ -168,18 +139,17 @@ func runCustomersRestore(cmd *cobra.Command, args []string) error {
 }
 
 var customersShowCmd = &cobra.Command{
-	Annotations: map[string]string{"wenmar/op": "GET /customers/{customer_id}/store_credits/{id}"},
+	Annotations: map[string]string{"wenmar/op": "GET /customers/{id}"},
 	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar customers show 42\n",
 	RunE:        runCustomersShow,
-	Short:       "show",
+	Short:       "Show a single customer by ID",
 	Use:         "show <id>",
 }
 
 func runCustomersShow(cmd *cobra.Command, args []string) error {
-	return runShow(cmd, args, "customers", "GET", func(a []string) string {
-		return fmt.Sprintf("/customers/%d/store_credits/%s", customersCustomerId, a[0])
-	}, func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
-		resp, err := client.ShowCustomersStoreCredit(ctx, customersCustomerId, id)
+	return runShow(cmd, args, "customers", "GET", idPath("/customers/"), func(ctx context.Context, client *wenmar.Client, id int) (any, error) {
+		resp, err := client.ShowCustomer(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -259,12 +229,6 @@ var customersCmd = &cobra.Command{
 }
 
 func init() {
-	customersCreateCmd.Flags().IntVar(&customersCustomerId, "customer-id", 0, "Customer ID (required)")
-	customersCreateCmd.MarkFlagRequired("customer-id")
-	customersCreateCmd.Flags().StringVar(&customersAmount, "amount", "", "Amount (required)")
-	customersCreateCmd.MarkFlagRequired("amount")
-	customersCreateCmd.Flags().StringVar(&customersKind, "kind", "", "Kind (required)")
-	customersCreateCmd.MarkFlagRequired("kind")
 	customersDuplicatesCmd.Flags().StringVar(&customersEmail, "email", "", "Email")
 	customersDuplicatesCmd.Flags().StringVar(&customersFirstName, "first-name", "", "First Name")
 	customersDuplicatesCmd.Flags().StringVar(&customersLastName, "last-name", "", "Last Name")
@@ -281,8 +245,6 @@ func init() {
 	customersListCmd.Flags().BoolVar(&customersListAll, "all", false, "Fetch all pages by following pagination links")
 	customersMergeCmd.Flags().IntVar(&customersSourceCustomerId, "source-id", 0, "Source customer ID to merge into keeper (required)")
 	customersMergeCmd.MarkFlagRequired("source-id")
-	customersShowCmd.Flags().IntVar(&customersCustomerId, "customer-id", 0, "Customer ID (required)")
-	customersShowCmd.MarkFlagRequired("customer-id")
-	customersCmd.AddCommand(customersArchiveCmd, customersCreateCmd, customersDuplicatesCmd, customersListCmd, customersMergeCmd, customersRestoreCmd, customersShowCmd, customersTrashCmd, customersVehiclesCmd, customersWorkordersCmd)
+	customersCmd.AddCommand(customersArchiveCmd, customersDuplicatesCmd, customersListCmd, customersMergeCmd, customersRestoreCmd, customersShowCmd, customersTrashCmd, customersVehiclesCmd, customersWorkordersCmd)
 	rootCmd.AddCommand(customersCmd)
 }
