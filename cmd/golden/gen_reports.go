@@ -15,10 +15,11 @@ var reportsPeriodEnd string
 var reportsPeriodStart string
 var reportsRemittedDate string
 var reportsCreateCmd = &cobra.Command{
-	Example: "wenmar reports create --period-start 2026-01-01 --period-end 2026-03-31\n",
-	RunE:    runReportsCreate,
-	Short:   "Create a tax period for remittance tracking",
-	Use:     "create",
+	Annotations: map[string]string{"wenmar/op": "POST /reports/tax_periods"},
+	Example:     "wenmar reports create --period-start 2026-01-01 --period-end 2026-03-31\n",
+	RunE:        runReportsCreate,
+	Short:       "Create a tax period for remittance tracking",
+	Use:         "create",
 }
 
 func runReportsCreate(cmd *cobra.Command, args []string) error {
@@ -41,10 +42,11 @@ func runReportsCreate(cmd *cobra.Command, args []string) error {
 }
 
 var reportsStatementsCmd = &cobra.Command{
-	Example: "wenmar reports statements\nwenmar reports statements --status sent\n",
-	RunE:    runReportsStatements,
-	Short:   "List account-wide statements",
-	Use:     "statements",
+	Annotations: map[string]string{"wenmar/op": "GET /reports/statements"},
+	Example:     "wenmar reports statements\nwenmar reports statements --status sent\n",
+	RunE:        runReportsStatements,
+	Short:       "List account-wide statements",
+	Use:         "statements",
 }
 
 func runReportsStatements(cmd *cobra.Command, args []string) error {
@@ -58,10 +60,11 @@ func runReportsStatements(cmd *cobra.Command, args []string) error {
 }
 
 var reportsTaxperiodsCmd = &cobra.Command{
-	Example: "wenmar reports taxperiods\n",
-	RunE:    runReportsTaxperiods,
-	Short:   "List tax periods",
-	Use:     "taxperiods",
+	Annotations: map[string]string{"wenmar/op": "GET /reports/tax_periods"},
+	Example:     "wenmar reports taxperiods\n",
+	RunE:        runReportsTaxperiods,
+	Short:       "List tax periods",
+	Use:         "taxperiods",
 }
 
 func runReportsTaxperiods(cmd *cobra.Command, args []string) error {
@@ -75,11 +78,12 @@ func runReportsTaxperiods(cmd *cobra.Command, args []string) error {
 }
 
 var reportsUpdateCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar reports update 5 --marked-remitted --remitted-date 2026-04-15\n",
-	RunE:    runReportsUpdate,
-	Short:   "Update a tax period by ID",
-	Use:     "update <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /reports/tax_periods/{id}"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar reports update 5 --marked-remitted --remitted-date 2026-04-15\n",
+	RunE:        runReportsUpdate,
+	Short:       "Update a tax period by ID",
+	Use:         "update <id>",
 }
 
 func runReportsUpdate(cmd *cobra.Command, args []string) error {

@@ -25,10 +25,11 @@ var customersSourceCustomerId int
 var customersStatus string
 var customersType string
 var customersArchiveCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersArchive,
-	Short: "Archive a customer (hidden from active lists, retained for history)",
-	Use:   "archive <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customers/{id}/archive"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomersArchive,
+	Short:       "Archive a customer (hidden from active lists, retained for history)",
+	Use:         "archive <id>",
 }
 
 func runCustomersArchive(cmd *cobra.Command, args []string) error {
@@ -44,9 +45,10 @@ func runCustomersArchive(cmd *cobra.Command, args []string) error {
 }
 
 var customersDuplicatesCmd = &cobra.Command{
-	RunE:  runCustomersDuplicates,
-	Short: "Check for duplicate customers",
-	Use:   "duplicates",
+	Annotations: map[string]string{"wenmar/op": "GET /customers/check_duplicate"},
+	RunE:        runCustomersDuplicates,
+	Short:       "Check for duplicate customers",
+	Use:         "duplicates",
 }
 
 func runCustomersDuplicates(cmd *cobra.Command, args []string) error {
@@ -65,10 +67,11 @@ func runCustomersDuplicates(cmd *cobra.Command, args []string) error {
 }
 
 var customersListCmd = &cobra.Command{
-	Example: "wenmar customers list\nwenmar customers list --query \"jane\" --all\nwenmar customers list --agent | head -20\n",
-	RunE:    runCustomersList,
-	Short:   "List all customers, paginated via the Link header",
-	Use:     "list",
+	Annotations: map[string]string{"wenmar/op": "GET /customers"},
+	Example:     "wenmar customers list\nwenmar customers list --query \"jane\" --all\nwenmar customers list --agent | head -20\n",
+	RunE:        runCustomersList,
+	Short:       "List all customers, paginated via the Link header",
+	Use:         "list",
 }
 
 func runCustomersList(cmd *cobra.Command, args []string) error {
@@ -92,10 +95,11 @@ func runCustomersList(cmd *cobra.Command, args []string) error {
 }
 
 var customersMergeCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersMerge,
-	Short: "Merge a source customer into this keeper",
-	Use:   "merge <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /customers/{id}/merges"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomersMerge,
+	Short:       "Merge a source customer into this keeper",
+	Use:         "merge <id>",
 }
 
 func runCustomersMerge(cmd *cobra.Command, args []string) error {
@@ -114,10 +118,11 @@ func runCustomersMerge(cmd *cobra.Command, args []string) error {
 }
 
 var customersRestoreCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersRestore,
-	Short: "Restore a customer to active (from trashed or archived)",
-	Use:   "restore <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customers/{id}/restore"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomersRestore,
+	Short:       "Restore a customer to active (from trashed or archived)",
+	Use:         "restore <id>",
 }
 
 func runCustomersRestore(cmd *cobra.Command, args []string) error {
@@ -133,11 +138,12 @@ func runCustomersRestore(cmd *cobra.Command, args []string) error {
 }
 
 var customersShowCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar customers show 42\n",
-	RunE:    runCustomersShow,
-	Short:   "Show a single customer by ID",
-	Use:     "show <id>",
+	Annotations: map[string]string{"wenmar/op": "GET /customers/{id}"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar customers show 42\n",
+	RunE:        runCustomersShow,
+	Short:       "Show a single customer by ID",
+	Use:         "show <id>",
 }
 
 func runCustomersShow(cmd *cobra.Command, args []string) error {
@@ -151,10 +157,11 @@ func runCustomersShow(cmd *cobra.Command, args []string) error {
 }
 
 var customersTrashCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersTrash,
-	Short: "Soft-delete a customer (status: trashed, purgeable after 30 days)",
-	Use:   "trash <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customers/{id}/trash"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomersTrash,
+	Short:       "Soft-delete a customer (status: trashed, purgeable after 30 days)",
+	Use:         "trash <id>",
 }
 
 func runCustomersTrash(cmd *cobra.Command, args []string) error {
@@ -170,10 +177,11 @@ func runCustomersTrash(cmd *cobra.Command, args []string) error {
 }
 
 var customersVehiclesCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomersVehicles,
-	Short: "List a customer's vehicles",
-	Use:   "vehicles <id>",
+	Annotations: map[string]string{"wenmar/op": "GET /customers/{customer_id}/vehicles"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomersVehicles,
+	Short:       "List a customer's vehicles",
+	Use:         "vehicles <id>",
 }
 
 func runCustomersVehicles(cmd *cobra.Command, args []string) error {
@@ -189,11 +197,12 @@ func runCustomersVehicles(cmd *cobra.Command, args []string) error {
 }
 
 var customersWorkordersCmd = &cobra.Command{
-	Aliases: []string{"work-orders"},
-	Args:    cobra.ExactArgs(1),
-	RunE:    runCustomersWorkorders,
-	Short:   "List a customer's work orders",
-	Use:     "workorders <id>",
+	Aliases:     []string{"work-orders"},
+	Annotations: map[string]string{"wenmar/op": "GET /customers/{customer_id}/work_orders"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomersWorkorders,
+	Short:       "List a customer's work orders",
+	Use:         "workorders <id>",
 }
 
 func runCustomersWorkorders(cmd *cobra.Command, args []string) error {

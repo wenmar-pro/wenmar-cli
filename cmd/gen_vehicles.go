@@ -22,10 +22,11 @@ var vehiclesType string
 var vehiclesVin string
 var vehiclesYear int
 var vehiclesArchiveCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesArchive,
-	Short: "Archive a vehicle (hidden from active lists, retained for history)",
-	Use:   "archive <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /vehicles/{id}/archive"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVehiclesArchive,
+	Short:       "Archive a vehicle (hidden from active lists, retained for history)",
+	Use:         "archive <id>",
 }
 
 func runVehiclesArchive(cmd *cobra.Command, args []string) error {
@@ -41,11 +42,12 @@ func runVehiclesArchive(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesDecodeVinCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar vehicles decode-vin 1HGCM82633A004352\n",
-	RunE:    runVehiclesDecodeVin,
-	Short:   "Decode a VIN into make/model",
-	Use:     "decode-vin <string>",
+	Annotations: map[string]string{"wenmar/op": "GET /vehicles/vin_decode"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar vehicles decode-vin 1HGCM82633A004352\n",
+	RunE:        runVehiclesDecodeVin,
+	Short:       "Decode a VIN into make/model",
+	Use:         "decode-vin <string>",
 }
 
 func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
@@ -60,10 +62,11 @@ func runVehiclesDecodeVin(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesDuplicatesCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesDuplicates,
-	Short: "Check for duplicate vehicles matching a VIN",
-	Use:   "duplicates <string>",
+	Annotations: map[string]string{"wenmar/op": "GET /vehicles/check_duplicate"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVehiclesDuplicates,
+	Short:       "Check for duplicate vehicles matching a VIN",
+	Use:         "duplicates <string>",
 }
 
 func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
@@ -78,10 +81,11 @@ func runVehiclesDuplicates(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesListCmd = &cobra.Command{
-	Example: "wenmar vehicles list\nwenmar vehicles list --jq '.[].plate'\n",
-	RunE:    runVehiclesList,
-	Short:   "List all vehicles",
-	Use:     "list",
+	Annotations: map[string]string{"wenmar/op": "GET /vehicles"},
+	Example:     "wenmar vehicles list\nwenmar vehicles list --jq '.[].plate'\n",
+	RunE:        runVehiclesList,
+	Short:       "List all vehicles",
+	Use:         "list",
 }
 
 func runVehiclesList(cmd *cobra.Command, args []string) error {
@@ -102,10 +106,11 @@ func runVehiclesList(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesMergeCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesMerge,
-	Short: "Merge a source vehicle into this keeper",
-	Use:   "merge <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /vehicles/{id}/merges"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVehiclesMerge,
+	Short:       "Merge a source vehicle into this keeper",
+	Use:         "merge <id>",
 }
 
 func runVehiclesMerge(cmd *cobra.Command, args []string) error {
@@ -124,9 +129,10 @@ func runVehiclesMerge(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesPrefillCmd = &cobra.Command{
-	RunE:  runVehiclesPrefill,
-	Short: "Prefill vehicle data from a VIN",
-	Use:   "prefill",
+	Annotations: map[string]string{"wenmar/op": "GET /vehicles/prefill"},
+	RunE:        runVehiclesPrefill,
+	Short:       "Prefill vehicle data from a VIN",
+	Use:         "prefill",
 }
 
 func runVehiclesPrefill(cmd *cobra.Command, args []string) error {
@@ -145,10 +151,11 @@ func runVehiclesPrefill(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesRestoreCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesRestore,
-	Short: "Restore a vehicle to active (from trashed or archived)",
-	Use:   "restore <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /vehicles/{id}/restore"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVehiclesRestore,
+	Short:       "Restore a vehicle to active (from trashed or archived)",
+	Use:         "restore <id>",
 }
 
 func runVehiclesRestore(cmd *cobra.Command, args []string) error {
@@ -164,11 +171,12 @@ func runVehiclesRestore(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesShowCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar vehicles show 5\n",
-	RunE:    runVehiclesShow,
-	Short:   "Show a single vehicle by ID",
-	Use:     "show <id>",
+	Annotations: map[string]string{"wenmar/op": "GET /vehicles/{id}"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar vehicles show 5\n",
+	RunE:        runVehiclesShow,
+	Short:       "Show a single vehicle by ID",
+	Use:         "show <id>",
 }
 
 func runVehiclesShow(cmd *cobra.Command, args []string) error {
@@ -182,10 +190,11 @@ func runVehiclesShow(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesTransferCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesTransfer,
-	Short: "Transfer a vehicle to a new customer",
-	Use:   "transfer <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /vehicles/{id}/transfers"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVehiclesTransfer,
+	Short:       "Transfer a vehicle to a new customer",
+	Use:         "transfer <id>",
 }
 
 func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
@@ -207,10 +216,11 @@ func runVehiclesTransfer(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesTrashCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVehiclesTrash,
-	Short: "Soft-delete a vehicle (status: trashed, purgeable after 30 days)",
-	Use:   "trash <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /vehicles/{id}/trash"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVehiclesTrash,
+	Short:       "Soft-delete a vehicle (status: trashed, purgeable after 30 days)",
+	Use:         "trash <id>",
 }
 
 func runVehiclesTrash(cmd *cobra.Command, args []string) error {
@@ -226,11 +236,12 @@ func runVehiclesTrash(cmd *cobra.Command, args []string) error {
 }
 
 var vehiclesWorkordersCmd = &cobra.Command{
-	Aliases: []string{"work-orders"},
-	Args:    cobra.ExactArgs(1),
-	RunE:    runVehiclesWorkorders,
-	Short:   "List a vehicle's work orders",
-	Use:     "workorders <id>",
+	Aliases:     []string{"work-orders"},
+	Annotations: map[string]string{"wenmar/op": "GET /vehicles/{vehicle_id}/work_orders"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVehiclesWorkorders,
+	Short:       "List a vehicle's work orders",
+	Use:         "workorders <id>",
 }
 
 func runVehiclesWorkorders(cmd *cobra.Command, args []string) error {

@@ -10,10 +10,11 @@ import (
 )
 
 var vendorsArchiveCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVendorsArchive,
-	Short: "Archive a vendor (hidden from active lists, retained for history)",
-	Use:   "archive <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /vendors/{id}/archive"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVendorsArchive,
+	Short:       "Archive a vendor (hidden from active lists, retained for history)",
+	Use:         "archive <id>",
 }
 
 func runVendorsArchive(cmd *cobra.Command, args []string) error {
@@ -29,10 +30,11 @@ func runVendorsArchive(cmd *cobra.Command, args []string) error {
 }
 
 var vendorsListCmd = &cobra.Command{
-	Example: "wenmar vendors list\n",
-	RunE:    runVendorsList,
-	Short:   "List all vendors, paginated via the Link header",
-	Use:     "list",
+	Annotations: map[string]string{"wenmar/op": "GET /vendors"},
+	Example:     "wenmar vendors list\n",
+	RunE:        runVendorsList,
+	Short:       "List all vendors, paginated via the Link header",
+	Use:         "list",
 }
 
 func runVendorsList(cmd *cobra.Command, args []string) error {
@@ -46,10 +48,11 @@ func runVendorsList(cmd *cobra.Command, args []string) error {
 }
 
 var vendorsRestoreCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVendorsRestore,
-	Short: "Restore a vendor to active (from trashed or archived)",
-	Use:   "restore <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /vendors/{id}/restore"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVendorsRestore,
+	Short:       "Restore a vendor to active (from trashed or archived)",
+	Use:         "restore <id>",
 }
 
 func runVendorsRestore(cmd *cobra.Command, args []string) error {
@@ -65,11 +68,12 @@ func runVendorsRestore(cmd *cobra.Command, args []string) error {
 }
 
 var vendorsShowCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar vendors show 7\n",
-	RunE:    runVendorsShow,
-	Short:   "Show a single vendor by ID",
-	Use:     "show <id>",
+	Annotations: map[string]string{"wenmar/op": "GET /vendors/{id}"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar vendors show 7\n",
+	RunE:        runVendorsShow,
+	Short:       "Show a single vendor by ID",
+	Use:         "show <id>",
 }
 
 func runVendorsShow(cmd *cobra.Command, args []string) error {
@@ -83,10 +87,11 @@ func runVendorsShow(cmd *cobra.Command, args []string) error {
 }
 
 var vendorsTrashCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runVendorsTrash,
-	Short: "Soft-delete a vendor (status: trashed, purgeable after 30 days)",
-	Use:   "trash <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /vendors/{id}/trash"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runVendorsTrash,
+	Short:       "Soft-delete a vendor (status: trashed, purgeable after 30 days)",
+	Use:         "trash <id>",
 }
 
 func runVendorsTrash(cmd *cobra.Command, args []string) error {

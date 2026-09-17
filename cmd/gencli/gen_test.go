@@ -2,9 +2,18 @@ package main
 
 import (
 	"bytes"
+	"regexp"
 	"strings"
 	"testing"
 )
+
+// containsNormalized reports whether haystack contains want after collapsing
+// runs of whitespace to a single space in both strings. It makes assertions on
+// gofmt-aligned emitted code robust to alignment whitespace changes.
+func containsNormalized(haystack, want string) bool {
+	ws := regexp.MustCompile(`\s+`)
+	return strings.Contains(ws.ReplaceAllString(haystack, " "), ws.ReplaceAllString(want, " "))
+}
 
 func TestEmitCreate_WrapperBody(t *testing.T) {
 	cmd := GenCommand{
@@ -88,14 +97,33 @@ func TestEmitNestedList_PositionalId(t *testing.T) {
 		t.Fatalf("emitGroup: %v", err)
 	}
 	for _, want := range []string{
-		`Use:   "vehicles <id>"`,
+		`Use: "vehicles <id>"`,
 		"runShow(cmd, args, \"customers\", \"GET\"",
 		"ListCustomersVehicles(ctx, id)",
 		`fmt.Sprintf("/customers/%s/vehicles", a[0])`,
 	} {
-		if !strings.Contains(code, want) {
+		if !containsNormalized(code, want) {
 			t.Errorf("emitted code missing %q:\n%s", want, code)
 		}
+	}
+}
+
+func TestOpAnnotationValue(t *testing.T) {
+	tests := []struct {
+		name string
+		cmd  GenCommand
+		want string
+	}{
+		{"method uppercased", GenCommand{Method: "get", Path: "/customers"}, "GET /customers"},
+		{"post with id segment", GenCommand{Method: "post", Path: "/work_orders/{id}/start"}, "POST /work_orders/{id}/start"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := OpAnnotationValue(tt.cmd)
+			if got != tt.want {
+				t.Errorf("OpAnnotationValue() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

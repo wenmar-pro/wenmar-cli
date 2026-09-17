@@ -12,9 +12,10 @@ import (
 var workordertagsColor string
 var workordertagsName string
 var workordertagsCreateCmd = &cobra.Command{
-	RunE:  runWorkordertagsCreate,
-	Short: "Create a work order tag",
-	Use:   "create",
+	Annotations: map[string]string{"wenmar/op": "POST /work_order_tags"},
+	RunE:        runWorkordertagsCreate,
+	Short:       "Create a work order tag",
+	Use:         "create",
 }
 
 func runWorkordertagsCreate(cmd *cobra.Command, args []string) error {
@@ -34,10 +35,11 @@ func runWorkordertagsCreate(cmd *cobra.Command, args []string) error {
 }
 
 var workordertagsDeleteCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkordertagsDelete,
-	Short: "Archive a work order tag by ID",
-	Use:   "delete <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_order_tags/{id}/archive"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkordertagsDelete,
+	Short:       "Archive a work order tag by ID",
+	Use:         "delete <id>",
 }
 
 func runWorkordertagsDelete(cmd *cobra.Command, args []string) error {
@@ -53,10 +55,11 @@ func runWorkordertagsDelete(cmd *cobra.Command, args []string) error {
 }
 
 var workordertagsListCmd = &cobra.Command{
-	Example: "wenmar workordertags list\n",
-	RunE:    runWorkordertagsList,
-	Short:   "List all work order tags",
-	Use:     "list",
+	Annotations: map[string]string{"wenmar/op": "GET /work_order_tags"},
+	Example:     "wenmar workordertags list\n",
+	RunE:        runWorkordertagsList,
+	Short:       "List all work order tags",
+	Use:         "list",
 }
 
 func runWorkordertagsList(cmd *cobra.Command, args []string) error {
@@ -70,10 +73,11 @@ func runWorkordertagsList(cmd *cobra.Command, args []string) error {
 }
 
 var workordertagsUpdateCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runWorkordertagsUpdate,
-	Short: "Update a work order tag by ID",
-	Use:   "update <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_order_tags/{id}"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runWorkordertagsUpdate,
+	Short:       "Update a work order tag by ID",
+	Use:         "update <id>",
 }
 
 func runWorkordertagsUpdate(cmd *cobra.Command, args []string) error {

@@ -9,10 +9,11 @@ import (
 )
 
 var accountShowCmd = &cobra.Command{
-	Example: "wenmar account show\n",
-	RunE:    runAccountShow,
-	Short:   "Show account details",
-	Use:     "show",
+	Annotations: map[string]string{"wenmar/op": "GET /account"},
+	Example:     "wenmar account show\n",
+	RunE:        runAccountShow,
+	Short:       "Show account details",
+	Use:         "show",
 }
 
 func runAccountShow(cmd *cobra.Command, args []string) error {

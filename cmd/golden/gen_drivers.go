@@ -15,9 +15,10 @@ var driversDeleteDryRun bool
 var driversFullName string
 var driversPhone string
 var driversCreateCmd = &cobra.Command{
-	RunE:  runDriversCreate,
-	Short: "Create a new driver for a customer",
-	Use:   "create",
+	Annotations: map[string]string{"wenmar/op": "POST /customers/{customer_id}/drivers"},
+	RunE:        runDriversCreate,
+	Short:       "Create a new driver for a customer",
+	Use:         "create",
 }
 
 func runDriversCreate(cmd *cobra.Command, args []string) error {
@@ -40,10 +41,11 @@ func runDriversCreate(cmd *cobra.Command, args []string) error {
 }
 
 var driversDeleteCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runDriversDelete,
-	Short: "Delete a driver by ID",
-	Use:   "delete <id>",
+	Annotations: map[string]string{"wenmar/op": "DELETE /customers/{customer_id}/drivers/{id}"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runDriversDelete,
+	Short:       "Delete a driver by ID",
+	Use:         "delete <id>",
 }
 
 func runDriversDelete(cmd *cobra.Command, args []string) error {
@@ -55,10 +57,11 @@ func runDriversDelete(cmd *cobra.Command, args []string) error {
 }
 
 var driversListCmd = &cobra.Command{
-	Example: "wenmar drivers list --customer-id 42\n",
-	RunE:    runDriversList,
-	Short:   "List drivers for a customer, paginated via the Link header",
-	Use:     "list",
+	Annotations: map[string]string{"wenmar/op": "GET /customers/{customer_id}/drivers"},
+	Example:     "wenmar drivers list --customer-id 42\n",
+	RunE:        runDriversList,
+	Short:       "List drivers for a customer, paginated via the Link header",
+	Use:         "list",
 }
 
 func runDriversList(cmd *cobra.Command, args []string) error {
@@ -72,10 +75,11 @@ func runDriversList(cmd *cobra.Command, args []string) error {
 }
 
 var driversShowCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runDriversShow,
-	Short: "Show a single driver by ID",
-	Use:   "show <id>",
+	Annotations: map[string]string{"wenmar/op": "GET /customers/{customer_id}/drivers/{id}"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runDriversShow,
+	Short:       "Show a single driver by ID",
+	Use:         "show <id>",
 }
 
 func runDriversShow(cmd *cobra.Command, args []string) error {
@@ -91,10 +95,11 @@ func runDriversShow(cmd *cobra.Command, args []string) error {
 }
 
 var driversUpdateCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runDriversUpdate,
-	Short: "Update a driver by ID",
-	Use:   "update <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customers/{customer_id}/drivers/{id}"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runDriversUpdate,
+	Short:       "Update a driver by ID",
+	Use:         "update <id>",
 }
 
 func runDriversUpdate(cmd *cobra.Command, args []string) error {

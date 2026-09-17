@@ -15,10 +15,11 @@ var servicecategoriesName string
 var servicecategoriesPosition int
 var servicecategoriesServiceType string
 var servicecategoriesArchiveCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesArchive,
-	Short: "Archive a service category (hidden from active lists, retained for history)",
-	Use:   "archive <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /service_categories/{id}/archive"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runServicecategoriesArchive,
+	Short:       "Archive a service category (hidden from active lists, retained for history)",
+	Use:         "archive <id>",
 }
 
 func runServicecategoriesArchive(cmd *cobra.Command, args []string) error {
@@ -34,9 +35,10 @@ func runServicecategoriesArchive(cmd *cobra.Command, args []string) error {
 }
 
 var servicecategoriesCreateCmd = &cobra.Command{
-	RunE:  runServicecategoriesCreate,
-	Short: "Create a new service category",
-	Use:   "create",
+	Annotations: map[string]string{"wenmar/op": "POST /service_categories"},
+	RunE:        runServicecategoriesCreate,
+	Short:       "Create a new service category",
+	Use:         "create",
 }
 
 func runServicecategoriesCreate(cmd *cobra.Command, args []string) error {
@@ -61,10 +63,11 @@ func runServicecategoriesCreate(cmd *cobra.Command, args []string) error {
 }
 
 var servicecategoriesListCmd = &cobra.Command{
-	Example: "wenmar servicecategories list\n",
-	RunE:    runServicecategoriesList,
-	Short:   "List all service categories",
-	Use:     "list",
+	Annotations: map[string]string{"wenmar/op": "GET /service_categories"},
+	Example:     "wenmar servicecategories list\n",
+	RunE:        runServicecategoriesList,
+	Short:       "List all service categories",
+	Use:         "list",
 }
 
 func runServicecategoriesList(cmd *cobra.Command, args []string) error {
@@ -78,10 +81,11 @@ func runServicecategoriesList(cmd *cobra.Command, args []string) error {
 }
 
 var servicecategoriesRestoreCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesRestore,
-	Short: "Restore a service category to active (from trashed or archived)",
-	Use:   "restore <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /service_categories/{id}/restore"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runServicecategoriesRestore,
+	Short:       "Restore a service category to active (from trashed or archived)",
+	Use:         "restore <id>",
 }
 
 func runServicecategoriesRestore(cmd *cobra.Command, args []string) error {
@@ -97,9 +101,10 @@ func runServicecategoriesRestore(cmd *cobra.Command, args []string) error {
 }
 
 var servicecategoriesSeedDefaultsCmd = &cobra.Command{
-	RunE:  runServicecategoriesSeedDefaults,
-	Short: "Seed default service categories for the account",
-	Use:   "seed-defaults",
+	Annotations: map[string]string{"wenmar/op": "POST /service_categories/seed_defaults"},
+	RunE:        runServicecategoriesSeedDefaults,
+	Short:       "Seed default service categories for the account",
+	Use:         "seed-defaults",
 }
 
 func runServicecategoriesSeedDefaults(cmd *cobra.Command, args []string) error {
@@ -113,10 +118,11 @@ func runServicecategoriesSeedDefaults(cmd *cobra.Command, args []string) error {
 }
 
 var servicecategoriesTrashCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesTrash,
-	Short: "Soft-delete a service category (status: trashed, purgeable after 30 days)",
-	Use:   "trash <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /service_categories/{id}/trash"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runServicecategoriesTrash,
+	Short:       "Soft-delete a service category (status: trashed, purgeable after 30 days)",
+	Use:         "trash <id>",
 }
 
 func runServicecategoriesTrash(cmd *cobra.Command, args []string) error {
@@ -132,10 +138,11 @@ func runServicecategoriesTrash(cmd *cobra.Command, args []string) error {
 }
 
 var servicecategoriesUpdateCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runServicecategoriesUpdate,
-	Short: "Update a service category by ID",
-	Use:   "update <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /service_categories/{id}"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runServicecategoriesUpdate,
+	Short:       "Update a service category by ID",
+	Use:         "update <id>",
 }
 
 func runServicecategoriesUpdate(cmd *cobra.Command, args []string) error {

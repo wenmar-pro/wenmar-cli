@@ -13,10 +13,11 @@ import (
 var customertagsName string
 var customertagsStatus string
 var customertagsArchiveCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomertagsArchive,
-	Short: "Archive a customer tag by ID",
-	Use:   "archive <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customer_tags/{id}/archive"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomertagsArchive,
+	Short:       "Archive a customer tag by ID",
+	Use:         "archive <id>",
 }
 
 func runCustomertagsArchive(cmd *cobra.Command, args []string) error {
@@ -32,9 +33,10 @@ func runCustomertagsArchive(cmd *cobra.Command, args []string) error {
 }
 
 var customertagsCreateCmd = &cobra.Command{
-	RunE:  runCustomertagsCreate,
-	Short: "Create a customer tag",
-	Use:   "create",
+	Annotations: map[string]string{"wenmar/op": "POST /customer_tags"},
+	RunE:        runCustomertagsCreate,
+	Short:       "Create a customer tag",
+	Use:         "create",
 }
 
 func runCustomertagsCreate(cmd *cobra.Command, args []string) error {
@@ -51,10 +53,11 @@ func runCustomertagsCreate(cmd *cobra.Command, args []string) error {
 }
 
 var customertagsDeleteCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomertagsDelete,
-	Short: "Trash a customer tag by ID",
-	Use:   "delete <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customer_tags/{id}/trash"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomertagsDelete,
+	Short:       "Trash a customer tag by ID",
+	Use:         "delete <id>",
 }
 
 func runCustomertagsDelete(cmd *cobra.Command, args []string) error {
@@ -70,10 +73,11 @@ func runCustomertagsDelete(cmd *cobra.Command, args []string) error {
 }
 
 var customertagsListCmd = &cobra.Command{
-	Example: "wenmar customertags list\n",
-	RunE:    runCustomertagsList,
-	Short:   "List all customer tags",
-	Use:     "list",
+	Annotations: map[string]string{"wenmar/op": "GET /customer_tags"},
+	Example:     "wenmar customertags list\n",
+	RunE:        runCustomertagsList,
+	Short:       "List all customer tags",
+	Use:         "list",
 }
 
 func runCustomertagsList(cmd *cobra.Command, args []string) error {
@@ -87,10 +91,11 @@ func runCustomertagsList(cmd *cobra.Command, args []string) error {
 }
 
 var customertagsRestoreCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomertagsRestore,
-	Short: "Restore a customer tag to active",
-	Use:   "restore <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customer_tags/{id}/restore"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomertagsRestore,
+	Short:       "Restore a customer tag to active",
+	Use:         "restore <id>",
 }
 
 func runCustomertagsRestore(cmd *cobra.Command, args []string) error {
@@ -106,10 +111,11 @@ func runCustomertagsRestore(cmd *cobra.Command, args []string) error {
 }
 
 var customertagsShowCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomertagsShow,
-	Short: "Show a single customer tag by ID",
-	Use:   "show <id>",
+	Annotations: map[string]string{"wenmar/op": "GET /customer_tags/{id}"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomertagsShow,
+	Short:       "Show a single customer tag by ID",
+	Use:         "show <id>",
 }
 
 func runCustomertagsShow(cmd *cobra.Command, args []string) error {
@@ -123,10 +129,11 @@ func runCustomertagsShow(cmd *cobra.Command, args []string) error {
 }
 
 var customertagsUpdateCmd = &cobra.Command{
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCustomertagsUpdate,
-	Short: "Update a customer tag by ID",
-	Use:   "update <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /customer_tags/{id}"},
+	Args:        cobra.ExactArgs(1),
+	RunE:        runCustomertagsUpdate,
+	Short:       "Update a customer tag by ID",
+	Use:         "update <id>",
 }
 
 func runCustomertagsUpdate(cmd *cobra.Command, args []string) error {

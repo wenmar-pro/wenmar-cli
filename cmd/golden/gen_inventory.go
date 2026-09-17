@@ -12,10 +12,11 @@ import (
 var inventoryExtractionId string
 var inventoryText string
 var inventoryExtractCmd = &cobra.Command{
-	Example: "wenmar inventory extract --extraction-id abc123 --text \"2x oil filter\"\n",
-	RunE:    runInventoryExtract,
-	Short:   "Extract inventory levels from text",
-	Use:     "extract",
+	Annotations: map[string]string{"wenmar/op": "POST /inventory_levels/extractions"},
+	Example:     "wenmar inventory extract --extraction-id abc123 --text \"2x oil filter\"\n",
+	RunE:        runInventoryExtract,
+	Short:       "Extract inventory levels from text",
+	Use:         "extract",
 }
 
 func runInventoryExtract(cmd *cobra.Command, args []string) error {

@@ -10,11 +10,12 @@ import (
 )
 
 var locationsShowCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar locations show main\n",
-	RunE:    runLocationsShow,
-	Short:   "Show a location by ID",
-	Use:     "show <id>",
+	Annotations: map[string]string{"wenmar/op": "GET /locations/{id}"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar locations show main\n",
+	RunE:        runLocationsShow,
+	Short:       "Show a location by ID",
+	Use:         "show <id>",
 }
 
 func runLocationsShow(cmd *cobra.Command, args []string) error {
