@@ -1,6 +1,10 @@
 package cmd
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/spf13/cobra"
+)
 
 func TestSurfaceSnapshotRecordsRequiredFlags(t *testing.T) {
 	surf := buildSurfaceSnapshot(vehiclesCreateCmd, "vehicles create")
@@ -14,5 +18,26 @@ func TestSurfaceSnapshotRecordsRequiredFlags(t *testing.T) {
 		if f.Name == "customer-id" && !f.Required {
 			t.Errorf("vehicles create --customer-id must be required:true in snapshot")
 		}
+	}
+}
+
+func TestSurfaceSnapshotRecordsOpAnnotations(t *testing.T) {
+	cmd := &cobra.Command{
+		Use:         "x <id>",
+		Annotations: map[string]string{"wenmar/op": "GET /x/{id}", "unrelated": "noise"},
+	}
+	surf := buildSurfaceSnapshot(cmd, "x")
+	if got := surf.Annotations["wenmar/op"]; got != "GET /x/{id}" {
+		t.Errorf("wenmar/op annotation not captured: got %q", got)
+	}
+	if len(surf.Annotations) != 1 {
+		t.Errorf("snapshot must carry only wenmar/op annotations, got %v", surf.Annotations)
+	}
+}
+
+func TestSurfaceSnapshotOmitsUnannotatedCommands(t *testing.T) {
+	surf := buildSurfaceSnapshot(&cobra.Command{Use: "y"}, "y")
+	if surf.Annotations != nil {
+		t.Errorf("unannotated command must not grow an annotations map: %v", surf.Annotations)
 	}
 }

@@ -31,11 +31,12 @@ func init() {
 
 // SurfaceCommand is a serializable representation of a cobra command.
 type SurfaceCommand struct {
-	Path     string           `json:"path"`
-	Use      string           `json:"use"`
-	Short    string           `json:"short"`
-	Flags    []SurfaceFlag    `json:"flags"`
-	Children []SurfaceCommand `json:"children,omitempty"`
+	Path        string            `json:"path"`
+	Use         string            `json:"use"`
+	Short       string            `json:"short"`
+	Flags       []SurfaceFlag     `json:"flags"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+	Children    []SurfaceCommand  `json:"children,omitempty"`
 }
 
 // SurfaceFlag is a serializable representation of a cobra flag.
@@ -55,6 +56,12 @@ func buildSurfaceSnapshot(cmd *cobra.Command, parentPath string) SurfaceCommand 
 		Path:  path,
 		Use:   cmd.Use,
 		Short: cmd.Short,
+	}
+
+	// Only the wenmar/op binding is part of the surface contract; other
+	// cobra annotations (present or future) stay out of the snapshot.
+	if op, ok := cmd.Annotations["wenmar/op"]; ok {
+		surf.Annotations = map[string]string{"wenmar/op": op}
 	}
 
 	// Collect flags.

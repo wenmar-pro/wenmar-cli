@@ -55,7 +55,10 @@
           "path": "wenmar account show",
           "use": "show",
           "short": "Show account details",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /account"
+          }
         }
       ]
     },
@@ -163,7 +166,10 @@
           "path": "wenmar customers archive \u003cid\u003e",
           "use": "archive \u003cid\u003e",
           "short": "Archive a customer (hidden from active lists, retained for history)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /customers/{id}/archive"
+          }
         },
         {
           "path": "wenmar customers create",
@@ -242,7 +248,10 @@
               "name": "phone",
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /customers/check_duplicate"
+          }
         },
         {
           "path": "wenmar customers list",
@@ -286,7 +295,10 @@
             {
               "name": "type"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /customers"
+          }
         },
         {
           "path": "wenmar customers lookup \u003cterm\u003e",
@@ -304,25 +316,37 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /customers/{id}/merges"
+          }
         },
         {
           "path": "wenmar customers restore \u003cid\u003e",
           "use": "restore \u003cid\u003e",
           "short": "Restore a customer to active (from trashed or archived)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /customers/{id}/restore"
+          }
         },
         {
           "path": "wenmar customers show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single customer by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /customers/{id}"
+          }
         },
         {
           "path": "wenmar customers trash \u003cid\u003e",
           "use": "trash \u003cid\u003e",
           "short": "Soft-delete a customer (status: trashed, purgeable after 30 days)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /customers/{id}/trash"
+          }
         },
         {
           "path": "wenmar customers update \u003cid\u003e",
@@ -383,13 +407,19 @@
           "path": "wenmar customers vehicles \u003cid\u003e",
           "use": "vehicles \u003cid\u003e",
           "short": "List a customer's vehicles",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /customers/{customer_id}/vehicles"
+          }
         },
         {
           "path": "wenmar customers workorders \u003cid\u003e",
           "use": "workorders \u003cid\u003e",
           "short": "List a customer's work orders",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /customers/{customer_id}/work_orders"
+          }
         }
       ]
     },
@@ -403,7 +433,10 @@
           "path": "wenmar customertags archive \u003cid\u003e",
           "use": "archive \u003cid\u003e",
           "short": "Archive a customer tag by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /customer_tags/{id}/archive"
+          }
         },
         {
           "path": "wenmar customertags create",
@@ -414,13 +447,19 @@
               "name": "name",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /customer_tags"
+          }
         },
         {
           "path": "wenmar customertags delete \u003cid\u003e",
           "use": "delete \u003cid\u003e",
           "short": "Trash a customer tag by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /customer_tags/{id}/trash"
+          }
         },
         {
           "path": "wenmar customertags list",
@@ -430,19 +469,28 @@
             {
               "name": "status"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /customer_tags"
+          }
         },
         {
           "path": "wenmar customertags restore \u003cid\u003e",
           "use": "restore \u003cid\u003e",
           "short": "Restore a customer tag to active",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /customer_tags/{id}/restore"
+          }
         },
         {
           "path": "wenmar customertags show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single customer tag by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /customer_tags/{id}"
+          }
         },
         {
           "path": "wenmar customertags update \u003cid\u003e",
@@ -453,7 +501,10 @@
               "name": "name",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "PATCH /customer_tags/{id}"
+          }
         }
       ]
     },
@@ -486,7 +537,10 @@
             {
               "name": "phone"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /customers/{customer_id}/drivers"
+          }
         },
         {
           "path": "wenmar drivers delete \u003cid\u003e",
@@ -502,7 +556,10 @@
               "name": "dry-run",
               "default": "false"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "DELETE /customers/{customer_id}/drivers/{id}"
+          }
         },
         {
           "path": "wenmar drivers list",
@@ -514,7 +571,10 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /customers/{customer_id}/drivers"
+          }
         },
         {
           "path": "wenmar drivers show \u003cid\u003e",
@@ -526,7 +586,10 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /customers/{customer_id}/drivers/{id}"
+          }
         },
         {
           "path": "wenmar drivers update \u003cid\u003e",
@@ -541,7 +604,10 @@
             {
               "name": "full-name"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "PATCH /customers/{customer_id}/drivers/{id}"
+          }
         }
       ]
     },
@@ -597,7 +663,10 @@
               "name": "text",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /inventory_levels/extractions"
+          }
         }
       ]
     },
@@ -625,7 +694,10 @@
           "path": "wenmar locations show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a location by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /locations/{id}"
+          }
         }
       ]
     },
@@ -648,7 +720,10 @@
               "name": "period-start",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /reports/tax_periods"
+          }
         },
         {
           "path": "wenmar reports statements",
@@ -658,13 +733,19 @@
             {
               "name": "billing-status"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /reports/statements"
+          }
         },
         {
           "path": "wenmar reports taxperiods",
           "use": "taxperiods",
           "short": "List tax periods",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /reports/tax_periods"
+          }
         },
         {
           "path": "wenmar reports update \u003cid\u003e",
@@ -680,7 +761,10 @@
               "name": "remitted-date",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "PATCH /reports/tax_periods/{id}"
+          }
         }
       ]
     },
@@ -694,7 +778,10 @@
           "path": "wenmar servicecategories archive \u003cid\u003e",
           "use": "archive \u003cid\u003e",
           "short": "Archive a service category (hidden from active lists, retained for history)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /service_categories/{id}/archive"
+          }
         },
         {
           "path": "wenmar servicecategories create",
@@ -713,31 +800,46 @@
               "name": "service-type",
               "default": "maintenance"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /service_categories"
+          }
         },
         {
           "path": "wenmar servicecategories list",
           "use": "list",
           "short": "List all service categories",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /service_categories"
+          }
         },
         {
           "path": "wenmar servicecategories restore \u003cid\u003e",
           "use": "restore \u003cid\u003e",
           "short": "Restore a service category to active (from trashed or archived)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /service_categories/{id}/restore"
+          }
         },
         {
           "path": "wenmar servicecategories seed-defaults",
           "use": "seed-defaults",
           "short": "Seed default service categories for the account",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /service_categories/seed_defaults"
+          }
         },
         {
           "path": "wenmar servicecategories trash \u003cid\u003e",
           "use": "trash \u003cid\u003e",
           "short": "Soft-delete a service category (status: trashed, purgeable after 30 days)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /service_categories/{id}/trash"
+          }
         },
         {
           "path": "wenmar servicecategories update \u003cid\u003e",
@@ -751,7 +853,10 @@
               "name": "position",
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "PATCH /service_categories/{id}"
+          }
         }
       ]
     },
@@ -821,13 +926,19 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /customers/{customer_id}/statements"
+          }
         },
         {
           "path": "wenmar statements show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single statement by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /statements/{id}"
+          }
         }
       ]
     },
@@ -888,7 +999,10 @@
           "path": "wenmar vehicles archive \u003cid\u003e",
           "use": "archive \u003cid\u003e",
           "short": "Archive a vehicle (hidden from active lists, retained for history)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /vehicles/{id}/archive"
+          }
         },
         {
           "path": "wenmar vehicles create",
@@ -965,13 +1079,19 @@
           "path": "wenmar vehicles decode-vin \u003cstring\u003e",
           "use": "decode-vin \u003cstring\u003e",
           "short": "Decode a VIN into make/model",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /vehicles/vin_decode"
+          }
         },
         {
           "path": "wenmar vehicles duplicates \u003cstring\u003e",
           "use": "duplicates \u003cstring\u003e",
           "short": "Check for duplicate vehicles matching a VIN",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /vehicles/check_duplicate"
+          }
         },
         {
           "path": "wenmar vehicles list",
@@ -999,7 +1119,10 @@
             {
               "name": "type"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /vehicles"
+          }
         },
         {
           "path": "wenmar vehicles lookup \u003cterm\u003e",
@@ -1017,7 +1140,10 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /vehicles/{id}/merges"
+          }
         },
         {
           "path": "wenmar vehicles prefill",
@@ -1037,19 +1163,28 @@
               "name": "year",
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "GET /vehicles/prefill"
+          }
         },
         {
           "path": "wenmar vehicles restore \u003cid\u003e",
           "use": "restore \u003cid\u003e",
           "short": "Restore a vehicle to active (from trashed or archived)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /vehicles/{id}/restore"
+          }
         },
         {
           "path": "wenmar vehicles show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single vehicle by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /vehicles/{id}"
+          }
         },
         {
           "path": "wenmar vehicles transfer \u003cid\u003e",
@@ -1065,13 +1200,19 @@
               "name": "mode",
               "default": "vehicle_only"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /vehicles/{id}/transfers"
+          }
         },
         {
           "path": "wenmar vehicles trash \u003cid\u003e",
           "use": "trash \u003cid\u003e",
           "short": "Soft-delete a vehicle (status: trashed, purgeable after 30 days)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /vehicles/{id}/trash"
+          }
         },
         {
           "path": "wenmar vehicles update \u003cid\u003e",
@@ -1133,7 +1274,10 @@
           "path": "wenmar vehicles workorders \u003cid\u003e",
           "use": "workorders \u003cid\u003e",
           "short": "List a vehicle's work orders",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /vehicles/{vehicle_id}/work_orders"
+          }
         }
       ]
     },
@@ -1147,31 +1291,46 @@
           "path": "wenmar vendors archive \u003cid\u003e",
           "use": "archive \u003cid\u003e",
           "short": "Archive a vendor (hidden from active lists, retained for history)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /vendors/{id}/archive"
+          }
         },
         {
           "path": "wenmar vendors list",
           "use": "list",
           "short": "List all vendors, paginated via the Link header",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /vendors"
+          }
         },
         {
           "path": "wenmar vendors restore \u003cid\u003e",
           "use": "restore \u003cid\u003e",
           "short": "Restore a vendor to active (from trashed or archived)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /vendors/{id}/restore"
+          }
         },
         {
           "path": "wenmar vendors show \u003cid\u003e",
           "use": "show \u003cid\u003e",
           "short": "Show a single vendor by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /vendors/{id}"
+          }
         },
         {
           "path": "wenmar vendors trash \u003cid\u003e",
           "use": "trash \u003cid\u003e",
           "short": "Soft-delete a vendor (status: trashed, purgeable after 30 days)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /vendors/{id}/trash"
+          }
         }
       ]
     },
@@ -1234,7 +1393,10 @@
           "path": "wenmar wo close \u003cid\u003e",
           "use": "close \u003cid\u003e",
           "short": "Close a work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/close"
+          }
         },
         {
           "path": "wenmar wo complete \u003cid\u003e",
@@ -1251,7 +1413,10 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/complete"
+          }
         },
         {
           "path": "wenmar wo create",
@@ -1268,7 +1433,10 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /work_orders"
+          }
         },
         {
           "path": "wenmar wo decline \u003cid\u003e",
@@ -1279,7 +1447,10 @@
               "name": "closure-reason",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/decline"
+          }
         },
         {
           "path": "wenmar wo decline-all",
@@ -1295,7 +1466,10 @@
               "required": true,
               "default": "0"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{work_order_id}/concerns/decline_all"
+          }
         },
         {
           "path": "wenmar wo estimate \u003cid\u003e",
@@ -1313,7 +1487,10 @@
           "path": "wenmar wo list",
           "use": "list",
           "short": "List all work orders, paginated via the Link header",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_orders"
+          }
         },
         {
           "path": "wenmar wo notes",
@@ -1386,31 +1563,46 @@
           "path": "wenmar wo post-to-account \u003cid\u003e",
           "use": "post-to-account \u003cid\u003e",
           "short": "Post a work order to accounts receivable",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/post_to_account"
+          }
         },
         {
           "path": "wenmar wo reopen \u003cid\u003e",
           "use": "reopen \u003cid\u003e",
           "short": "Reopen a closed work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/reopen"
+          }
         },
         {
           "path": "wenmar wo send-estimate \u003cid\u003e",
           "use": "send-estimate \u003cid\u003e",
           "short": "Send the estimate to the customer",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/send_estimate"
+          }
         },
         {
           "path": "wenmar wo send-invoice-summary \u003cid\u003e",
           "use": "send-invoice-summary \u003cid\u003e",
           "short": "Send the invoice summary to the customer",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/send_invoice_summary"
+          }
         },
         {
           "path": "wenmar wo send-reminder \u003cid\u003e",
           "use": "send-reminder \u003cid\u003e",
           "short": "Send a reminder for the work order",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/send_reminder"
+          }
         },
         {
           "path": "wenmar wo services \u003cwork-order-id\u003e",
@@ -1676,7 +1868,10 @@
           "path": "wenmar wo start \u003cid\u003e",
           "use": "start \u003cid\u003e",
           "short": "Start a work order (estimate -\u003e in_progress)",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/start"
+          }
         },
         {
           "path": "wenmar wo technicians \u003cwork-order-id\u003e",
@@ -1732,7 +1927,10 @@
             {
               "name": "work-order-tag-id"
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "PATCH /work_orders/{id}"
+          }
         },
         {
           "path": "wenmar wo vehicle-history \u003cwork-order-id\u003e",
@@ -1749,7 +1947,10 @@
               "name": "closure-reason",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /work_orders/{id}/void"
+          }
         },
         {
           "path": "wenmar wo wip \u003cid\u003e",
@@ -1778,19 +1979,28 @@
               "name": "name",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "POST /work_order_tags"
+          }
         },
         {
           "path": "wenmar workordertags delete \u003cid\u003e",
           "use": "delete \u003cid\u003e",
           "short": "Archive a work order tag by ID",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "PATCH /work_order_tags/{id}/archive"
+          }
         },
         {
           "path": "wenmar workordertags list",
           "use": "list",
           "short": "List all work order tags",
-          "flags": null
+          "flags": null,
+          "annotations": {
+            "wenmar/op": "GET /work_order_tags"
+          }
         },
         {
           "path": "wenmar workordertags update \u003cid\u003e",
@@ -1801,7 +2011,10 @@
               "name": "name",
               "required": true
             }
-          ]
+          ],
+          "annotations": {
+            "wenmar/op": "PATCH /work_order_tags/{id}"
+          }
         }
       ]
     }
