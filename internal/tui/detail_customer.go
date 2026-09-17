@@ -86,7 +86,7 @@ func (m *CustomerDetail) View() string {
 
 	s += DetailLabelStyle.Render("Financials\n")
 	s += fmt.Sprintf("  Outstanding balance: %s\n", formatCentsPtr(c.OutstandingBalanceCents))
-	s += fmt.Sprintf("  Store credit: %s\n", formatCentsPtr(c.StoreCreditCents))
+	s += fmt.Sprintf("  Store credit: %s\n", formatCents(c.StoreCreditCents))
 	s += fmt.Sprintf("  Total revenue: %s\n", formatCentsPtr(c.TotalRevenueCents))
 	s += "\n"
 
