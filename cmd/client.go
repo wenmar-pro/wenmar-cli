@@ -49,7 +49,11 @@ func newClientForLocation(locationID string) (*wenmar.Client, error) {
 	if locationID == "" {
 		return client, nil
 	}
-	return client.ForLocation(locationID), nil
+	scoped, err := client.ForLocation(locationID)
+	if err != nil {
+		return nil, err
+	}
+	return scoped, nil
 }
 
 // newScopedClient resolves the location from flag/env/config and builds a

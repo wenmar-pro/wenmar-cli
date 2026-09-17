@@ -107,7 +107,10 @@ func fetchWorkOrderDetail(client *wenmar.Client, locationID string, id int) tea.
 		var resp *wenmar.ShowWorkOrderResponse
 		var err error
 		if locationID != "" {
-			lc := client.ForLocation(locationID)
+			lc, err := client.ForLocation(locationID)
+			if err != nil {
+				return detailResultMsg{err: err}
+			}
 			resp, err = lc.ShowWorkOrder(ctx, id)
 		} else {
 			resp, err = client.ShowWorkOrder(ctx, id)
