@@ -86,7 +86,7 @@ func (m *CustomerDetail) View() string {
 
 	s += DetailLabelStyle.Render("Financials\n")
 	s += fmt.Sprintf("  Outstanding balance: %s\n", formatCentsPtr(c.OutstandingBalanceCents))
-	s += fmt.Sprintf("  Store credit: %s\n", formatCentsPtr(c.StoreCreditCents))
+	s += fmt.Sprintf("  Store credit: %s\n", formatCents(c.StoreCreditCents))
 	s += fmt.Sprintf("  Total revenue: %s\n", formatCentsPtr(c.TotalRevenueCents))
 	s += "\n"
 
@@ -118,8 +118,12 @@ func fetchCustomerDetail(client *wenmar.Client, locationID string, id int) tea.C
 		ctx := context.Background()
 		var resp *wenmar.ShowCustomerResponse
 		var err error
+		var lc *wenmar.Client
 		if locationID != "" {
-			lc := client.ForLocation(locationID)
+			lc, err = client.ForLocation(locationID)
+			if err != nil {
+				return customerDetailResultMsg{err: err}
+			}
 			resp, err = lc.ShowCustomer(ctx, id)
 		} else {
 			resp, err = client.ShowCustomer(ctx, id)

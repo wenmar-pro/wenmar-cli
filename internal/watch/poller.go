@@ -105,7 +105,7 @@ func (p *Poller) scopedClient(ctx context.Context) (*wenmar.Client, error) {
 	if p.LocationID == "" {
 		return p.Client, nil
 	}
-	return p.Client.ForLocation(p.LocationID), nil
+	return p.Client.ForLocation(p.LocationID)
 }
 
 func isAuthError(err error) bool {

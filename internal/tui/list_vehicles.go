@@ -115,8 +115,12 @@ func fetchVehicles(client *wenmar.Client, locationID string) tea.Cmd {
 		ctx := context.Background()
 		var resp *wenmar.ListResult[wenmar.Vehicle]
 		var err error
+		var lc *wenmar.Client
 		if locationID != "" {
-			lc := client.ForLocation(locationID)
+			lc, err = client.ForLocation(locationID)
+			if err != nil {
+				return vehicleListResultMsg{err: err}
+			}
 			resp, err = lc.ListVehicles(ctx, nil)
 		} else {
 			resp, err = client.ListVehicles(ctx, nil)

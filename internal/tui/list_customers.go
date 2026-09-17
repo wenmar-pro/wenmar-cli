@@ -122,8 +122,12 @@ func fetchCustomersWithParams(client *wenmar.Client, locationID string, params w
 		ctx := context.Background()
 		var resp *wenmar.ListResult[wenmar.Customer]
 		var err error
+		var lc *wenmar.Client
 		if locationID != "" {
-			lc := client.ForLocation(locationID)
+			lc, err = client.ForLocation(locationID)
+			if err != nil {
+				return customerListResultMsg{err: err}
+			}
 			resp, err = lc.ListCustomers(ctx, &params)
 		} else {
 			resp, err = client.ListCustomers(ctx, &params)
