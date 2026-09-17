@@ -55,7 +55,7 @@ func (c *Client) Schema(ctx context.Context) (*SchemaResponse, error) {
 		return nil, fmt.Errorf("read schema response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, wenmar.ParseErrorBodyWithRequest(body, resp.StatusCode, http.MethodGet, "/exports/schema.json")
+		return nil, wenmar.ParseErrorBody(body, resp.StatusCode, http.MethodGet, "/exports/schema.json", resp.Header.Get("X-Request-Id"))
 	}
 
 	var schema SchemaResponse
@@ -89,7 +89,7 @@ func (c *Client) Create(ctx context.Context, r CreateRequest) (*CreateResponse, 
 		return nil, fmt.Errorf("read export response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, wenmar.ParseErrorBodyWithRequest(body, resp.StatusCode, http.MethodPost, "/exports.json")
+		return nil, wenmar.ParseErrorBody(body, resp.StatusCode, http.MethodPost, "/exports.json", resp.Header.Get("X-Request-Id"))
 	}
 
 	var created CreateResponse
@@ -149,9 +149,9 @@ func (c *Client) Download(ctx context.Context, downloadURL string, maxWait time.
 				continue
 			}
 		case http.StatusGone:
-			return nil, "", "", wenmar.ParseErrorBodyWithRequest(body, resp.StatusCode, http.MethodGet, downloadURL)
+			return nil, "", "", wenmar.ParseErrorBody(body, resp.StatusCode, http.MethodGet, downloadURL, resp.Header.Get("X-Request-Id"))
 		default:
-			return nil, "", "", wenmar.ParseErrorBodyWithRequest(body, resp.StatusCode, http.MethodGet, downloadURL)
+			return nil, "", "", wenmar.ParseErrorBody(body, resp.StatusCode, http.MethodGet, downloadURL, resp.Header.Get("X-Request-Id"))
 		}
 	}
 }
