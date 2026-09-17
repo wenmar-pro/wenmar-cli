@@ -383,6 +383,9 @@ func emitCommand(f *jen.File, cmd GenCommand, overrides *Overrides) error {
 		jen.Id("Use"):   jen.Lit(cmd.Command + useArgsSuffix(cmdType, cmd)),
 		jen.Id("Short"): jen.Lit(cmd.Summary),
 		jen.Id("RunE"):  jen.Id(runHandlerName(cmd)),
+		jen.Id("Annotations"): jen.Map(jen.String()).String().Values(jen.Dict{
+			jen.Lit(OpAnnotationKey): jen.Lit(OpAnnotationValue(cmd)),
+		}),
 	}
 	if needsExactArgs(cmdType) {
 		dict[jen.Id("Args")] = jen.Qual("github.com/spf13/cobra", "ExactArgs").Call(jen.Lit(1))
@@ -1519,6 +1522,17 @@ func emitSeedActionHandler(g *jen.Group, cmd GenCommand) {
 }
 
 const wenmarPkg = "github.com/wenmar-pro/wenmar-sdk/go/wenmar"
+
+// OpAnnotationKey marks a cobra command with the public spec operation it
+// exercises ("METHOD /path"), so the surface snapshot carries an exact
+// command-to-operation binding for the wenmar-pro parity gate.
+const OpAnnotationKey = "wenmar/op"
+
+// OpAnnotationValue is the "METHOD /path" form of the spec operation the
+// command exercises — the same shape as parity-manifest endpoints.
+func OpAnnotationValue(cmd GenCommand) string {
+	return strings.ToUpper(cmd.Method) + " " + cmd.Path
+}
 
 func sdkMethodNameFor(cmd GenCommand) string {
 	if cmd.SDKMethod != "" {

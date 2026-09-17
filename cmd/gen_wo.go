@@ -25,11 +25,12 @@ var woWaitingForCustomer bool
 var woWorkOrderId int
 var woWorkOrderTagId string
 var woCloseCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo close 100\n",
-	RunE:    runWoClose,
-	Short:   "Close a work order",
-	Use:     "close <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/close"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo close 100\n",
+	RunE:        runWoClose,
+	Short:       "Close a work order",
+	Use:         "close <id>",
 }
 
 func runWoClose(cmd *cobra.Command, args []string) error {
@@ -45,11 +46,12 @@ func runWoClose(cmd *cobra.Command, args []string) error {
 }
 
 var woCompleteCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo complete 100\n",
-	RunE:    runWoComplete,
-	Short:   "Mark a work order complete",
-	Use:     "complete <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/complete"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo complete 100\n",
+	RunE:        runWoComplete,
+	Short:       "Mark a work order complete",
+	Use:         "complete <id>",
 }
 
 func runWoComplete(cmd *cobra.Command, args []string) error {
@@ -74,10 +76,11 @@ func runWoComplete(cmd *cobra.Command, args []string) error {
 }
 
 var woCreateCmd = &cobra.Command{
-	Example: "wenmar wo create --customer-id 42 --vehicle-id 5\n",
-	RunE:    runWoCreate,
-	Short:   "Create a new work order",
-	Use:     "create",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders"},
+	Example:     "wenmar wo create --customer-id 42 --vehicle-id 5\n",
+	RunE:        runWoCreate,
+	Short:       "Create a new work order",
+	Use:         "create",
 }
 
 func runWoCreate(cmd *cobra.Command, args []string) error {
@@ -100,11 +103,12 @@ func runWoCreate(cmd *cobra.Command, args []string) error {
 }
 
 var woDeclineCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo decline 100 --closure-reason \"Customer declined\"\n",
-	RunE:    runWoDecline,
-	Short:   "Close a work order as declined with a reason",
-	Use:     "decline <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/decline"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo decline 100 --closure-reason \"Customer declined\"\n",
+	RunE:        runWoDecline,
+	Short:       "Close a work order as declined with a reason",
+	Use:         "decline <id>",
 }
 
 func runWoDecline(cmd *cobra.Command, args []string) error {
@@ -123,10 +127,11 @@ func runWoDecline(cmd *cobra.Command, args []string) error {
 }
 
 var woDeclineAllCmd = &cobra.Command{
-	Example: "wenmar wo decline-all --work-order-id 100 --decline-reason \"Customer declined all\"\n",
-	RunE:    runWoDeclineAll,
-	Short:   "Decline all concerns on a work order",
-	Use:     "decline-all",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{work_order_id}/concerns/decline_all"},
+	Example:     "wenmar wo decline-all --work-order-id 100 --decline-reason \"Customer declined all\"\n",
+	RunE:        runWoDeclineAll,
+	Short:       "Decline all concerns on a work order",
+	Use:         "decline-all",
 }
 
 func runWoDeclineAll(cmd *cobra.Command, args []string) error {
@@ -143,10 +148,11 @@ func runWoDeclineAll(cmd *cobra.Command, args []string) error {
 }
 
 var woListCmd = &cobra.Command{
-	Example: "wenmar wo list\nwenmar wo list --jq '.[].number'\nwenmar wo list --jq 'length'\n",
-	RunE:    runWoList,
-	Short:   "List all work orders, paginated via the Link header",
-	Use:     "list",
+	Annotations: map[string]string{"wenmar/op": "GET /work_orders"},
+	Example:     "wenmar wo list\nwenmar wo list --jq '.[].number'\nwenmar wo list --jq 'length'\n",
+	RunE:        runWoList,
+	Short:       "List all work orders, paginated via the Link header",
+	Use:         "list",
 }
 
 func runWoList(cmd *cobra.Command, args []string) error {
@@ -160,11 +166,12 @@ func runWoList(cmd *cobra.Command, args []string) error {
 }
 
 var woPostToAccountCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo post-to-account 100\n",
-	RunE:    runWoPostToAccount,
-	Short:   "Post a work order to accounts receivable",
-	Use:     "post-to-account <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/post_to_account"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo post-to-account 100\n",
+	RunE:        runWoPostToAccount,
+	Short:       "Post a work order to accounts receivable",
+	Use:         "post-to-account <id>",
 }
 
 func runWoPostToAccount(cmd *cobra.Command, args []string) error {
@@ -180,11 +187,12 @@ func runWoPostToAccount(cmd *cobra.Command, args []string) error {
 }
 
 var woReopenCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo reopen 100\n",
-	RunE:    runWoReopen,
-	Short:   "Reopen a closed work order",
-	Use:     "reopen <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/reopen"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo reopen 100\n",
+	RunE:        runWoReopen,
+	Short:       "Reopen a closed work order",
+	Use:         "reopen <id>",
 }
 
 func runWoReopen(cmd *cobra.Command, args []string) error {
@@ -200,11 +208,12 @@ func runWoReopen(cmd *cobra.Command, args []string) error {
 }
 
 var woSendEstimateCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo send-estimate 100\n",
-	RunE:    runWoSendEstimate,
-	Short:   "Send the estimate to the customer",
-	Use:     "send-estimate <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/send_estimate"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo send-estimate 100\n",
+	RunE:        runWoSendEstimate,
+	Short:       "Send the estimate to the customer",
+	Use:         "send-estimate <id>",
 }
 
 func runWoSendEstimate(cmd *cobra.Command, args []string) error {
@@ -220,11 +229,12 @@ func runWoSendEstimate(cmd *cobra.Command, args []string) error {
 }
 
 var woSendInvoiceSummaryCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo send-invoice-summary 100\n",
-	RunE:    runWoSendInvoiceSummary,
-	Short:   "Send the invoice summary to the customer",
-	Use:     "send-invoice-summary <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/send_invoice_summary"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo send-invoice-summary 100\n",
+	RunE:        runWoSendInvoiceSummary,
+	Short:       "Send the invoice summary to the customer",
+	Use:         "send-invoice-summary <id>",
 }
 
 func runWoSendInvoiceSummary(cmd *cobra.Command, args []string) error {
@@ -240,11 +250,12 @@ func runWoSendInvoiceSummary(cmd *cobra.Command, args []string) error {
 }
 
 var woSendReminderCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo send-reminder 100\n",
-	RunE:    runWoSendReminder,
-	Short:   "Send a reminder for the work order",
-	Use:     "send-reminder <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/send_reminder"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo send-reminder 100\n",
+	RunE:        runWoSendReminder,
+	Short:       "Send a reminder for the work order",
+	Use:         "send-reminder <id>",
 }
 
 func runWoSendReminder(cmd *cobra.Command, args []string) error {
@@ -260,11 +271,12 @@ func runWoSendReminder(cmd *cobra.Command, args []string) error {
 }
 
 var woStartCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo start 100\n",
-	RunE:    runWoStart,
-	Short:   "Start a work order (estimate -> in_progress)",
-	Use:     "start <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/start"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo start 100\n",
+	RunE:        runWoStart,
+	Short:       "Start a work order (estimate -> in_progress)",
+	Use:         "start <id>",
 }
 
 func runWoStart(cmd *cobra.Command, args []string) error {
@@ -280,11 +292,12 @@ func runWoStart(cmd *cobra.Command, args []string) error {
 }
 
 var woUpdateCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo update 100 --intake-method drop_off\n",
-	RunE:    runWoUpdate,
-	Short:   "Update a work order by ID",
-	Use:     "update <id>",
+	Annotations: map[string]string{"wenmar/op": "PATCH /work_orders/{id}"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo update 100 --intake-method drop_off\n",
+	RunE:        runWoUpdate,
+	Short:       "Update a work order by ID",
+	Use:         "update <id>",
 }
 
 func runWoUpdate(cmd *cobra.Command, args []string) error {
@@ -319,11 +332,12 @@ func runWoUpdate(cmd *cobra.Command, args []string) error {
 }
 
 var woVoidCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Example: "wenmar wo void 100 --closure-reason \"Duplicate order\"\n",
-	RunE:    runWoVoid,
-	Short:   "Void a work order with a reason",
-	Use:     "void <id>",
+	Annotations: map[string]string{"wenmar/op": "POST /work_orders/{id}/void"},
+	Args:        cobra.ExactArgs(1),
+	Example:     "wenmar wo void 100 --closure-reason \"Duplicate order\"\n",
+	RunE:        runWoVoid,
+	Short:       "Void a work order with a reason",
+	Use:         "void <id>",
 }
 
 func runWoVoid(cmd *cobra.Command, args []string) error {
