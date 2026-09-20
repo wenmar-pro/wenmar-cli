@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# bin/worktree — manage sibling git worktrees for parallel AI agent work.
+# Worktrees are SIBLING directories (../wenmar-cli-<task>) so that relative
+# paths to ../wenmar-sdk (go.work, Makefile SPEC_PATH) keep resolving.
+
+MAIN="$(git worktree list --porcelain | awk '/^worktree/ {print substr($0, 10); exit}')"
+PARENT="$(dirname "$MAIN")"
+BASE_BRANCH="${WORKTREE_BASE:-main}"
+MERGE_LOCK="/tmp/wenmar-cli-merge.lock"
+
+die() { echo "❌ $*" >&2; exit 1; }
+info() { echo "▶ $*"; }
+
+usage() {
+  cat <<EOF
+Usage: bin/worktree <command> [args]
+
+Commands:
+  create <task> [--base main]   Create worktree at ../wenmar-cli-<task>
+  merge <task> [-m MSG]         make check + surface-diff in worktree, squash merge, cleanup
+  clean <task>                  Permanently delete worktree + branch (asks to confirm)
+  list                          Show active worktrees and dirty state
+EOF
+}
+
+validate_name() {
+  [[ "$1" =~ ^[a-z0-9][a-z0-9_-]*$ ]] || die "invalid task name '$1'"
+}
+
+wt_path() { echo "$PARENT/wenmar-cli-$1"; }
+
+cmd_create() {
+  local task="" base="$BASE_BRANCH"
+  [[ $# -ge 1 ]] || die "create requires a task name"
+  task="$1"; shift
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --base) base="$2"; shift 2 ;;
+      *) die "unknown option: $1" ;;
+    esac
+  done
+  validate_name "$task"
+  local wt
+  wt="$(wt_path "$task")"
+  [[ -d "$wt" ]] && die "worktree already exists: $wt"
+  git rev-parse --verify --quiet "$base" >/dev/null || die "base branch not found: $base"
+
+  info "Creating worktree $wt (branch $task from $base)"
+  git worktree add "$wt" -b "$task" "$base"
+  (cd "$wt" && go build ./...)
+
+  cat <<EOF
+✅ Worktree ready
+   Path:   $wt
+   Branch: $task (base: $base)
+   Note:   go.work resolves ../wenmar-sdk from this location.
+EOF
+}
+
+cmd_merge() {
+  local task="" msg=""
+  [[ $# -ge 1 ]] || die "merge requires a task name"
+  task="$1"; shift || true
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -m) msg="$2"; shift 2 ;;
+      *) die "unknown option: $1" ;;
+    esac
+  done
+  validate_name "$task"
+  local wt
+  wt="$(wt_path "$task")"
+  [[ -d "$wt" ]] || die "no worktree for task: $task"
+
+  exec 9>"$MERGE_LOCK"
+  info "Acquiring merge lock ($MERGE_LOCK)"
+  flock 9
+
+  if [[ -n "$(git -C "$wt" status --porcelain)" ]]; then
+    die "worktree has uncommitted changes — commit everything first"
+  fi
+  if [[ -n "$(git -C "$MAIN" status --porcelain)" ]]; then
+    die "main checkout is dirty — commit or stash it first"
+  fi
+
+  info "Merging $BASE_BRANCH into $task (inside worktree)"
+  if ! git -C "$wt" merge --no-edit "$BASE_BRANCH"; then
+    git -C "$wt" merge --abort 2>/dev/null || true
+    die "merge conflict with $BASE_BRANCH — resolve manually in $wt, then re-run"
+  fi
+
+  info "make check (includes ../wenmar-sdk/go tests via go.work)"
+  (cd "$wt" && make check)
+
+  info "Surface diff"
+  (cd "$wt" && make surface-diff)
+
+  info "Squash merging into $BASE_BRANCH"
+  local subject
+  subject="$(git -C "$wt" log --format=%s --reverse "$BASE_BRANCH"..HEAD | head -1)"
+  git -C "$MAIN" checkout "$BASE_BRANCH"
+  git -C "$MAIN" merge --squash "$task"
+  git -C "$MAIN" commit -m "${msg:-"$subject (squashed from $task)"}"
+
+  git worktree remove "$wt"
+  git branch -D "$task"
+  echo "✅ Merged '$task' into $BASE_BRANCH and cleaned up."
+}
+
+cmd_clean() {
+  [[ $# -ge 1 ]] || die "clean requires a task name"
+  local task="$1" wt reply
+  validate_name "$task"
+  wt="$(wt_path "$task")"
+  [[ -d "$wt" ]] || die "no worktree for task: $task"
+  echo "This permanently deletes the worktree AND branch '$task', including any uncommitted work."
+  read -r -p "Type '$task' to confirm: " reply
+  [[ "$reply" == "$task" ]] || die "aborted"
+  git worktree remove --force "$wt"
+  git branch -D "$task" 2>/dev/null || true
+  echo "🗑  Removed worktree and branch '$task'."
+}
+
+cmd_list() {
+  local wt task branch dirty
+  for wt in "$PARENT"/wenmar-cli-*/; do
+    [[ -d "$wt/.git" || -f "$wt/.git" ]] || continue
+    task="$(basename "$wt" | sed 's/^wenmar-cli-//')"
+    branch="$(git -C "$wt" branch --show-current 2>/dev/null || echo "?")"
+    dirty="$(git -C "$wt" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+    printf "%-35s %-35s dirty=%s\n" "$task" "$branch" "$dirty"
+  done
+}
+
+case "${1:-}" in
+  create) shift; cmd_create "$@" ;;
+  merge) shift; cmd_merge "$@" ;;
+  clean) shift; cmd_clean "$@" ;;
+  list) cmd_list ;;
+  ""|-h|--help|help) usage ;;
+  *) usage; die "unknown command: $1" ;;
+esac
