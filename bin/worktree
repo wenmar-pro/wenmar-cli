@@ -49,6 +49,16 @@ cmd_create() {
 
   info "Creating worktree $wt (branch $task from $base)"
   git worktree add "$wt" -b "$task" "$base"
+
+  # go.work / go.work.sum are gitignored, so a fresh worktree has none.
+  # Copy them so the sibling worktree resolves ../wenmar-sdk/go exactly
+  # like the main checkout (the reason worktrees are siblings).
+  for f in go.work go.work.sum; do
+    if [[ -f "$MAIN/$f" ]]; then
+      cp "$MAIN/$f" "$wt/$f"
+    fi
+  done
+
   (cd "$wt" && go build ./...)
 
   cat <<EOF
