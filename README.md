@@ -35,16 +35,9 @@ Download the latest release from [GitHub Releases](https://github.com/wenmar-pro
 - `wenmar_<version>_linux_arm64.tar.gz`
 - `wenmar_<version>_windows_amd64.zip`
 
-### Package managers
+### Linux packages
 
 ```bash
-# Homebrew (macOS / Linux)
-brew install --cask wenmar-pro/tap/wenmar
-
-# Scoop (Windows)
-scoop bucket add wenmar https://github.com/wenmar-pro/scoop-bucket
-scoop install wenmar
-
 # deb / rpm / apk
 # Available as release assets (wenmar_<version>_<os>_<arch>.deb / .rpm / .apk)
 ```

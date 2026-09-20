@@ -67,8 +67,6 @@ func runUpgrade(cmd *cobra.Command, args []string) error {
 	switch installMethod {
 	case "mise":
 		return runMiseUpgrade(cmd, target)
-	case "homebrew":
-		return runBrewUpgrade(cmd)
 	case "go_install":
 		return fmt.Errorf("wenmar was installed via `go install`. Upgrade with `go install github.com/wenmar-pro/wenmar-cli/cmd/wenmar@latest`")
 	case "installer":
@@ -119,11 +117,6 @@ func detectInstallMethod() (string, string, error) {
 		return "mise", strings.TrimSpace(string(out)), nil
 	}
 
-	// Homebrew
-	if out, err := exec.Command("brew", "--prefix", "wenmar").Output(); err == nil && strings.TrimSpace(string(out)) != "" {
-		return "homebrew", strings.TrimSpace(string(out)), nil
-	}
-
 	// go install
 	if strings.Contains(exe, "go-build") || strings.Contains(exe, "gopath") || strings.Contains(exe, "go/bin") {
 		return "go_install", exe, nil
@@ -149,13 +142,6 @@ func runMiseUpgrade(cmd *cobra.Command, target string) error {
 		args = append(args, target)
 	}
 	c := exec.Command("mise", args...)
-	c.Stdout = cmd.OutOrStdout()
-	c.Stderr = cmd.ErrOrStderr()
-	return c.Run()
-}
-
-func runBrewUpgrade(cmd *cobra.Command) error {
-	c := exec.Command("brew", "upgrade", "wenmar")
 	c.Stdout = cmd.OutOrStdout()
 	c.Stderr = cmd.ErrOrStderr()
 	return c.Run()
